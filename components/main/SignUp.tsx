@@ -12,6 +12,7 @@ const SignUp = ({ setCurrentView }) => {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -19,6 +20,12 @@ const SignUp = ({ setCurrentView }) => {
     e.preventDefault();
     setLoading(true);
     setError('');
+
+    if (password !== confirmPassword) {
+      setError('Passwords do not match.');
+      setLoading(false);
+      return;
+    }
 
     const registrationData = {
       email,
@@ -106,6 +113,18 @@ const SignUp = ({ setCurrentView }) => {
           className="bg-[#0D1B2A] border-gray-600 text-white focus:ring-[#3BB273]"
         />
       </div>
+      <div className="space-y-2">
+        <Label htmlFor="companyConfirmPassword" className="text-gray-400">Confirm Password</Label>
+        <Input
+          id="companyConfirmPassword"
+          type="password"
+          placeholder="••••••••"
+          required
+          value={confirmPassword}
+          onChange={(e) => setConfirmPassword(e.target.value)}
+          className="bg-[#0D1B2A] border-gray-600 text-white focus:ring-[#3BB273]"
+        />
+      </div>
       {error && <p className="text-sm text-red-500">{error}</p>}
       <Button type="submit" className="w-full bg-[#3BB273] hover:bg-[#3BB273]/90 text-white" disabled={loading}>
         {loading ? 'Creating Account...' : 'Create Account'}
@@ -148,6 +167,18 @@ const SignUp = ({ setCurrentView }) => {
           required
           value={password}
           onChange={(e) => setPassword(e.target.value)}
+          className="bg-[#0D1B2A] border-gray-600 text-white focus:ring-[#3BB273]"
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="investorConfirmPassword" className="text-gray-400">Confirm Password</Label>
+        <Input
+          id="investorConfirmPassword"
+          type="password"
+          placeholder="••••••••"
+          required
+          value={confirmPassword}
+          onChange={(e) => setConfirmPassword(e.target.value)}
           className="bg-[#0D1B2A] border-gray-600 text-white focus:ring-[#3BB273]"
         />
       </div>

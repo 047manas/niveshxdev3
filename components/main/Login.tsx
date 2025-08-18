@@ -69,7 +69,16 @@ const Login = ({ setCurrentView }) => {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-gray-400">Password</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password" className="text-gray-400">Password</Label>
+                <button
+                  type="button"
+                  onClick={() => setCurrentView('forgot-password')}
+                  className="text-sm font-medium text-[#3BB273] hover:underline"
+                >
+                  Forgot Password?
+                </button>
+              </div>
               <Input
                 id="password"
                 type="password"
