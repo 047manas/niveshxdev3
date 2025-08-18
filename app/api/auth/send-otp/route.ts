@@ -35,8 +35,9 @@ export async function POST(req: NextRequest) {
 
     // Action code settings for the email link
     const actionCodeSettings = {
-      // This URL must be authorized in the Firebase console
-      url: 'http://localhost:3000/verify-email',
+      // This URL must be authorized in the Firebase console.
+      // Use an environment variable for the base URL in production.
+      url: `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/verify-email`,
       handleCodeInApp: true,
     };
 
