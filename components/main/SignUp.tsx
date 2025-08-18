@@ -35,13 +35,8 @@ const SignUp = ({ setCurrentView }) => {
         throw new Error(data.error || 'Something went wrong');
       }
 
-      // On success, switch to the verification view as requested
-      // A parent component will need to handle this state change.
-      // For now, we can show a message.
-      alert("Sign-up successful! Please check your email for a verification link to complete the process.");
-
-      // Or, if a parent component manages the view:
-      // setCurrentView('verify');
+      // On success, switch to the verification view.
+      setCurrentView('verify');
 
     } catch (err) {
       setError(err.message);
