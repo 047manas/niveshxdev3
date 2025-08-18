@@ -151,10 +151,12 @@ export default function HomePage() {
               </div>
 
               <div className="text-center">
-                <Button size="lg" className="bg-[#3BB273] hover:bg-[#3BB273]/90 text-white">
-                  Create Liquidity
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Button>
+                <Link href="/main">
+                  <Button size="lg" className="bg-[#3BB273] hover:bg-[#3BB273]/90 text-white">
+                    Create Liquidity
+                    <ArrowRight className="ml-2 h-5 w-5" />
+                  </Button>
+                </Link>
               </div>
             </CardContent>
           </Card>
@@ -232,10 +234,12 @@ export default function HomePage() {
               </div>
 
               <div className="text-center">
-                <Button size="lg" className="bg-[#3BB273] hover:bg-[#3BB273]/90 text-white">
-                  Start Investing
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Button>
+                <Link href="/main">
+                  <Button size="lg" className="bg-[#3BB273] hover:bg-[#3BB273]/90 text-white">
+                    Start Investing
+                    <ArrowRight className="ml-2 h-5 w-5" />
+                  </Button>
+                </Link>
               </div>
             </CardContent>
           </Card>
@@ -291,10 +295,12 @@ export default function HomePage() {
               </div>
 
               <div className="text-center">
-                <Button size="lg" className="bg-[#3BB273] hover:bg-[#3BB273]/90 text-white">
-                  Start Selling
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Button>
+                <Link href="/main">
+                  <Button size="lg" className="bg-[#3BB273] hover:bg-[#3BB273]/90 text-white">
+                    Start Selling
+                    <ArrowRight className="ml-2 h-5 w-5" />
+                  </Button>
+                </Link>
               </div>
             </CardContent>
           </Card>
@@ -481,10 +487,12 @@ export default function HomePage() {
                   <span className="text-gray-300">Portfolio diversification opportunities</span>
                 </div>
               </div>
-              <Button size="lg" className="bg-[#3BB273] hover:bg-[#3BB273]/90 text-white">
-                Start Investing
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
+              <Link href="/main">
+                <Button size="lg" className="bg-[#3BB273] hover:bg-[#3BB273]/90 text-white">
+                  Start Investing
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
+              </Link>
             </div>
             <div className="bg-gradient-to-br from-[#1a2332] to-[#0D1B2A] rounded-lg p-8 border border-gray-700">
               <div className="space-y-6">
