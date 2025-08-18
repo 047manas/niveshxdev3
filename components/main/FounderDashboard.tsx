@@ -1,18 +1,27 @@
-import React from 'react';
+"use client";
 
-const FounderDashboard = ({ handleLogout }) => (
-  <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
-    <div className="w-full max-w-4xl p-8 space-y-6 bg-white rounded-lg shadow-md">
-      <h2 className="text-3xl font-bold text-center text-gray-900">Founder Dashboard</h2>
-      <p className="text-center text-gray-600">Welcome, Founder!</p>
-      <button
-        onClick={handleLogout}
-        className="w-full px-4 py-2 font-bold text-white bg-red-500 rounded-md hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-      >
+import { Button } from "@/components/ui/button";
+import { auth } from "@/lib/firebase";
+import { signOut } from "firebase/auth";
+import { useRouter } from "next/navigation";
+
+const FounderDashboard = ({ user }) => {
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    await signOut(auth);
+    router.push('/'); // Redirect to homepage after logout
+  };
+
+  return (
+    <div className="p-8">
+      <h1 className="text-2xl font-bold">Welcome, Founder!</h1>
+      <p>Email: {user ? user.email : 'Loading...'}</p>
+      <Button onClick={handleLogout} className="mt-4">
         Log Out
-      </button>
+      </Button>
     </div>
-  </div>
-);
+  );
+};
 
 export default FounderDashboard;

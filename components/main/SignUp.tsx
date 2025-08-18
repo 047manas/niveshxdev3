@@ -2,17 +2,52 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
-const SignUp = ({ handleSignUp, setCurrentView }) => {
+const SignUp = ({ setCurrentView }) => {
   const [fullName, setFullName] = React.useState('');
   const [email, setEmail] = React.useState('');
-  const [password, setPassword] = React.useState('');
+  // Password is no longer needed for passwordless flow
   const [userType, setUserType] = React.useState('Founder');
+  const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState('');
 
-  const onSignUp = (e) => {
+  // The 'handleSignUp' prop is no longer needed as we handle the API call directly.
+  const onSignUp = async (e) => {
     e.preventDefault();
-    handleSignUp({ fullName, email, password, userType });
+    setLoading(true);
+    setError('');
+
+    try {
+      // Save the email to local storage so we can retrieve it on the verification page.
+      window.localStorage.setItem('emailForSignIn', email);
+      const response = await fetch('/api/auth/send-otp', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ fullName, email, userType }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Something went wrong');
+      }
+
+      // On success, switch to the verification view as requested
+      // A parent component will need to handle this state change.
+      // For now, we can show a message.
+      alert("Sign-up successful! Please check your email for a verification link to complete the process.");
+
+      // Or, if a parent component manages the view:
+      // setCurrentView('verify');
+
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -52,18 +87,6 @@ const SignUp = ({ handleSignUp, setCurrentView }) => {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
-              type="password"
-              placeholder="Enter your password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-            />
-          </div>
-          <div className="space-y-2">
             <Label>You are a:</Label>
             <RadioGroup defaultValue="Founder" onValueChange={setUserType} className="flex space-x-4">
               <div className="flex items-center space-x-2">
@@ -76,9 +99,10 @@ const SignUp = ({ handleSignUp, setCurrentView }) => {
               </div>
             </RadioGroup>
           </div>
+          {error && <p className="text-sm text-red-600">{error}</p>}
           <div>
-            <Button type="submit" className="w-full">
-              Sign Up
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? 'Sending...' : 'Sign Up'}
             </Button>
           </div>
         </form>
