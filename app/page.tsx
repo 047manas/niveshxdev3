@@ -44,6 +44,11 @@ export default function HomePage() {
               For Shareholders
             </Link>
           </div>
+          <div className="hidden md:flex items-center">
+            <Link href="/auth">
+              <Button className="bg-[#3BB273] hover:bg-[#3BB273]/90 text-white">Login / Sign Up</Button>
+            </Link>
+          </div>
         </div>
       </nav>
 
