@@ -3,13 +3,43 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
-const Login = ({ handleLogin, setCurrentView }) => {
+const Login = ({ setCurrentView }) => {
   const [email, setEmail] = React.useState('');
-  const [password, setPassword] = React.useState('');
+  const [loading, setLoading] = React.useState(false);
+  const [message, setMessage] = React.useState('');
+  const [error, setError] = React.useState('');
 
-  const onLogin = (e) => {
+  // The 'handleLogin' prop is no longer needed as we handle the API call directly.
+  const onLogin = async (e) => {
     e.preventDefault();
-    handleLogin({ email, password });
+    setLoading(true);
+    setMessage('');
+    setError('');
+
+    try {
+      // Save the email to local storage so we can retrieve it on the verification page.
+      window.localStorage.setItem('emailForSignIn', email);
+      const response = await fetch('/api/auth/send-otp', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Something went wrong');
+      }
+
+      setMessage('Success! Check your email for a login link.');
+      setEmail('');
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -20,7 +50,7 @@ const Login = ({ handleLogin, setCurrentView }) => {
             Log in to your account
           </h2>
           <p className="mt-2 text-sm text-gray-600">
-            Welcome back! Please enter your details.
+            Welcome back! Enter your email to receive a login link.
           </p>
         </div>
         <form className="space-y-6" onSubmit={onLogin}>
@@ -36,21 +66,11 @@ const Login = ({ handleLogin, setCurrentView }) => {
               className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
             />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
-              type="password"
-              placeholder="Enter your password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-            />
-          </div>
+          {message && <p className="text-sm text-green-600">{message}</p>}
+          {error && <p className="text-sm text-red-600">{error}</p>}
           <div>
-            <Button type="submit" className="w-full">
-              Log In
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? 'Sending...' : 'Send Login Link'}
             </Button>
           </div>
         </form>
