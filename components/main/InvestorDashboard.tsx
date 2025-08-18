@@ -9,6 +9,10 @@ const InvestorDashboard = ({ user }) => {
   const router = useRouter();
 
   const handleLogout = async () => {
+    if (!auth) {
+      console.error("Firebase auth is not initialized.");
+      return;
+    }
     await signOut(auth);
     router.push('/'); // Redirect to homepage after logout
   };

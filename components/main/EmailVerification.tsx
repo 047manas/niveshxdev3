@@ -14,6 +14,11 @@ const EmailVerification = () => {
 
   useEffect(() => {
     const verifyLinkAndSignIn = async () => {
+      if (!auth) {
+        setError('Firebase has not been configured correctly.');
+        setStatus('');
+        return;
+      }
       // Get the one-time code from the URL query parameters.
       const oobCode = searchParams.get('oobCode');
       // Get the user's email from local storage.
