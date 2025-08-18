@@ -33,7 +33,7 @@ export default function HomePage() {
             <span className="text-white">Nivesh</span>
             <span className="text-[#3BB273]">x</span>
           </div>
-          <div className="hidden md:flex items-center space-x-8">
+          <div className="hidden md:flex items-center space-x-6">
             <Link href="#startups" className="text-gray-300 hover:text-white transition-colors">
               For Startups
             </Link>
@@ -43,6 +43,16 @@ export default function HomePage() {
             <Link href="#shareholders" className="text-gray-300 hover:text-white transition-colors">
               For Shareholders
             </Link>
+            <div className="flex items-center space-x-4 pl-4 border-l border-gray-700">
+              <Link href="/login">
+                <Button variant="ghost" className="text-white hover:bg-gray-800 hover:text-white">
+                  Login
+                </Button>
+              </Link>
+              <Link href="/signup-selection">
+                <Button className="bg-[#3BB273] hover:bg-[#3BB273]/90 text-white">Register</Button>
+              </Link>
+            </div>
           </div>
         </div>
       </nav>
@@ -151,7 +161,7 @@ export default function HomePage() {
               </div>
 
               <div className="text-center">
-                <Link href="/main">
+                <Link href="/register/company">
                   <Button size="lg" className="bg-[#3BB273] hover:bg-[#3BB273]/90 text-white">
                     Create Liquidity
                     <ArrowRight className="ml-2 h-5 w-5" />
@@ -234,7 +244,7 @@ export default function HomePage() {
               </div>
 
               <div className="text-center">
-                <Link href="/main">
+                <Link href="/register/investor">
                   <Button size="lg" className="bg-[#3BB273] hover:bg-[#3BB273]/90 text-white">
                     Start Investing
                     <ArrowRight className="ml-2 h-5 w-5" />
@@ -295,7 +305,7 @@ export default function HomePage() {
               </div>
 
               <div className="text-center">
-                <Link href="/main">
+                <Link href="/register/shareholder">
                   <Button size="lg" className="bg-[#3BB273] hover:bg-[#3BB273]/90 text-white">
                     Start Selling
                     <ArrowRight className="ml-2 h-5 w-5" />
@@ -487,7 +497,7 @@ export default function HomePage() {
                   <span className="text-gray-300">Portfolio diversification opportunities</span>
                 </div>
               </div>
-              <Link href="/main">
+              <Link href="/register/investor">
                 <Button size="lg" className="bg-[#3BB273] hover:bg-[#3BB273]/90 text-white">
                   Start Investing
                   <ArrowRight className="ml-2 h-5 w-5" />
