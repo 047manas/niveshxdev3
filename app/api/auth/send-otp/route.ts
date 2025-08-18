@@ -2,23 +2,29 @@ import { NextRequest, NextResponse } from 'next/server';
 import admin from '@/lib/firebase-admin';
 
 export async function POST(req: NextRequest) {
+  console.log("SEND-OTP API: Route hit.");
   try {
     const { email, fullName, userType } = await req.json();
+    console.log(`SEND-OTP API: Received request for email: ${email}`);
 
     if (!email) {
+      console.log("SEND-OTP API: Error - Email is required.");
       return NextResponse.json({ error: 'Email is required' }, { status: 400 });
     }
 
     const firestore = admin.firestore();
     const usersCollection = firestore.collection('users');
+    console.log("SEND-OTP API: Checking Firestore for existing user.");
     const userQuery = await usersCollection.where('email', '==', email).get();
+    console.log(`SEND-OTP API: Firestore query completed. Found ${userQuery.size} matching users.`);
 
     // If fullName is provided, it's a sign-up attempt
     if (fullName) {
       if (!userQuery.empty) {
+        console.log("SEND-OTP API: Error - User already exists during sign-up attempt.");
         return NextResponse.json({ error: 'User with this email already exists' }, { status: 409 });
       }
-      // Create a new user profile in Firestore
+      console.log("SEND-OTP API: Creating new user profile in Firestore.");
       await usersCollection.add({
         email,
         fullName,
@@ -26,30 +32,31 @@ export async function POST(req: NextRequest) {
         isVerified: false,
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
       });
+      console.log("SEND-OTP API: New user profile created successfully.");
     } else {
       // If it's a login attempt, check if the user exists
       if (userQuery.empty) {
+        console.log("SEND-OTP API: Error - User not found during login attempt.");
         return NextResponse.json({ error: 'No user found with this email. Please sign up first.' }, { status: 404 });
       }
     }
 
-    // Action code settings for the email link
+    const callbackUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/verify-email`;
+    console.log(`SEND-OTP API: Preparing to generate sign-in link with callback URL: ${callbackUrl}`);
+
     const actionCodeSettings = {
-      // This URL must be authorized in the Firebase console.
-      // Use an environment variable for the base URL in production.
-      url: `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/verify-email`,
+      url: callbackUrl,
       handleCodeInApp: true,
     };
 
-    // Generate the sign-in link and ask Firebase to send it
+    console.log("SEND-OTP API: Calling Firebase to generate and send the link...");
     await admin.auth().generateSignInWithEmailLink(email, actionCodeSettings);
+    console.log("SEND-OTP API: Firebase call successful. Email should be on its way.");
 
-    // We don't send the link back to the client for security reasons.
-    // The user will receive it in their email.
     return NextResponse.json({ success: true, message: 'Sign-in link sent to your email.' });
 
   } catch (error) {
-    console.error('Error in send-otp route:', error);
+    console.error('SEND-OTP API: CRITICAL ERROR - An exception occurred:', error);
     const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred.';
     return NextResponse.json({ error: 'Failed to send sign-in link.', details: errorMessage }, { status: 500 });
   }
