@@ -1,29 +1,22 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { auth } from "@/lib/firebase";
-import { signOut } from "firebase/auth";
-import { useRouter } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
 
-const InvestorDashboard = ({ user }) => {
-  const router = useRouter();
-
-  const handleLogout = async () => {
-    if (!auth) {
-      console.error("Firebase auth is not initialized.");
-      return;
-    }
-    await signOut(auth);
-    router.push('/'); // Redirect to homepage after logout
-  };
+const InvestorDashboard = () => {
+  const { user, logout } = useAuth();
 
   return (
-    <div className="p-8">
-      <h1 className="text-2xl font-bold">Welcome, Investor!</h1>
-      <p>Email: {user ? user.email : 'Loading...'}</p>
-      <Button onClick={handleLogout} className="mt-4">
-        Log Out
-      </Button>
+    <div className="min-h-screen bg-[#0D1B2A] text-white p-8">
+      <div className="container mx-auto">
+        <div className="flex justify-between items-center mb-8">
+            <h1 className="text-3xl font-bold">Investor Dashboard</h1>
+            <Button onClick={logout} variant="outline" className="text-white border-white hover:bg-white hover:text-black">
+                Log Out
+            </Button>
+        </div>
+        <p className="text-lg">Welcome, <span className="font-semibold text-[#3BB273]">{user ? user.email : 'Investor'}</span>!</p>
+      </div>
     </div>
   );
 };

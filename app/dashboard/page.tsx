@@ -1,50 +1,52 @@
 "use client";
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { useRouter } from 'next/navigation';
 import FounderDashboard from '@/components/main/FounderDashboard';
 import InvestorDashboard from '@/components/main/InvestorDashboard';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const DashboardPage = () => {
-  const { user, userProfile, loading } = useAuth();
+  const { user, isAuthenticated, loading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    // If loading is finished and there's no user, redirect to homepage.
-    if (!loading && !user) {
-      router.push('/');
+    if (!loading && !isAuthenticated) {
+      router.push('/auth');
     }
-  }, [user, loading, router]);
+  }, [loading, isAuthenticated, router]);
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <p>Loading dashboard...</p>
+      <div className="flex items-center justify-center min-h-screen bg-[#0D1B2A]">
+        <div className="w-full max-w-4xl p-8 space-y-6">
+          <Skeleton className="h-12 w-1/4 bg-gray-700" />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="md:col-span-2 space-y-4">
+              <Skeleton className="h-40 bg-gray-700" />
+              <Skeleton className="h-40 bg-gray-700" />
+            </div>
+            <div className="space-y-4">
+              <Skeleton className="h-24 bg-gray-700" />
+              <Skeleton className="h-24 bg-gray-700" />
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
 
-  if (user && userProfile) {
-    if (userProfile.userType === 'Founder') {
-      return <FounderDashboard user={user} />;
-    }
-    if (userProfile.userType === 'Investor') {
-      return <InvestorDashboard user={user} />;
-    }
+  if (!isAuthenticated || !user) {
+    // This is a fallback while the redirect is happening
+    return null;
   }
 
-  // This state can happen if the user is authenticated but their profile is not found or is malformed.
-  if (user && !loading) {
-     return (
-        <div className="flex items-center justify-center min-h-screen">
-            <p>Could not load user profile. Please contact support.</p>
-        </div>
-     )
-  }
-
-  // If not loading and no user, this will be rendered for a brief moment before redirect kicks in.
-  return null;
+  return (
+    <div>
+      {user.userType === 'company' ? <FounderDashboard /> : <InvestorDashboard />}
+    </div>
+  );
 };
 
 export default DashboardPage;
