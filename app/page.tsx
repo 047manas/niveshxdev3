@@ -74,7 +74,7 @@ export default function HomePage() {
                 <Button size="lg" className="w-full md:w-auto bg-[#3BB273] hover:bg-[#3BB273]/90 text-white">I’m a Founder</Button>
             </Link>
             <Link href="/auth">
-                <Button size="lg" variant="outline" className="w-full md:w-auto text-white border-white hover:bg-white hover:text-black">I’m an Investor</Button>
+                <Button size="lg" variant="outline" className="w-full md:w-auto text-[#3BB273] border-[#3BB273] hover:bg-[#3BB273]/10 hover:text-[#3BB273]">I’m an Investor</Button>
             </Link>
           </div>
 
@@ -267,7 +267,7 @@ export default function HomePage() {
                 <Button size="lg" className="w-full md:w-auto bg-[#3BB273] hover:bg-[#3BB273]/90 text-white">Get Started as a Founder</Button>
             </Link>
             <Link href="/auth">
-                <Button size="lg" variant="outline" className="w-full md:w-auto text-white border-white hover:bg-white hover:text-black">Get Started as an Investor</Button>
+                <Button size="lg" variant="outline" className="w-full md:w-auto text-[#3BB273] border-[#3BB273] hover:bg-[#3BB273]/10 hover:text-[#3BB273]">Get Started as an Investor</Button>
             </Link>
           </div>
         </div>

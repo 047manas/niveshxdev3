@@ -204,7 +204,7 @@ const SignUp = ({ setCurrentView }) => {
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-[#0D1B2A]">
-      <Card className="w-full max-w-md bg-[#1a2332] border-gray-700 text-white">
+      <Card className="w-full max-w-md bg-[#1a2332] border-gray-700 hover:border-[#3BB273]/50 transition-colors text-white">
         <CardHeader className="text-center">
           <CardTitle className="text-3xl font-bold">Create an account</CardTitle>
           <p className="text-gray-400">Join our community of founders and investors.</p>

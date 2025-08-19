@@ -58,7 +58,7 @@ const VerifyOtp = ({ setCurrentView }) => {
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-[#0D1B2A]">
-      <Card className="w-full max-w-md bg-[#1a2332] border-gray-700 text-white">
+      <Card className="w-full max-w-md bg-[#1a2332] border-gray-700 hover:border-[#3BB273]/50 transition-colors text-white">
         <CardHeader className="text-center">
           <CardTitle className="text-3xl font-bold">Verify your email</CardTitle>
           <CardDescription className="text-gray-400">
@@ -70,12 +70,12 @@ const VerifyOtp = ({ setCurrentView }) => {
             <div className="flex justify-center">
               <InputOTP maxLength={6} value={otp} onChange={setOtp}>
                 <InputOTPGroup>
-                  <InputOTPSlot index={0} className="bg-[#0D1B2A] border-gray-600 text-white" />
-                  <InputOTPSlot index={1} className="bg-[#0D1B2A] border-gray-600 text-white" />
-                  <InputOTPSlot index={2} className="bg-[#0D1B2A] border-gray-600 text-white" />
-                  <InputOTPSlot index={3} className="bg-[#0D1B2A] border-gray-600 text-white" />
-                  <InputOTPSlot index={4} className="bg-[#0D1B2A] border-gray-600 text-white" />
-                  <InputOTPSlot index={5} className="bg-[#0D1B2A] border-gray-600 text-white" />
+                  <InputOTPSlot index={0} className="bg-[#0D1B2A] border-gray-600 text-white focus:ring-2 focus:ring-inset focus:ring-[#3BB273]" />
+                  <InputOTPSlot index={1} className="bg-[#0D1B2A] border-gray-600 text-white focus:ring-2 focus:ring-inset focus:ring-[#3BB273]" />
+                  <InputOTPSlot index={2} className="bg-[#0D1B2A] border-gray-600 text-white focus:ring-2 focus:ring-inset focus:ring-[#3BB273]" />
+                  <InputOTPSlot index={3} className="bg-[#0D1B2A] border-gray-600 text-white focus:ring-2 focus:ring-inset focus:ring-[#3BB273]" />
+                  <InputOTPSlot index={4} className="bg-[#0D1B2A] border-gray-600 text-white focus:ring-2 focus:ring-inset focus:ring-[#3BB273]" />
+                  <InputOTPSlot index={5} className="bg-[#0D1B2A] border-gray-600 text-white focus:ring-2 focus:ring-inset focus:ring-[#3BB273]" />
                 </InputOTPGroup>
               </InputOTP>
             </div>
