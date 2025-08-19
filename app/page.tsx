@@ -2,17 +2,11 @@
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import {
   ArrowRight,
   CheckCircle,
   TrendingUp,
-  Users,
-  Building2,
-  Wallet,
-  Shield,
   BarChart3,
-  Target,
   Zap,
   FileCheck,
   Eye,
@@ -20,10 +14,15 @@ import {
   Linkedin,
   Twitter,
   DollarSign,
+  Menu,
+  X,
 } from "lucide-react"
 import Link from "next/link"
+import { useState } from "react"
 
 export default function HomePage() {
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
+
   return (
     <div className="min-h-screen bg-[#0D1B2A] text-white">
       {/* Navigation */}
@@ -34,518 +33,191 @@ export default function HomePage() {
             <span className="text-[#3BB273]">x</span>
           </div>
           <div className="hidden md:flex items-center space-x-8">
-            <Link href="#startups" className="text-gray-300 hover:text-white transition-colors">
-              For Startups
-            </Link>
-            <Link href="#investors" className="text-gray-300 hover:text-white transition-colors">
-              For Investors
-            </Link>
-            <Link href="#shareholders" className="text-gray-300 hover:text-white transition-colors">
-              For Shareholders
-            </Link>
+            {/* Navigation links removed as per new design */}
           </div>
           <div className="hidden md:flex items-center">
             <Link href="/auth">
               <Button className="bg-[#3BB273] hover:bg-[#3BB273]/90 text-white">Login / Sign Up</Button>
             </Link>
           </div>
+          <div className="md:hidden">
+            <button onClick={() => setIsMenuOpen(!isMenuOpen)}>
+              {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            </button>
+          </div>
         </div>
+        {/* Mobile Menu */}
+        {isMenuOpen && (
+          <div className="md:hidden bg-[#0D1B2A] border-t border-gray-800">
+            <div className="container mx-auto px-4 py-4 flex flex-col space-y-4">
+                {/* Navigation links removed as per new design */}
+                <Link href="/auth">
+                    <Button className="w-full bg-[#3BB273] hover:bg-[#3BB273]/90 text-white">Login / Sign Up</Button>
+                </Link>
+            </div>
+          </div>
+        )}
       </nav>
 
       {/* Hero Section */}
-      <section className="relative py-20 px-4 overflow-hidden">
+      <section className="relative py-20 px-4 text-center overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-[#0D1B2A] via-[#1a2332] to-[#0D1B2A]" />
-
-        {/* Mock Dashboard Background */}
-        <div className="absolute inset-0 opacity-20">
-          <div className="grid grid-cols-12 gap-4 h-full p-8">
-            <div className="col-span-8 bg-gradient-to-r from-[#3BB273]/30 to-transparent rounded-lg p-4">
-              <div className="h-4 bg-[#3BB273]/50 rounded mb-2 w-1/3"></div>
-              <div className="h-8 bg-[#3BB273]/30 rounded mb-4"></div>
-              <div className="grid grid-cols-4 gap-2">
-                {Array.from({ length: 16 }).map((_, i) => (
-                  <div key={i} className="h-12 bg-[#3BB273]/20 rounded"></div>
-                ))}
-              </div>
-            </div>
-            <div className="col-span-4 space-y-4">
-              <div className="bg-[#3BB273]/20 rounded-lg p-4 h-32"></div>
-              <div className="bg-[#3BB273]/20 rounded-lg p-4 h-24"></div>
-              <div className="bg-[#3BB273]/20 rounded-lg p-4 h-20"></div>
-            </div>
-          </div>
-        </div>
-
-        <div className="container mx-auto relative z-10 text-center">
-          <Badge className="mb-6 bg-[#3BB273]/20 text-[#3BB273] border-[#3BB273]/30">
-            Building Liquidity Infrastructure for Private Equity
-          </Badge>
-
-          <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight">
-            Empowering Secondary liquidity in <span className="text-[#3BB273]">Private Equity</span>
+        <div className="container mx-auto relative z-10">
+          <h1 className="text-4xl md:text-7xl font-bold mb-4 leading-tight">
+            Startup Funding Powered by <span className="text-[#3BB273]">Data</span>.
           </h1>
-
-          <p className="text-xl md:text-2xl text-gray-300 mb-8 max-w-3xl mx-auto">
-            Making Private Startup Equity Visible, Sellable and Liquid
+          <p className="text-lg md:text-2xl text-gray-300 mb-8 max-w-3xl mx-auto">
+            Turn your growth into a single source of truth and get funded faster, without endless pitch decks.
           </p>
+          <div className="flex flex-col md:flex-row justify-center gap-4">
+            <Link href="/auth">
+                <Button size="lg" className="w-full md:w-auto bg-[#3BB273] hover:bg-[#3BB273]/90 text-white">I’m a Founder</Button>
+            </Link>
+            <Link href="/auth">
+                <Button size="lg" variant="outline" className="w-full md:w-auto text-white border-white hover:bg-white hover:text-black">I’m an Investor</Button>
+            </Link>
+          </div>
 
-          <div className="mb-6">
-            <Badge className="bg-[#3BB273]/10 text-[#3BB273] border-[#3BB273]/30 mb-2">
-              🔒 Limited early access for verified users
-            </Badge>
+          {/* Dashboard Visual Placeholder */}
+          <div className="relative mt-16">
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-green-500/10 to-transparent" />
+            <div className="container mx-auto p-4 md:p-8 bg-[#0D1B2A]/50 backdrop-blur-sm border border-gray-700/50 rounded-lg shadow-2xl">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                  <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+                  <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                </div>
+                <div className="w-1/3 h-6 bg-gray-700/50 rounded"></div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="col-span-1 md:col-span-2 h-40 md:h-64 bg-gray-700/30 rounded-lg flex items-end p-4">
+                  {/* Mock line chart */}
+                  <div className="w-full h-1/2 border-b border-dashed border-gray-500 relative">
+                    <div className="absolute bottom-0 left-0 w-full h-2/3 bg-gradient-to-t from-[#3BB273]/30 to-transparent"></div>
+                  </div>
+                </div>
+                <div className="col-span-1 space-y-4">
+                  <div className="h-20 bg-gray-700/30 rounded-lg p-3">
+                    <div className="w-1/2 h-4 bg-gray-600/50 rounded mb-2"></div>
+                    <div className="w-3/4 h-6 bg-gray-600/50 rounded"></div>
+                  </div>
+                  <div className="h-20 bg-gray-700/30 rounded-lg p-3">
+                    <div className="w-1/2 h-4 bg-gray-600/50 rounded mb-2"></div>
+                    <div className="w-3/4 h-6 bg-gray-600/50 rounded"></div>
+                  </div>
+                  <div className="h-12 bg-gray-700/30 rounded-lg"></div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* For Startups Section */}
-      <section id="startups" className="py-20 px-4">
-        <div className="container mx-auto">
-          <Card className="bg-gradient-to-br from-[#1a2332] to-[#0D1B2A] border-gray-700 p-8">
-            <CardHeader className="text-center mb-8">
-              <div className="w-16 h-16 bg-[#3BB273]/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Building2 className="h-8 w-8 text-[#3BB273]" />
-              </div>
-              <CardTitle className="text-3xl md:text-4xl font-bold text-white mb-4">
-                Create Liquidity for Your Shares, Employees & Shareholders On Your Terms
-              </CardTitle>
-            </CardHeader>
-
-            <CardContent>
-              <div className="grid md:grid-cols-2 gap-8 mb-8">
-                <div className="space-y-6">
-                  <div className="flex items-start space-x-4">
-                    <CheckCircle className="h-6 w-6 text-[#3BB273] mt-1 flex-shrink-0" />
-                    <div>
-                      <h3 className="text-lg font-semibold text-white mb-2">Approve buyers based on your preference</h3>
-                      <p className="text-gray-300">Maintain control over who can invest in your company</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start space-x-4">
-                    <CheckCircle className="h-6 w-6 text-[#3BB273] mt-1 flex-shrink-0" />
-                    <div>
-                      <h3 className="text-lg font-semibold text-white mb-2">
-                        Conduct structured partial exits for early backers or personal liquidity
-                      </h3>
-                      <p className="text-gray-300">Enable strategic liquidity events for stakeholders</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-6">
-                  <div className="flex items-start space-x-4">
-                    <CheckCircle className="h-6 w-6 text-[#3BB273] mt-1 flex-shrink-0" />
-                    <div>
-                      <h3 className="text-lg font-semibold text-white mb-2">
-                        Demonstrate tangible value creation to your team and early investors
-                      </h3>
-                      <p className="text-gray-300">Show measurable growth and attract future funding</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start space-x-4">
-                    <CheckCircle className="h-6 w-6 text-[#3BB273] mt-1 flex-shrink-0" />
-                    <div>
-                      <h3 className="text-lg font-semibold text-white mb-2">
-                        List verified secondary offers for discreet, controlled transactions
-                      </h3>
-                      <p className="text-gray-300">Manage liquidity events with privacy and control</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="text-center">
-                <Link href="/main">
-                  <Button size="lg" className="bg-[#3BB273] hover:bg-[#3BB273]/90 text-white">
-                    Create Liquidity
-                    <ArrowRight className="ml-2 h-5 w-5" />
-                  </Button>
-                </Link>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </section>
-
-      {/* For Investors Section */}
-      <section id="investors" className="py-20 px-4 bg-[#0a1520]">
-        <div className="container mx-auto">
-          <Card className="bg-gradient-to-br from-[#1a2332] to-[#0D1B2A] border-gray-700 p-8">
-            <CardHeader className="text-center mb-8">
-              <div className="w-16 h-16 bg-[#3BB273]/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <TrendingUp className="h-8 w-8 text-[#3BB273]" />
-              </div>
-              <CardTitle className="text-3xl md:text-4xl font-bold text-white mb-4">
-                Get access to secondary deals of industry-leading startups
-              </CardTitle>
-            </CardHeader>
-
-            <CardContent>
-              <div className="grid md:grid-cols-2 gap-8 mb-8">
-                <div className="space-y-6">
-                  <div className="flex items-start space-x-4">
-                    <Target className="h-6 w-6 text-[#3BB273] mt-1 flex-shrink-0" />
-                    <div>
-                      <h3 className="text-lg font-semibold text-white mb-2">
-                        Discover New Exit Paths & Secondary Opportunities
-                      </h3>
-                      <p className="text-gray-300">Find unique investment opportunities in private markets</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start space-x-4">
-                    <Shield className="h-6 w-6 text-[#3BB273] mt-1 flex-shrink-0" />
-                    <div>
-                      <h3 className="text-lg font-semibold text-white mb-2">
-                        Access curated live secondary opportunities in promising growth-stage startups
-                      </h3>
-                      <p className="text-gray-300">Vetted opportunities from high-growth companies</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start space-x-4">
-                    <Zap className="h-6 w-6 text-[#3BB273] mt-1 flex-shrink-0" />
-                    <div>
-                      <h3 className="text-lg font-semibold text-white mb-2">
-                        Gain liquidity for your early-stage equity investments, pre-IPO
-                      </h3>
-                      <p className="text-gray-300">Exit before traditional IPO timelines</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-6">
-                  <div className="flex items-start space-x-4">
-                    <BarChart3 className="h-6 w-6 text-[#3BB273] mt-1 flex-shrink-0" />
-                    <div>
-                      <h3 className="text-lg font-semibold text-white mb-2">
-                        Diversify your portfolio by acquiring stakes in high-potential companies
-                      </h3>
-                      <p className="text-gray-300">Spread risk across multiple promising ventures</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start space-x-4">
-                    <Zap className="h-6 w-6 text-[#3BB273] mt-1 flex-shrink-0" />
-                    <div>
-                      <h3 className="text-lg font-semibold text-white mb-2">
-                        Reduce exit timelines from years to just clicks
-                      </h3>
-                      <p className="text-gray-300">Faster liquidity through our platform</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="text-center">
-                <Link href="/main">
-                  <Button size="lg" className="bg-[#3BB273] hover:bg-[#3BB273]/90 text-white">
-                    Start Investing
-                    <ArrowRight className="ml-2 h-5 w-5" />
-                  </Button>
-                </Link>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </section>
-
-      {/* For Shareholders Section */}
-      <section id="shareholders" className="py-20 px-4">
-        <div className="container mx-auto">
-          <Card className="bg-gradient-to-br from-[#1a2332] to-[#0D1B2A] border-gray-700 p-8">
-            <CardHeader className="text-center mb-8">
-              <div className="w-16 h-16 bg-[#3BB273]/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Wallet className="h-8 w-8 text-[#3BB273]" />
-              </div>
-              <CardTitle className="text-3xl md:text-4xl font-bold text-white mb-4">
-                Sell your equity to relevant individuals and institutional investors
-              </CardTitle>
-            </CardHeader>
-
-            <CardContent>
-              <div className="grid md:grid-cols-2 gap-8 mb-8">
-                <div className="space-y-6">
-                  <div className="flex items-start space-x-4">
-                    <Users className="h-6 w-6 text-[#3BB273] mt-1 flex-shrink-0" />
-                    <div>
-                      <h3 className="text-lg font-semibold text-white mb-2">
-                        Dedicated investor portal to filter the relevant investors
-                      </h3>
-                      <p className="text-gray-300">Connect with qualified buyers for your equity</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start space-x-4">
-                    <CheckCircle className="h-6 w-6 text-[#3BB273] mt-1 flex-shrink-0" />
-                    <div>
-                      <h3 className="text-lg font-semibold text-white mb-2">Review multiple offers before selling</h3>
-                      <p className="text-gray-300">Compare and choose the best terms</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-6">
-                  <div className="flex items-start space-x-4">
-                    <Zap className="h-6 w-6 text-[#3BB273] mt-1 flex-shrink-0" />
-                    <div>
-                      <h3 className="text-lg font-semibold text-white mb-2">
-                        1-click participation in structured secondary sales to monetize your equity
-                      </h3>
-                      <p className="text-gray-300">Streamlined process for quick transactions</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="text-center">
-                <Link href="/main">
-                  <Button size="lg" className="bg-[#3BB273] hover:bg-[#3BB273]/90 text-white">
-                    Start Selling
-                    <ArrowRight className="ml-2 h-5 w-5" />
-                  </Button>
-                </Link>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </section>
-
-      {/* Why Niveshx Section */}
-      <section className="py-20 px-4 bg-[#0a1520]">
+      {/* Why NiveshX? Section */}
+      <section id="why-niveshx" className="py-20 px-4 bg-[#0a1520]">
         <div className="container mx-auto text-center">
-          <h2 className="text-4xl md:text-5xl font-bold text-white mb-8">
-            Why <span className="text-[#3BB273]">Niveshx</span>?
+          <h2 className="text-3xl md:text-5xl font-bold text-white mb-4">
+            The Startup Ecosystem Has a Data Problem. <span className="text-[#3BB273]">We're Solving It.</span>
           </h2>
-
-          <div className="max-w-4xl mx-auto mb-12">
-            <p className="text-xl text-gray-300 mb-6">
-              <strong>The problem:</strong> Startup equity is powerful—but frustratingly illiquid and opaque. Its true
-              value remains locked away.
-            </p>
-
-            <div className="grid md:grid-cols-2 gap-8 text-left mb-8">
-              <Card className="bg-[#1a2332] border-gray-700">
-                <CardContent className="p-6">
-                  <h3 className="text-lg font-semibold text-white mb-3">For Founders</h3>
-                  <p className="text-gray-300">
-                    Can't easily realize value from their shares without complex, ad-hoc processes
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-[#1a2332] border-gray-700">
-                <CardContent className="p-6">
-                  <h3 className="text-lg font-semibold text-white mb-3">For Early Investors</h3>
-                  <p className="text-gray-300">
-                    Struggle to find clean, compliant secondary exit routes for their holdings
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-[#1a2332] border-gray-700">
-                <CardContent className="p-6">
-                  <h3 className="text-lg font-semibold text-white mb-3">For Shareholders</h3>
-                  <p className="text-gray-300">Have no clear path to understand or unlock their equity's value</p>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-[#1a2332] border-gray-700">
-                <CardContent className="p-6">
-                  <h3 className="text-lg font-semibold text-white mb-3">For New Investors</h3>
-                  <p className="text-gray-300">
-                    Find it difficult to access curated growth-stage secondary deals without insider networks
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
-
-            <div className="text-center mb-8">
-              <p className="text-2xl text-[#3BB273] font-bold">We're changing that. Forever.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* What You Can Do Section */}
-      <section className="py-20 px-4">
-        <div className="container mx-auto">
-          <h2 className="text-4xl md:text-5xl font-bold text-white text-center mb-12">
-            What You Can Do with <span className="text-[#3BB273]">Niveshx</span>
-          </h2>
-
-          <div className="overflow-x-auto">
-            <table className="w-full bg-[#1a2332] rounded-lg border border-gray-700">
-              <thead>
-                <tr className="border-b border-gray-700">
-                  <th className="text-left p-6 text-white font-semibold">Stakeholder</th>
-                  <th className="text-left p-6 text-white font-semibold">What You Get</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr className="border-b border-gray-700">
-                  <td className="p-6 text-[#3BB273] font-medium">Founders</td>
-                  <td className="p-6 text-gray-300">
-                    Realize Partial Exits: Access liquidity for your shares, on your terms
-                  </td>
-                </tr>
-                <tr className="border-b border-gray-700">
-                  <td className="p-6 text-[#3BB273] font-medium">Investors</td>
-                  <td className="p-6 text-gray-300">
-                    Seamless Exits & Trading: Sell or acquire early-stage equity via a compliant platform
-                  </td>
-                </tr>
-                <tr className="border-b border-gray-700">
-                  <td className="p-6 text-[#3BB273] font-medium">Startups</td>
-                  <td className="p-6 text-gray-300">
-                    Host Structured Liquidity Events: Organize clean secondary rounds for all stakeholders
-                  </td>
-                </tr>
-                <tr>
-                  <td className="p-6 text-[#3BB273] font-medium">Employees</td>
-                  <td className="p-6 text-gray-300">
-                    Track, Value & Liquidate ESOPs: Understand your equity and participate in liquidity events
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+          <p className="text-lg md:text-xl text-gray-300 max-w-4xl mx-auto mb-12">
+            Startups and investors are stuck in a cycle of inefficiency and mistrust, but the problem isn't a lack of capital—it's a lack of data.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
+            <Card className="bg-[#1a2332] border-gray-700 p-6">
+              <CardHeader>
+                <CardTitle className="text-2xl text-white">For Founders</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-300">
+                  You're trapped in a messy process of managing spreadsheets and chasing investors. Even when you get a meeting, you don't have the clean, verified data to prove your growth. This leads to endless meetings and funding delays.
+                </p>
+              </CardContent>
+            </Card>
+            <Card className="bg-[#1a2332] border-gray-700 p-6">
+              <CardHeader>
+                <CardTitle className="text-2xl text-white">For Investors</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-300">
+                  You're overwhelmed by disorganized pitch decks and scattered portfolio data. It's difficult to find and vet high-quality deals, and you’re missing a central source of truth to monitor your investments.
+                </p>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </section>
 
       {/* How It Works Section */}
-      <section className="py-20 px-4 bg-[#0a1520]">
-        <div className="container mx-auto">
-          <h2 className="text-4xl md:text-5xl font-bold text-white text-center mb-12">
-            How It <span className="text-[#3BB273]">Works</span>
+      <section id="how-it-works" className="py-20 px-4">
+        <div className="container mx-auto text-center">
+          <h2 className="text-3xl md:text-5xl font-bold text-white mb-12">
+            How it Works for <span className="text-[#3BB273]">You</span>
           </h2>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            <Card className="bg-gradient-to-br from-[#1a2332] to-[#0D1B2A] border-gray-700 text-center">
-              <CardContent className="p-6">
-                <div className="w-16 h-16 bg-[#3BB273]/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <FileCheck className="h-8 w-8 text-[#3BB273]" />
-                </div>
-                <h3 className="text-xl font-bold text-white mb-3">1. Secure Onboarding & Verification</h3>
-                <p className="text-gray-300">
-                  Startups securely submit financials and cap tables. Investors and equity holders complete seamless
-                  KYC.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gradient-to-br from-[#1a2332] to-[#0D1B2A] border-gray-700 text-center">
-              <CardContent className="p-6">
-                <div className="w-16 h-16 bg-[#3BB273]/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Eye className="h-8 w-8 text-[#3BB273]" />
-                </div>
-                <h3 className="text-xl font-bold text-white mb-3">2. Equity Visibility & Discovery</h3>
-                <p className="text-gray-300">
-                  Verified startup profiles go live. Equity instruments are made visible, verified, and priced for
-                  potential transactions.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gradient-to-br from-[#1a2332] to-[#0D1B2A] border-gray-700 text-center">
-              <CardContent className="p-6">
-                <div className="w-16 h-16 bg-[#3BB273]/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Handshake className="h-8 w-8 text-[#3BB273]" />
-                </div>
-                <h3 className="text-xl font-bold text-white mb-3">3. Curate or Join a Deal</h3>
-                <p className="text-gray-300">
-                  Choose to list your equity for sale or participate in a structured liquidity event. Select buyers, set
-                  ROFR rules, and approve sales with full control.
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
-
-      {/* Invest Now Section */}
-      <section id="invest-now" className="py-20 px-4">
-        <div className="container mx-auto">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-16">
+            {/* For Founders */}
             <div>
-              <div className="w-16 h-16 bg-[#3BB273]/20 rounded-full flex items-center justify-center mb-6">
-                <DollarSign className="h-8 w-8 text-[#3BB273]" />
+              <h3 className="text-2xl md:text-3xl font-bold text-white mb-8">For Founders: Get Funded in 3 Simple Steps.</h3>
+              <div className="space-y-8 text-left">
+                <div className="flex items-start space-x-4">
+                  <div className="flex-shrink-0 w-12 h-12 bg-[#3BB273]/20 rounded-full flex items-center justify-center">
+                    <Zap className="h-6 w-6 text-[#3BB273]" />
+                  </div>
+                  <div>
+                    <h4 className="text-xl font-semibold text-white">Step 1: Connect Your Data.</h4>
+                    <p className="text-gray-300">A startup securely links their existing software (like Zoho Books, Tally, or Razorpay) to the NiveshX platform in minutes. Our system reads and consolidates all your financial metrics automatically.</p>
+                  </div>
+                </div>
+                <div className="flex items-start space-x-4">
+                  <div className="flex-shrink-0 w-12 h-12 bg-[#3BB273]/20 rounded-full flex items-center justify-center">
+                    <BarChart3 className="h-6 w-6 text-[#3BB273]" />
+                  </div>
+                  <div>
+                    <h4 className="text-xl font-semibold text-white">Step 2: Get a Live Dashboard.</h4>
+                    <p className="text-gray-300">The platform instantly generates a real-time, consolidated view of your key metrics. This becomes a single source of truth for your team and your investors, replacing messy spreadsheets and manual reports.</p>
+                  </div>
+                </div>
+                <div className="flex items-start space-x-4">
+                  <div className="flex-shrink-0 w-12 h-12 bg-[#3BB273]/20 rounded-full flex items-center justify-center">
+                    <CheckCircle className="h-6 w-6 text-[#3BB273]" />
+                  </div>
+                  <div>
+                    <h4 className="text-xl font-semibold text-white">Step 3: Become Investor-Ready.</h4>
+                    <p className="text-gray-300">Your data-rich dashboard allows you to build trust with existing investors and get discovered by new ones. This helps cut months off your fundraising timeline.</p>
+                  </div>
+                </div>
               </div>
-              <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-                Invest in India's Top Startups — Backed by <span className="text-[#3BB273]">Verified Data</span>
-              </h2>
-              <p className="text-xl text-gray-300 mb-8">
-                Access exclusive secondary opportunities. Empower your portfolio.
-              </p>
-              <div className="space-y-4 mb-8">
-                <div className="flex items-center space-x-3">
-                  <CheckCircle className="h-6 w-6 text-[#3BB273]" />
-                  <span className="text-gray-300">Verified startup financials and cap tables</span>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <CheckCircle className="h-6 w-6 text-[#3BB273]" />
-                  <span className="text-gray-300">Exclusive access to secondary deals</span>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <CheckCircle className="h-6 w-6 text-[#3BB273]" />
-                  <span className="text-gray-300">Portfolio diversification opportunities</span>
-                </div>
-              </div>
-              <Link href="/main">
-                <Button size="lg" className="bg-[#3BB273] hover:bg-[#3BB273]/90 text-white">
-                  Start Investing
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Button>
-              </Link>
             </div>
-            <div className="bg-gradient-to-br from-[#1a2332] to-[#0D1B2A] rounded-lg p-8 border border-gray-700">
-              <div className="space-y-6">
-                {/* Investment Dashboard Illustration */}
-                <div className="flex justify-between items-center mb-4">
-                  <div className="h-4 bg-[#3BB273]/30 rounded w-1/3"></div>
-                  <div className="h-4 bg-[#3BB273]/50 rounded w-1/4"></div>
-                </div>
-
-                {/* Portfolio Cards */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-[#3BB273]/10 rounded-lg p-4 border border-[#3BB273]/20">
-                    <div className="h-3 bg-[#3BB273]/40 rounded mb-2 w-2/3"></div>
-                    <div className="h-6 bg-[#3BB273]/60 rounded mb-2"></div>
-                    <div className="h-2 bg-[#3BB273]/30 rounded w-1/2"></div>
+            {/* For Investors */}
+            <div>
+              <h3 className="text-2xl md:text-3xl font-bold text-white mb-8">For Investors: Invest Smarter in 3 Simple Steps.</h3>
+              <div className="space-y-8 text-left">
+                <div className="flex items-start space-x-4">
+                  <div className="flex-shrink-0 w-12 h-12 bg-[#3BB273]/20 rounded-full flex items-center justify-center">
+                    <Eye className="h-6 w-6 text-[#3BB273]" />
                   </div>
-                  <div className="bg-[#3BB273]/10 rounded-lg p-4 border border-[#3BB273]/20">
-                    <div className="h-3 bg-[#3BB273]/40 rounded mb-2 w-2/3"></div>
-                    <div className="h-6 bg-[#3BB273]/60 rounded mb-2"></div>
-                    <div className="h-2 bg-[#3BB273]/30 rounded w-1/2"></div>
+                  <div>
+                    <h4 className="text-xl font-semibold text-white">Step 1: Discover Opportunities.</h4>
+                    <p className="text-gray-300">NiveshX brings you a curated feed of high-growth startups vetted by our data engine. You can filter by industry, metrics, and funding stage to find your next great deal.</p>
                   </div>
                 </div>
-
-                {/* Investment Flow */}
-                <div className="space-y-3">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-[#3BB273]/20 rounded-full flex items-center justify-center">
-                      <div className="w-3 h-3 bg-[#3BB273] rounded-full"></div>
-                    </div>
-                    <div className="h-3 bg-[#3BB273]/20 rounded flex-1"></div>
+                <div className="flex items-start space-x-4">
+                  <div className="flex-shrink-0 w-12 h-12 bg-[#3BB273]/20 rounded-full flex items-center justify-center">
+                    <TrendingUp className="h-6 w-6 text-[#3BB273]" />
                   </div>
-                  <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-[#3BB273]/20 rounded-full flex items-center justify-center">
-                      <div className="w-3 h-3 bg-[#3BB273] rounded-full"></div>
-                    </div>
-                    <div className="h-3 bg-[#3BB273]/20 rounded flex-1"></div>
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-[#3BB273]/20 rounded-full flex items-center justify-center">
-                      <div className="w-3 h-3 bg-[#3BB273] rounded-full"></div>
-                    </div>
-                    <div className="h-3 bg-[#3BB273]/20 rounded flex-1"></div>
+                  <div>
+                    <h4 className="text-xl font-semibold text-white">Step 2: Track Your Portfolio.</h4>
+                    <p className="text-gray-300">Get a unified, real-time dashboard of your entire portfolio. Stop sifting through fragmented pitch decks and monitor performance from a single source of truth.</p>
                   </div>
                 </div>
-
-                {/* Action Button */}
-                <div className="h-12 bg-[#3BB273] rounded flex items-center justify-center">
-                  <span className="text-white font-semibold">Invest in Verified Startups</span>
+                <div className="flex items-start space-x-4">
+                  <div className="flex-shrink-0 w-12 h-12 bg-[#3BB273]/20 rounded-full flex items-center justify-center">
+                    <Handshake className="h-6 w-6 text-[#3BB273]" />
+                  </div>
+                  <div>
+                    <h4 className="text-xl font-semibold text-white">Step 3: Find the Right Capital.</h4>
+                    <p className="text-gray-300">Filter and connect with startups based on verified metrics to find the best equity opportunities.</p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -553,238 +225,79 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Liquidate With Ease Section */}
+      {/* Value Propositions Section */}
       <section className="py-20 px-4 bg-[#0a1520]">
-        <div className="container mx-auto">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <div>
-              <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-                Liquidate With <span className="text-[#3BB273]">Ease</span>
-              </h2>
-              <p className="text-xl text-gray-300 mb-8">
-                Find curated investors, negotiate terms, receive funds and stay compliant with our platform.
-              </p>
-              <div className="space-y-4">
-                <div className="flex items-center space-x-3">
-                  <CheckCircle className="h-6 w-6 text-[#3BB273]" />
-                  <span className="text-gray-300">Compliant, verified, and always accessible</span>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <CheckCircle className="h-6 w-6 text-[#3BB273]" />
-                  <span className="text-gray-300">Transparent pricing and terms</span>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <CheckCircle className="h-6 w-6 text-[#3BB273]" />
-                  <span className="text-gray-300">Secure transaction processing</span>
-                </div>
-              </div>
+        <div className="container mx-auto grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
+          {/* For Founders */}
+          <div className="text-center md:text-left">
+            <p className="text-lg text-[#3BB273] font-semibold">FOR FOUNDERS: YOUR FINANCIAL CO-PILOT</p>
+            <h2 className="text-3xl md:text-4xl font-bold text-white mt-2 mb-4">Growth, On Your Terms. Keep Your Equity. 🚀</h2>
+            <p className="text-gray-300 mb-8">We help you raise capital without raising your anxiety. NiveshX turns your data into your most powerful fundraising tool.</p>
+            <div className="space-y-4 text-left">
+              <div className="flex items-start"><CheckCircle className="h-6 w-6 text-[#3BB273] mr-3 flex-shrink-0" /><span>"Build a single source of truth for your startup."</span></div>
+              <div className="flex items-start"><CheckCircle className="h-6 w-6 text-[#3BB273] mr-3 flex-shrink-0" /><span>"Get investor-ready in minutes, not months."</span></div>
+              <div className="flex items-start"><CheckCircle className="h-6 w-6 text-[#3BB273] mr-3 flex-shrink-0" /><span>"Share a professional, data-rich dashboard with investors. Build trust without endless meetings."</span></div>
+              <div className="flex items-start"><CheckCircle className="h-6 w-6 text-[#3BB273] mr-3 flex-shrink-0" /><span>"Cut months off your fundraising timeline."</span></div>
             </div>
-            <div
-              className="bg-gradient-to-br from-[#1a2332] to-[#0D1B2A] rounded-lg p-8 border border-gray-700 hover:border-[#3BB273]/50 transition-all duration-300 cursor-pointer group"
-              onClick={() => document.getElementById("invest-now")?.scrollIntoView({ behavior: "smooth" })}
-            >
-              <div className="space-y-6 text-center">
-                <div className="w-20 h-20 bg-[#3BB273]/20 rounded-full flex items-center justify-center mx-auto group-hover:bg-[#3BB273]/30 transition-colors">
-                  <DollarSign className="h-10 w-10 text-[#3BB273]" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-bold text-white mb-2">Ready to Invest?</h3>
-                  <p className="text-gray-300 mb-4">Discover verified startup opportunities</p>
-                </div>
-                <div className="flex items-center justify-center space-x-2 text-[#3BB273] group-hover:text-white transition-colors">
-                  <span className="font-semibold">Explore Investment Options</span>
-                  <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
-                </div>
-              </div>
+          </div>
+          {/* For Investors */}
+          <div className="text-center md:text-left">
+            <p className="text-lg text-[#3BB273] font-semibold">FOR INVESTORS: INVEST SMARTER, NOT HARDER</p>
+            <h2 className="text-3xl md:text-4xl font-bold text-white mt-2 mb-4">Discover Data-Driven Deals. Find Smarter Investments.</h2>
+            <p className="text-gray-300 mb-8">NiveshX gives you a single, clear dashboard for portfolio management and a curated pipeline of high-growth startups.</p>
+            <div className="space-y-4 text-left">
+              <div className="flex items-start"><FileCheck className="h-6 w-6 text-[#3BB273] mr-3 flex-shrink-0" /><span>Curated Deal Flow: We bring you a curated pipeline of high-growth startups, vetted by data. Invest smarter, not harder.</span></div>
+              <div className="flex items-start"><DollarSign className="h-6 w-6 text-[#3BB273] mr-3 flex-shrink-0" /><span>A Single Source of Truth: Stop sifting through disorganized pitch decks. NiveshX gives you a single, clear dashboard for portfolio management and new deals.</span></div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Hassle-Free Investment Section */}
-      <section className="py-20 px-4">
+      {/* Closing Section */}
+      <section className="py-20 px-4 text-center">
         <div className="container mx-auto">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <div className="bg-gradient-to-br from-[#1a2332] to-[#0D1B2A] rounded-lg p-8 border border-gray-700">
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <div className="h-4 bg-[#3BB273]/30 rounded w-1/2"></div>
-                  <div className="h-4 bg-[#3BB273]/50 rounded w-1/4"></div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <div className="h-3 bg-[#3BB273]/20 rounded"></div>
-                    <div className="h-6 bg-[#3BB273]/30 rounded"></div>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="h-3 bg-[#3BB273]/20 rounded"></div>
-                    <div className="h-6 bg-[#3BB273]/30 rounded"></div>
-                  </div>
-                </div>
-                <div className="h-12 bg-[#3BB273] rounded flex items-center justify-center">
-                  <span className="text-white font-semibold">Invest Now</span>
-                </div>
-              </div>
-            </div>
-            <div>
-              <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-                Hassle-Free Investment <span className="text-[#3BB273]">Process</span>
-              </h2>
-              <p className="text-xl text-gray-300 mb-8">
-                Find curated deals based on your preference, access all deal details and complete the transaction
-                through a single dashboard.
-              </p>
-              <div className="space-y-4">
-                <div className="flex items-center space-x-3">
-                  <CheckCircle className="h-6 w-6 text-[#3BB273]" />
-                  <span className="text-gray-300">Curated investment opportunities</span>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <CheckCircle className="h-6 w-6 text-[#3BB273]" />
-                  <span className="text-gray-300">Comprehensive due diligence</span>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <CheckCircle className="h-6 w-6 text-[#3BB273]" />
-                  <span className="text-gray-300">Single-click investment process</span>
-                </div>
-              </div>
-            </div>
+          <h2 className="text-3xl md:text-5xl font-bold text-white mb-4">
+            The Future of Funding is Built on <span className="text-[#3BB273]">Data</span>.
+          </h2>
+          <p className="text-lg md:text-xl text-gray-300 mb-8">
+            Join the community that's changing how startups grow.
+          </p>
+          <div className="flex flex-col md:flex-row justify-center gap-4">
+            <Link href="/auth">
+                <Button size="lg" className="w-full md:w-auto bg-[#3BB273] hover:bg-[#3BB273]/90 text-white">Get Started as a Founder</Button>
+            </Link>
+            <Link href="/auth">
+                <Button size="lg" variant="outline" className="w-full md:w-auto text-white border-white hover:bg-white hover:text-black">Get Started as an Investor</Button>
+            </Link>
           </div>
         </div>
       </section>
 
       {/* Footer */}
       <footer className="py-12 px-4 bg-[#0a1520] border-t border-gray-800">
-        <div className="container mx-auto">
-          <div className="grid md:grid-cols-4 gap-8 mb-8">
-            <div>
-              <div className="text-2xl font-bold mb-4">
-                <span className="text-white">Nivesh</span>
-                <span className="text-[#3BB273]">x</span>
-              </div>
-              <p className="text-gray-400 text-sm">Empowering Private Startup Equity through Liquidity</p>
-            </div>
-
-            <div>
-              <h3 className="text-white font-semibold mb-4">Product</h3>
-              <ul className="space-y-2 text-sm text-gray-400">
-                <li>
-                  <Link href="#" className="hover:text-white transition-colors">
-                    Dashboard
-                  </Link>
-                </li>
-                <li>
-                  <Link href="#" className="hover:text-white transition-colors">
-                    Marketplace
-                  </Link>
-                </li>
-                <li>
-                  <Link href="#startups" className="hover:text-white transition-colors">
-                    For Founders
-                  </Link>
-                </li>
-                <li>
-                  <Link href="#investors" className="hover:text-white transition-colors">
-                    For Investors
-                  </Link>
-                </li>
-                <li>
-                  <Link href="#shareholders" className="hover:text-white transition-colors">
-                    For Employees
-                  </Link>
-                </li>
-              </ul>
-            </div>
-
-            <div>
-              <h3 className="text-white font-semibold mb-4">Company</h3>
-              <ul className="space-y-2 text-sm text-gray-400">
-                <li>
-                  <Link href="#" className="hover:text-white transition-colors">
-                    About Us
-                  </Link>
-                </li>
-                <li>
-                  <Link href="#" className="hover:text-white transition-colors">
-                    Careers
-                  </Link>
-                </li>
-                <li>
-                  <Link href="#" className="hover:text-white transition-colors">
-                    Blog
-                  </Link>
-                </li>
-              </ul>
-            </div>
-
-            <div>
-              <h3 className="text-white font-semibold mb-4">Contact</h3>
-              <ul className="space-y-2 text-sm text-gray-400">
-                <li>support@niveshx.app</li>
-                <li className="flex space-x-4 pt-2">
-                  <Link href="#" className="hover:text-white transition-colors">
-                    <Linkedin className="h-5 w-5" />
-                  </Link>
-                  <Link href="#" className="hover:text-white transition-colors">
-                    <Twitter className="h-5 w-5" />
-                  </Link>
-                </li>
-              </ul>
-            </div>
+        <div className="container mx-auto flex flex-col md:flex-row justify-between items-center text-center md:text-left space-y-4 md:space-y-0">
+          <div className="text-2xl font-bold">
+            <span className="text-white">Nivesh</span>
+            <span className="text-[#3BB273]">x</span>
           </div>
-
-          <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center">
-            <div className="flex space-x-6 text-sm text-gray-400 mb-4 md:mb-0">
-              <Link href="/terms" target="_blank" className="hover:text-white transition-colors">
-                Terms & Conditions
-              </Link>
-              <Link href="/privacy" target="_blank" className="hover:text-white transition-colors">
-                Privacy Policy
-              </Link>
-            </div>
-            <span className="text-sm text-gray-400">© 2025 Startup Gurukul Innovation Pvt Ltd</span>
+          <div className="flex space-x-4 text-sm text-gray-400">
+            <Link href="/terms" target="_blank" className="hover:text-white transition-colors">
+              Terms & Conditions
+            </Link>
+            <Link href="/privacy" target="_blank" className="hover:text-white transition-colors">
+              Privacy Policy
+            </Link>
+          </div>
+          <div className="flex space-x-4">
+            <Link href="#" className="text-gray-400 hover:text-white transition-colors">
+              <Twitter className="h-5 w-5" />
+            </Link>
+            <Link href="#" className="text-gray-400 hover:text-white transition-colors">
+              <Linkedin className="h-5 w-5" />
+            </Link>
           </div>
         </div>
       </footer>
-
-      {/* Legal Disclaimer Section - Bottom of Page */}
-      <section className="py-8 px-4 bg-[#0a1520] border-t border-gray-700">
-        <div className="container mx-auto">
-          <div className="max-w-6xl mx-auto">
-            <h3 className="text-lg font-semibold text-white mb-6">Legal Disclaimer</h3>
-            <div className="text-sm text-gray-400 leading-relaxed space-y-4">
-              <p>
-                All trademarks and logos found on this Site or mentioned herein belong to their respective owners and
-                are solely being used for informational purposes.
-              </p>
-
-              <p>
-                Information provided herein has been gathered from public sources. Startup Gurukul Innovation Pvt. Ltd.
-                disclaims any and all responsibility in connection with veracity of this data. Information presented on
-                this website is for educational purposes only and should not be treated as legal, financial, or any
-                other form of advice. Startup Gurukul Innovation Pvt. Ltd. is not liable for financial or any other form
-                of loss incurred by the user or any affiliated party on the basis of information provided herein.
-              </p>
-
-              <p>
-                Startup Gurukul Innovation Pvt. Ltd. is neither a stock exchange nor does it intend to get recognized as
-                a stock exchange under the Securities Contracts Regulation Act, 1956. Startup Gurukul Innovation Pvt.
-                Ltd. is not authorised by the capital markets regulator to solicit investments. The securities traded on
-                these platforms are not traded on any regulated exchange. Startup Gurukul Innovation Pvt. Ltd. also
-                provides that it does not facilitate any online or offline buying, selling, or trading of securities.
-              </p>
-
-              <p>
-                Investing in private companies may be considered highly speculative and involves a high degree of risk,
-                including the risk of substantial loss of investment. Investors must be able to afford the loss of their
-                entire investment.
-              </p>
-
-              <p>This Site will be updated on a regular basis.</p>
-            </div>
-          </div>
-        </div>
-      </section>
     </div>
   )
 }

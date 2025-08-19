@@ -10,7 +10,7 @@ const generateOtp = () => {
 
 export async function POST(req: NextRequest) {
   try {
-    const { email, password, fullName, userType, companyName } = await req.json();
+    const { email, password, fullName, userType, companyName, investmentFirm } = await req.json();
 
     if (!email || !password || !fullName || !userType) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -38,6 +38,7 @@ export async function POST(req: NextRequest) {
       fullName,
       userType,
       companyName: companyName || null,
+      investmentFirm: investmentFirm || null,
       isVerified: false,
       otp,
       otpExpires,

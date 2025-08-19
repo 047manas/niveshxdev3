@@ -9,6 +9,7 @@ import { Building2, User } from 'lucide-react';
 const SignUp = ({ setCurrentView }) => {
   const [userType, setUserType] = useState('company');
   const [companyName, setCompanyName] = useState('');
+  const [investmentFirm, setInvestmentFirm] = useState('');
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -33,6 +34,7 @@ const SignUp = ({ setCurrentView }) => {
       userType,
       fullName,
       ...(userType === 'company' && { companyName }),
+      ...(userType === 'investor' && { investmentFirm }),
     };
 
     try {
@@ -74,6 +76,17 @@ const SignUp = ({ setCurrentView }) => {
           required
           value={companyName}
           onChange={(e) => setCompanyName(e.target.value)}
+          className="bg-[#0D1B2A] border-gray-600 text-white focus:ring-[#3BB273]"
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="investmentFirm" className="text-gray-400">Investment Firm (Optional)</Label>
+        <Input
+          id="investmentFirm"
+          type="text"
+          placeholder="VC Partners"
+          value={investmentFirm}
+          onChange={(e) => setInvestmentFirm(e.target.value)}
           className="bg-[#0D1B2A] border-gray-600 text-white focus:ring-[#3BB273]"
         />
       </div>
