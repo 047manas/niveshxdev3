@@ -1,58 +1,77 @@
 import nodemailer from 'nodemailer';
 
-// Create a single transporter for the application lifetime
-let transporter;
-let testAccount;
+let transporter: nodemailer.Transporter;
 
-// Function to initialize the email transporter
-export const initializeEmail = async () => {
+// This function initializes the email transporter.
+// It will use production credentials if they are available as environment variables.
+// Otherwise, it will fall back to a temporary Ethereal test account for development.
+const initializeEmail = async () => {
   if (transporter) {
     return; // Already initialized
   }
 
-  // Generate a test account from Ethereal
-  testAccount = await nodemailer.createTestAccount();
+  // Check if production email credentials are provided in environment variables
+  if (process.env.EMAIL_SMTP_HOST && process.env.EMAIL_SMTP_USER && process.env.EMAIL_SMTP_PASS) {
+    // Use production SMTP transporter
+    transporter = nodemailer.createTransport({
+      host: process.env.EMAIL_SMTP_HOST,
+      port: parseInt(process.env.EMAIL_SMTP_PORT || '587', 10),
+      secure: (process.env.EMAIL_SMTP_PORT === '465'), // `secure:true` is required for port 465
+      auth: {
+        user: process.env.EMAIL_SMTP_USER,
+        pass: process.env.EMAIL_SMTP_PASS,
+      },
+    });
+    console.log("Email service configured for production.");
+  } else {
+    // Fallback to Ethereal for development/testing
+    const testAccount = await nodemailer.createTestAccount();
+    console.log("---");
+    console.log("INFO: Production email credentials not found. Using Ethereal for development.");
+    console.log("INFO: View test emails at: https://ethereal.email/messages");
+    console.log(`Ethereal User: ${testAccount.user}`);
+    console.log(`Ethereal Pass: ${testAccount.pass}`);
+    console.log("---");
 
-  console.log("--- ETHEREAL TEST ACCOUNT ---");
-  console.log("User:", testAccount.user);
-  console.log("Pass:", testAccount.pass);
-  console.log("Preview URL:", nodemailer.getTestMessageUrl({ info: null })); // Generic preview link
-  console.log("----------------------------");
-
-  transporter = nodemailer.createTransport({
-    host: 'smtp.ethereal.email',
-    port: 587,
-    secure: false, // true for 465, false for other ports
-    auth: {
-      user: testAccount.user,
-      pass: testAccount.pass,
-    },
-  });
+    transporter = nodemailer.createTransport({
+      host: 'smtp.ethereal.email',
+      port: 587,
+      secure: false,
+      auth: {
+        user: testAccount.user,
+        pass: testAccount.pass,
+      },
+    });
+  }
 };
 
-// Function to send the OTP email
-export const sendOtpEmail = async (to: string, otp: string) => {
+// Function to send the OTP/Password Reset email
+export const sendOtpEmail = async (to: string, body: string, subject?: string) => {
+  // Ensure the transporter is initialized before sending an email
   if (!transporter) {
     await initializeEmail();
   }
 
   const mailOptions = {
-    from: '"Niveshx" <no-reply@niveshx.app>',
+    from: `"Niveshx" <${process.env.EMAIL_FROM || 'no-reply@niveshx.app'}>`,
     to: to,
-    subject: 'Your OTP for Niveshx',
-    html: `<p>Your One-Time Password is: <strong>${otp}</strong></p>`,
+    subject: subject || 'Your Verification Code',
+    html: body,
   };
 
   try {
     const info = await transporter.sendMail(mailOptions);
     console.log('Message sent: %s', info.messageId);
-    // Log the preview URL for the sent email
-    console.log('Preview URL: %s', nodemailer.getTestMessageUrl(info));
-    return nodemailer.getTestMessageUrl(info); // Return the URL for testing
+
+    // Log the Ethereal preview URL if we're in development mode
+    if (info.response.includes('Ethereal')) {
+      console.log('Preview URL: %s', nodemailer.getTestMessageUrl(info));
+    }
   } catch (error) {
     console.error('Error sending email:', error);
-    throw new Error('Failed to send OTP email.');
+    throw new Error('Failed to send email.');
   }
 };
 
-// No longer initialize on startup
+// Initialize the email service when the module is loaded
+initializeEmail().catch(console.error);

@@ -47,7 +47,14 @@ export async function POST(req: NextRequest) {
     await usersCollection.add(newUser);
 
     // Send the OTP email
-    await sendOtpEmail(email, otp);
+    const emailSubject = "Your Niveshx Verification Code";
+    const emailBody = `
+      <p>Hello ${fullName},</p>
+      <p>Thank you for registering. Your One-Time Password (OTP) is:</p>
+      <h2>${otp}</h2>
+      <p>This code will expire in 10 minutes.</p>
+    `;
+    await sendOtpEmail(email, emailBody, emailSubject);
 
     return NextResponse.json({ success: true, message: 'Registration successful. Please check your email for the OTP.' });
 

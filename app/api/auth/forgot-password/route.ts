@@ -38,16 +38,15 @@ export async function POST(req: NextRequest) {
     // Send the email
     const resetUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`;
 
-    // We can reuse the sendOtpEmail function and just change the subject and body
-    // For now, I'll just log it to the console, but this would be a proper email
-    console.log(`--BEGIN PASSWORD RESET EMAIL--`);
-    console.log(`To: ${email}`);
-    console.log(`Subject: Password Reset Request`);
-    console.log(`Click this link to reset your password: ${resetUrl}`);
-    console.log(`--END PASSWORD RESET EMAIL--`);
-
-    // In a real app, you would use a proper email template
-    await sendOtpEmail(email, `Your password reset link is: ${resetUrl}`);
+    // Send the email
+    const emailSubject = "Reset Your Password for Niveshx";
+    const emailBody = `
+      <p>Hello,</p>
+      <p>You requested a password reset. Please click the link below to set a new password:</p>
+      <p><a href="${resetUrl}">${resetUrl}</a></p>
+      <p>If you did not request this, please ignore this email.</p>
+    `;
+    await sendOtpEmail(email, emailBody, emailSubject);
 
 
     return NextResponse.json({ success: true, message: 'If an account with that email exists, we have sent a password reset link to it.' });
