@@ -10,9 +10,10 @@ const generateOtp = () => {
 
 export async function POST(req: NextRequest) {
   try {
-    const { email, password, fullName, userType, companyName, investmentFirm } = await req.json();
+    const { userType, ...formData } = await req.json();
+    const { email, password, fullName } = formData;
 
-    if (!email || !password || !fullName || !userType) {
+    if (!email || !password || !userType) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
@@ -24,33 +25,81 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'User with this email already exists' }, { status: 409 });
     }
 
-    // Hash the password
     const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Generate OTP
     const otp = generateOtp();
-    const otpExpires = admin.firestore.Timestamp.fromMillis(Date.now() + 10 * 60 * 1000); // 10 minutes expiry
+    const otpExpires = admin.firestore.Timestamp.fromMillis(Date.now() + 10 * 60 * 1000);
 
-    // Create new user object
-    const newUser = {
-      email,
-      password: hashedPassword,
-      fullName,
-      userType,
-      companyName: companyName || null,
-      investmentFirm: investmentFirm || null,
-      isVerified: false,
-      otp,
-      otpExpires,
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
-    };
+    const newUserRef = usersCollection.doc();
+    let emailRecipientName = '';
 
-    await usersCollection.add(newUser);
+    if (userType === 'company') {
+      const {
+        firstName, lastName, designation, linkedinProfile, countryCode,
+        phoneNumber, companyName, companyStage, latestValuation, shareType, dealSize
+      } = formData;
+
+      emailRecipientName = `${firstName} ${lastName}`;
+
+      const newUserData = {
+        email,
+        password: hashedPassword,
+        userType,
+        firstName,
+        lastName,
+        fullName: `${firstName} ${lastName}`,
+        designation,
+        linkedinProfile,
+        phone: {
+          countryCode,
+          number: phoneNumber,
+        },
+        isVerified: false,
+        otp,
+        otpExpires,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      };
+      await newUserRef.set(newUserData);
+
+      const companyData = {
+        userId: newUserRef.id,
+        name: companyName,
+        stage: companyStage,
+        latestValuation,
+        shareType,
+        dealSize,
+        contact: {
+          name: emailRecipientName,
+          email,
+          designation,
+          linkedinProfile,
+          phone: `${countryCode} ${phoneNumber}`,
+        }
+      };
+      await firestore.collection('companies').add(companyData);
+
+    } else { // Investor
+      if (!fullName) {
+        return NextResponse.json({ error: 'Full name is required for investors.' }, { status: 400 });
+      }
+      emailRecipientName = fullName;
+      const newUserData = {
+        email,
+        password: hashedPassword,
+        userType,
+        fullName,
+        investmentFirm: formData.investmentFirm || null,
+        isVerified: false,
+        otp,
+        otpExpires,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      };
+      await newUserRef.set(newUserData);
+    }
 
     // Send the OTP email
     const emailSubject = "Your Niveshx Verification Code";
     const emailBody = `
-      <p>Hello ${fullName},</p>
+      <p>Hello ${emailRecipientName},</p>
       <p>Thank you for registering. Your One-Time Password (OTP) is:</p>
       <h2>${otp}</h2>
       <p>This code will expire in 10 minutes.</p>
