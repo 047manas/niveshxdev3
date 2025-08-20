@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -7,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Building2, User } from 'lucide-react';
 
 const SignUp = ({ setCurrentView }) => {
+  const router = useRouter();
   const [userType, setUserType] = useState('company');
   const [companyName, setCompanyName] = useState('');
   const [investmentFirm, setInvestmentFirm] = useState('');
@@ -55,8 +57,8 @@ const SignUp = ({ setCurrentView }) => {
       // Save email for OTP verification page
       window.localStorage.setItem('emailForVerification', email);
 
-      // Switch to OTP verification view
-      setCurrentView('verify-otp');
+      // On successful registration, redirect to the OTP verification page
+      router.push('/verify-email');
 
     } catch (err) {
       setError(err.message);
