@@ -47,11 +47,13 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { PhoneInput } from "@/components/ui/phone-input";
+import { useRouter } from "next/navigation";
 
 const SignUp = ({ setCurrentView }) => {
   const [userType, setUserType] = useState('company');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const router = useRouter();
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -340,8 +342,7 @@ const SignUp = ({ setCurrentView }) => {
         throw new Error(data.error || 'Something went wrong');
       }
 
-      window.localStorage.setItem('emailForVerification', values.email);
-      setCurrentView('verify-otp');
+      router.push(`/verify-otp?email=${encodeURIComponent(values.email)}`);
 
     } catch (err) {
       setError(err.message);
