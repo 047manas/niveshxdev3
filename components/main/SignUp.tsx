@@ -129,19 +129,19 @@ const SignUp = ({ setCurrentView }) => {
       case 1:
         return (
           <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); nextStep(); }}>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="firstName" className="text-gray-400">First Name *</Label>
-                <Input id="firstName" value={formData.firstName} onChange={handleChange('firstName')} required className="bg-[#0D1B2A] border-gray-600 text-white" />
+                <Input id="firstName" value={formData.firstName} onChange={handleChange('firstName')} required className="bg-[#2d8f5a] border-gray-600 text-white" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="lastName" className="text-gray-400">Last Name *</Label>
-                <Input id="lastName" value={formData.lastName} onChange={handleChange('lastName')} required className="bg-[#0D1B2A] border-gray-600 text-white" />
+                <Input id="lastName" value={formData.lastName} onChange={handleChange('lastName')} required className="bg-[#2d8f5a] border-gray-600 text-white" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="designation" className="text-gray-400">Designation *</Label>
                 <Select onValueChange={handleSelectChange('designation')} defaultValue={formData.designation}>
-                  <SelectTrigger className="bg-[#0D1B2A] border-gray-600 text-white"><SelectValue placeholder="Select..." /></SelectTrigger>
+                  <SelectTrigger className="bg-[#2d8f5a] border-gray-600 text-white"><SelectValue placeholder="Select..." /></SelectTrigger>
                   <SelectContent className="bg-[#1a2332] border-gray-600 text-white">
                     <SelectItem value="founder">Founder</SelectItem>
                     <SelectItem value="cxo">CXOs</SelectItem>
@@ -151,15 +151,15 @@ const SignUp = ({ setCurrentView }) => {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="linkedinProfile" className="text-gray-400">LinkedIn Profile *</Label>
-                <Input id="linkedinProfile" value={formData.linkedinProfile} onChange={handleChange('linkedinProfile')} placeholder="https://www.linkedin.com/in/yourprofile/" required className="bg-[#0D1B2A] border-gray-600 text-white" />
+                <Input id="linkedinProfile" value={formData.linkedinProfile} onChange={handleChange('linkedinProfile')} placeholder="https://www.linkedin.com/in/yourprofile/" required className="bg-[#2d8f5a] border-gray-600 text-white" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-gray-400">Email *</Label>
-                <Input id="email" type="email" value={formData.email} onChange={handleChange('email')} placeholder="test@gmail.com" required className="bg-[#0D1B2A] border-gray-600 text-white" />
+                <Input id="email" type="email" value={formData.email} onChange={handleChange('email')} placeholder="test@gmail.com" required className="bg-[#2d8f5a] border-gray-600 text-white" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="phoneNumber" className="text-gray-400">Phone number *</Label>
-                <div className="flex"><Select defaultValue={formData.countryCode} onValueChange={handleSelectChange('countryCode')}><SelectTrigger className="w-1/4 bg-[#0D1B2A] border-gray-600 text-white"><SelectValue /></SelectTrigger><SelectContent className="bg-[#1a2332] border-gray-600 text-white"><SelectItem value="+91">IN (+91)</SelectItem><SelectItem value="+1">US (+1)</SelectItem></SelectContent></Select><Input id="phoneNumber" type="tel" value={formData.phoneNumber} onChange={handleChange('phoneNumber')} className="w-3/4 bg-[#0D1B2A] border-gray-600 text-white" required /></div>
+                <div className="flex"><Select defaultValue={formData.countryCode} onValueChange={handleSelectChange('countryCode')}><SelectTrigger className="w-1/4 bg-[#2d8f5a] border-gray-600 text-white"><SelectValue /></SelectTrigger><SelectContent className="bg-[#1a2332] border-gray-600 text-white"><SelectItem value="+91">IN (+91)</SelectItem><SelectItem value="+1">US (+1)</SelectItem></SelectContent></Select><Input id="phoneNumber" type="tel" value={formData.phoneNumber} onChange={handleChange('phoneNumber')} className="w-3/4 bg-[#2d8f5a] border-gray-600 text-white" required /></div>
               </div>
             </div>
             <div className="flex justify-end pt-4">
@@ -170,15 +170,15 @@ const SignUp = ({ setCurrentView }) => {
       case 2:
         return (
           <form className="space-y-4" onSubmit={onRegister}>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2 md:col-span-2">
+            <div className="space-y-4">
+              <div className="space-y-2">
                 <Label htmlFor="companyName" className="text-gray-400">Company Name *</Label>
-                <Input id="companyName" value={formData.companyName} onChange={handleChange('companyName')} required className="bg-[#0D1B2A] border-gray-600 text-white" />
+                <Input id="companyName" value={formData.companyName} onChange={handleChange('companyName')} required className="bg-[#2d8f5a] border-gray-600 text-white" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="companyStage" className="text-gray-400">Company Stage *</Label>
                 <Select onValueChange={handleSelectChange('companyStage')} defaultValue={formData.companyStage}>
-                  <SelectTrigger className="bg-[#0D1B2A] border-gray-600 text-white"><SelectValue placeholder="Select..." /></SelectTrigger>
+                  <SelectTrigger className="bg-[#2d8f5a] border-gray-600 text-white"><SelectValue placeholder="Select..." /></SelectTrigger>
                   <SelectContent className="bg-[#1a2332] border-gray-600 text-white">
                     <SelectItem value="series_a">Series A</SelectItem>
                     <SelectItem value="series_b">Series B</SelectItem>
@@ -191,9 +191,9 @@ const SignUp = ({ setCurrentView }) => {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="latestValuation" className="text-gray-400">Latest Valuation (INR CR) *</Label>
-                <Input id="latestValuation" value={formData.latestValuation} onChange={handleChange('latestValuation')} required className="bg-[#0D1B2A] border-gray-600 text-white" />
+                <Input id="latestValuation" value={formData.latestValuation} onChange={handleChange('latestValuation')} required className="bg-[#2d8f5a] border-gray-600 text-white" />
               </div>
-              <div className="space-y-2 md:col-span-2">
+              <div className="space-y-2">
                 <Label className="text-gray-400">Share Type *</Label>
                 <ToggleGroup type="multiple" onValueChange={handleShareTypeChange} defaultValue={formData.shareType} className="flex flex-wrap gap-2">
                   <ToggleGroupItem value="common" className="data-[state=on]:bg-[#3BB273] data-[state=on]:text-white">Common Shares</ToggleGroupItem>
@@ -201,18 +201,18 @@ const SignUp = ({ setCurrentView }) => {
                   <ToggleGroupItem value="esop" className="data-[state=on]:bg-[#3BB273] data-[state=on]:text-white">Employee Stock Options</ToggleGroupItem>
                 </ToggleGroup>
               </div>
-              <div className="space-y-2 md:col-span-2">
+              <div className="space-y-2">
                 <Label htmlFor="dealSize" className="text-gray-400">Deal Size (INR CR) *</Label>
-                <Input id="dealSize" value={formData.dealSize} onChange={handleChange('dealSize')} required className="bg-[#0D1B2A] border-gray-600 text-white" />
+                <Input id="dealSize" value={formData.dealSize} onChange={handleChange('dealSize')} required className="bg-[#2d8f5a] border-gray-600 text-white" />
               </div>
             </div>
             <div className="space-y-2">
               <Label htmlFor="password" className="text-gray-400">Password *</Label>
-              <Input id="password" type="password" value={formData.password} onChange={handleChange('password')} required className="bg-[#0D1B2A] border-gray-600 text-white" />
+              <Input id="password" type="password" value={formData.password} onChange={handleChange('password')} required className="bg-[#2d8f5a] border-gray-600 text-white" />
             </div>
             <div className="space-y-2">
               <Label htmlFor="confirmPassword" className="text-gray-400">Confirm Password *</Label>
-              <Input id="confirmPassword" type="password" value={formData.confirmPassword} onChange={handleChange('confirmPassword')} required className="bg-[#0D1B2A] border-gray-600 text-white" />
+              <Input id="confirmPassword" type="password" value={formData.confirmPassword} onChange={handleChange('confirmPassword')} required className="bg-[#2d8f5a] border-gray-600 text-white" />
             </div>
             {error && <p className="text-sm text-red-500">{error}</p>}
             <div className="flex justify-between pt-4">
@@ -239,7 +239,7 @@ const SignUp = ({ setCurrentView }) => {
           required
           value={formData.fullName}
           onChange={handleChange('fullName')}
-          className="bg-[#0D1B2A] border-gray-600 text-white focus:ring-[#3BB273]"
+          className="bg-[#2d8f5a] border-gray-600 text-white focus:ring-[#3BB273]"
         />
       </div>
       <div className="space-y-2">
@@ -251,7 +251,7 @@ const SignUp = ({ setCurrentView }) => {
           required
           value={formData.email}
           onChange={handleChange('email')}
-          className="bg-[#0D1B2A] border-gray-600 text-white focus:ring-[#3BB273]"
+          className="bg-[#2d8f5a] border-gray-600 text-white focus:ring-[#3BB273]"
         />
       </div>
       <div className="space-y-2">
@@ -263,7 +263,7 @@ const SignUp = ({ setCurrentView }) => {
           required
           value={formData.password}
           onChange={handleChange('password')}
-          className="bg-[#0D1B2A] border-gray-600 text-white focus:ring-[#3BB273]"
+          className="bg-[#2d8f5a] border-gray-600 text-white focus:ring-[#3BB273]"
         />
       </div>
       <div className="space-y-2">
@@ -275,7 +275,7 @@ const SignUp = ({ setCurrentView }) => {
           required
           value={formData.confirmPassword}
           onChange={handleChange('confirmPassword')}
-          className="bg-[#0D1B2A] border-gray-600 text-white focus:ring-[#3BB273]"
+          className="bg-[#2d8f5a] border-gray-600 text-white focus:ring-[#3BB273]"
         />
       </div>
       {error && <p className="text-sm text-red-500">{error}</p>}
@@ -286,8 +286,8 @@ const SignUp = ({ setCurrentView }) => {
   );
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-[#0D1B2A]">
-      <Card className="w-full max-w-md bg-[#1a2332] border-gray-700 text-white">
+    <div className="flex items-center justify-center min-h-screen bg-background">
+      <Card className="w-full max-w-md bg-[#3BB273] text-white">
         <CardHeader className="text-center">
           <CardTitle className="text-3xl font-bold">Create an account</CardTitle>
           <p className="text-gray-400">Join our community of founders and investors.</p>
