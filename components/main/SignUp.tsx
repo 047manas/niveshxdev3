@@ -474,69 +474,6 @@ const SignUp = ({ setCurrentView }) => {
       </form>
     </Form>
   );
-          className="bg-[#0D1B2A] border-gray-600 text-white focus:ring-[#3BB273]"
-        />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="investorEmail" className="text-gray-400">Email</Label>
-        <Input
-          id="investorEmail"
-          type="email"
-          placeholder="investor@domain.com"
-          required
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="bg-[#0D1B2A] border-gray-600 text-white focus:ring-[#3BB273]"
-        />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="investorPassword" className="text-gray-400">Password</Label>
-        <div className="relative">
-          <Input
-            id="investorPassword"
-            type={showPassword ? 'text' : 'password'}
-            placeholder="••••••••"
-            required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="bg-[#0D1B2A] border-gray-600 text-white focus:ring-[#3BB273] pr-10"
-          />
-          <button
-            type="button"
-            onClick={() => setShowPassword(!showPassword)}
-            className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 hover:text-white"
-          >
-            {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-          </button>
-        </div>
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="investorConfirmPassword" className="text-gray-400">Confirm Password</Label>
-        <div className="relative">
-          <Input
-            id="investorConfirmPassword"
-            type={showConfirmPassword ? 'text' : 'password'}
-            placeholder="••••••••"
-            required
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            className="bg-[#0D1B2A] border-gray-600 text-white focus:ring-[#3BB273] pr-10"
-          />
-          <button
-            type="button"
-            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-            className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 hover:text-white"
-          >
-            {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-          </button>
-        </div>
-      </div>
-      {error && <p className="text-sm text-red-500">{error}</p>}
-      <Button type="submit" className="w-full bg-[#3BB273] hover:bg-[#3BB273]/90 text-white" disabled={loading}>
-        {loading ? 'Creating Account...' : 'Create Account'}
-      </Button>
-    </form>
-  );
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-[#0D1B2A]">
