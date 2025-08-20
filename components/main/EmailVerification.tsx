@@ -62,13 +62,13 @@ const EmailVerification = () => {
   }, []);
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      <div className="w-full max-w-md p-8 space-y-6 text-center bg-white rounded-lg shadow-md">
-        <h2 className="text-3xl font-extrabold text-gray-900">
+    <div className="flex items-center justify-center min-h-screen bg-background">
+      <div className="w-full max-w-md p-8 space-y-6 text-center bg-card rounded-lg shadow-md">
+        <h2 className="text-3xl font-extrabold text-foreground">
           Signing You In...
         </h2>
-        {status && <p className="text-sm text-gray-600">{status}</p>}
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {status && <p className="text-sm text-muted-foreground">{status}</p>}
+        {error && <p className="text-sm text-destructive">{error}</p>}
         {error && (
           <div className="pt-4">
             <Button onClick={() => router.push('/')} className="w-full">

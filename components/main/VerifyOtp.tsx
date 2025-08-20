@@ -80,7 +80,7 @@ const VerifyOtp = ({ setCurrentView }) => {
               </InputOTP>
             </div>
             {error && <p className="text-sm text-center text-red-500">{error}</p>}
-            <Button type="submit" className="w-full bg-[#3BB273] hover:bg-[#3BB273]/90 text-white" disabled={loading}>
+            <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" disabled={loading}>
               {loading ? 'Verifying...' : 'Verify'}
             </Button>
           </form>

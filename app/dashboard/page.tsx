@@ -19,7 +19,7 @@ const DashboardPage = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-[#0D1B2A]">
+      <div className="flex items-center justify-center min-h-screen bg-background">
         <div className="w-full max-w-4xl p-8 space-y-6">
           <Skeleton className="h-12 w-1/4 bg-gray-700" />
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
