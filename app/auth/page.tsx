@@ -3,7 +3,6 @@
 import React, { useState } from 'react';
 import Login from '@/components/main/Login';
 import SignUp from '@/components/main/SignUp';
-import VerifyOtp from '@/components/main/VerifyOtp';
 import ForgotPassword from '@/components/main/ForgotPassword';
 
 // This page manages which authentication view is currently active.
@@ -17,8 +16,6 @@ const AuthPage = () => {
         return <Login setCurrentView={setView} />;
       case 'signup':
         return <SignUp setCurrentView={setView} />;
-      case 'verify-otp':
-        return <VerifyOtp setCurrentView={setView} />;
       case 'forgot-password':
         return <ForgotPassword setCurrentView={setView} />;
       default:
