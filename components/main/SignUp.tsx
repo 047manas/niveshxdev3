@@ -132,17 +132,17 @@ const SignUp = ({ setCurrentView }) => {
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="firstName" className="text-gray-400">First Name *</Label>
-                <Input id="firstName" value={formData.firstName} onChange={handleChange('firstName')} required className="bg-[#2d8f5a] border-gray-600 text-white" />
+                <Input id="firstName" value={formData.firstName} onChange={handleChange('firstName')} required className="bg-background border-border text-foreground" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="lastName" className="text-gray-400">Last Name *</Label>
-                <Input id="lastName" value={formData.lastName} onChange={handleChange('lastName')} required className="bg-[#2d8f5a] border-gray-600 text-white" />
+                <Input id="lastName" value={formData.lastName} onChange={handleChange('lastName')} required className="bg-background border-border text-foreground" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="designation" className="text-gray-400">Designation *</Label>
                 <Select onValueChange={handleSelectChange('designation')} defaultValue={formData.designation}>
-                  <SelectTrigger className="bg-[#2d8f5a] border-gray-600 text-white"><SelectValue placeholder="Select..." /></SelectTrigger>
-                  <SelectContent className="bg-[#1a2332] border-gray-600 text-white">
+                  <SelectTrigger className="bg-background border-border text-foreground"><SelectValue placeholder="Select..." /></SelectTrigger>
+                  <SelectContent className="bg-card border-border text-foreground">
                     <SelectItem value="founder">Founder</SelectItem>
                     <SelectItem value="cxo">CXOs</SelectItem>
                     <SelectItem value="other">Other</SelectItem>
@@ -151,19 +151,19 @@ const SignUp = ({ setCurrentView }) => {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="linkedinProfile" className="text-gray-400">LinkedIn Profile *</Label>
-                <Input id="linkedinProfile" value={formData.linkedinProfile} onChange={handleChange('linkedinProfile')} placeholder="https://www.linkedin.com/in/yourprofile/" required className="bg-[#2d8f5a] border-gray-600 text-white" />
+                <Input id="linkedinProfile" value={formData.linkedinProfile} onChange={handleChange('linkedinProfile')} placeholder="https://www.linkedin.com/in/yourprofile/" required className="bg-background border-border text-foreground" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-gray-400">Email *</Label>
-                <Input id="email" type="email" value={formData.email} onChange={handleChange('email')} placeholder="test@gmail.com" required className="bg-[#2d8f5a] border-gray-600 text-white" />
+                <Input id="email" type="email" value={formData.email} onChange={handleChange('email')} placeholder="test@gmail.com" required className="bg-background border-border text-foreground" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="phoneNumber" className="text-gray-400">Phone number *</Label>
-                <div className="flex"><Select defaultValue={formData.countryCode} onValueChange={handleSelectChange('countryCode')}><SelectTrigger className="w-1/4 bg-[#2d8f5a] border-gray-600 text-white"><SelectValue /></SelectTrigger><SelectContent className="bg-[#1a2332] border-gray-600 text-white"><SelectItem value="+91">IN (+91)</SelectItem><SelectItem value="+1">US (+1)</SelectItem></SelectContent></Select><Input id="phoneNumber" type="tel" value={formData.phoneNumber} onChange={handleChange('phoneNumber')} className="w-3/4 bg-[#2d8f5a] border-gray-600 text-white" required /></div>
+                <div className="flex"><Select defaultValue={formData.countryCode} onValueChange={handleSelectChange('countryCode')}><SelectTrigger className="w-1/4 bg-background border-border text-foreground"><SelectValue /></SelectTrigger><SelectContent className="bg-card border-border text-foreground"><SelectItem value="+91">IN (+91)</SelectItem><SelectItem value="+1">US (+1)</SelectItem></SelectContent></Select><Input id="phoneNumber" type="tel" value={formData.phoneNumber} onChange={handleChange('phoneNumber')} className="w-3/4 bg-background border-border text-foreground" required /></div>
               </div>
             </div>
             <div className="flex justify-end pt-4">
-              <Button type="submit" className="w-full bg-[#3BB273] hover:bg-[#3BB273]/90 text-white">Next</Button>
+              <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">Next</Button>
             </div>
           </form>
         );
@@ -173,13 +173,13 @@ const SignUp = ({ setCurrentView }) => {
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="companyName" className="text-gray-400">Company Name *</Label>
-                <Input id="companyName" value={formData.companyName} onChange={handleChange('companyName')} required className="bg-[#2d8f5a] border-gray-600 text-white" />
+                <Input id="companyName" value={formData.companyName} onChange={handleChange('companyName')} required className="bg-background border-border text-foreground" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="companyStage" className="text-gray-400">Company Stage *</Label>
                 <Select onValueChange={handleSelectChange('companyStage')} defaultValue={formData.companyStage}>
-                  <SelectTrigger className="bg-[#2d8f5a] border-gray-600 text-white"><SelectValue placeholder="Select..." /></SelectTrigger>
-                  <SelectContent className="bg-[#1a2332] border-gray-600 text-white">
+                  <SelectTrigger className="bg-background border-border text-foreground"><SelectValue placeholder="Select..." /></SelectTrigger>
+                  <SelectContent className="bg-card border-border text-foreground">
                     <SelectItem value="series_a">Series A</SelectItem>
                     <SelectItem value="series_b">Series B</SelectItem>
                     <SelectItem value="series_c">Series C</SelectItem>
@@ -191,33 +191,33 @@ const SignUp = ({ setCurrentView }) => {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="latestValuation" className="text-gray-400">Latest Valuation (INR CR) *</Label>
-                <Input id="latestValuation" value={formData.latestValuation} onChange={handleChange('latestValuation')} required className="bg-[#2d8f5a] border-gray-600 text-white" />
+                <Input id="latestValuation" value={formData.latestValuation} onChange={handleChange('latestValuation')} required className="bg-background border-border text-foreground" />
               </div>
               <div className="space-y-2">
                 <Label className="text-gray-400">Share Type *</Label>
                 <ToggleGroup type="multiple" onValueChange={handleShareTypeChange} defaultValue={formData.shareType} className="flex flex-wrap gap-2">
-                  <ToggleGroupItem value="common" className="data-[state=on]:bg-[#3BB273] data-[state=on]:text-white">Common Shares</ToggleGroupItem>
-                  <ToggleGroupItem value="preferred" className="data-[state=on]:bg-[#3BB273] data-[state=on]:text-white">Preferred Shares</ToggleGroupItem>
-                  <ToggleGroupItem value="esop" className="data-[state=on]:bg-[#3BB273] data-[state=on]:text-white">Employee Stock Options</ToggleGroupItem>
+                  <ToggleGroupItem value="common" className="data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">Common Shares</ToggleGroupItem>
+                  <ToggleGroupItem value="preferred" className="data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">Preferred Shares</ToggleGroupItem>
+                  <ToggleGroupItem value="esop" className="data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">Employee Stock Options</ToggleGroupItem>
                 </ToggleGroup>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="dealSize" className="text-gray-400">Deal Size (INR CR) *</Label>
-                <Input id="dealSize" value={formData.dealSize} onChange={handleChange('dealSize')} required className="bg-[#2d8f5a] border-gray-600 text-white" />
+                <Input id="dealSize" value={formData.dealSize} onChange={handleChange('dealSize')} required className="bg-background border-border text-foreground" />
               </div>
             </div>
             <div className="space-y-2">
               <Label htmlFor="password" className="text-gray-400">Password *</Label>
-              <Input id="password" type="password" value={formData.password} onChange={handleChange('password')} required className="bg-[#2d8f5a] border-gray-600 text-white" />
+              <Input id="password" type="password" value={formData.password} onChange={handleChange('password')} required className="bg-background border-border text-foreground" />
             </div>
             <div className="space-y-2">
               <Label htmlFor="confirmPassword" className="text-gray-400">Confirm Password *</Label>
-              <Input id="confirmPassword" type="password" value={formData.confirmPassword} onChange={handleChange('confirmPassword')} required className="bg-[#2d8f5a] border-gray-600 text-white" />
+              <Input id="confirmPassword" type="password" value={formData.confirmPassword} onChange={handleChange('confirmPassword')} required className="bg-background border-border text-foreground" />
             </div>
             {error && <p className="text-sm text-red-500">{error}</p>}
             <div className="flex justify-between pt-4">
               <Button type="button" onClick={prevStep} variant="outline" className="text-white border-gray-600 hover:bg-gray-700">Back</Button>
-              <Button type="submit" className="w-full bg-[#3BB273] hover:bg-[#3BB273]/90 text-white" disabled={loading}>
+              <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" disabled={loading}>
                 {loading ? 'Submitting...' : 'Submit'}
               </Button>
             </div>
@@ -239,7 +239,7 @@ const SignUp = ({ setCurrentView }) => {
           required
           value={formData.fullName}
           onChange={handleChange('fullName')}
-          className="bg-[#2d8f5a] border-gray-600 text-white focus:ring-[#3BB273]"
+          className="bg-background border-border text-foreground focus:ring-ring"
         />
       </div>
       <div className="space-y-2">
@@ -251,7 +251,7 @@ const SignUp = ({ setCurrentView }) => {
           required
           value={formData.email}
           onChange={handleChange('email')}
-          className="bg-[#2d8f5a] border-gray-600 text-white focus:ring-[#3BB273]"
+          className="bg-background border-border text-foreground focus:ring-ring"
         />
       </div>
       <div className="space-y-2">
@@ -263,7 +263,7 @@ const SignUp = ({ setCurrentView }) => {
           required
           value={formData.password}
           onChange={handleChange('password')}
-          className="bg-[#2d8f5a] border-gray-600 text-white focus:ring-[#3BB273]"
+          className="bg-background border-border text-foreground focus:ring-ring"
         />
       </div>
       <div className="space-y-2">
@@ -275,11 +275,11 @@ const SignUp = ({ setCurrentView }) => {
           required
           value={formData.confirmPassword}
           onChange={handleChange('confirmPassword')}
-          className="bg-[#2d8f5a] border-gray-600 text-white focus:ring-[#3BB273]"
+          className="bg-background border-border text-foreground focus:ring-ring"
         />
       </div>
       {error && <p className="text-sm text-red-500">{error}</p>}
-      <Button type="submit" className="w-full bg-[#3BB273] hover:bg-[#3BB273]/90 text-white" disabled={loading}>
+      <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" disabled={loading}>
         {loading ? 'Creating Account...' : 'Create Account'}
       </Button>
     </form>
@@ -287,7 +287,7 @@ const SignUp = ({ setCurrentView }) => {
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-background">
-      <Card className="w-full max-w-md bg-[#3BB273] text-white">
+      <Card className="w-full max-w-md bg-primary text-primary-foreground">
         <CardHeader className="text-center">
           <CardTitle className="text-3xl font-bold">Create an account</CardTitle>
           <p className="text-gray-400">Join our community of founders and investors.</p>
@@ -295,10 +295,10 @@ const SignUp = ({ setCurrentView }) => {
         <CardContent>
           <Tabs value={userType} onValueChange={setUserType} className="w-full">
             <TabsList className="grid w-full grid-cols-2 bg-[#0D1B2A] border-gray-600">
-              <TabsTrigger value="company" className="data-[state=active]:bg-[#3BB273] data-[state=active]:text-white">
+              <TabsTrigger value="company" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                 <Building2 className="mr-2 h-4 w-4" /> Company
               </TabsTrigger>
-              <TabsTrigger value="investor" className="data-[state=active]:bg-[#3BB273] data-[state=active]:text-white">
+              <TabsTrigger value="investor" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                 <User className="mr-2 h-4 w-4" /> Investor
               </TabsTrigger>
             </TabsList>
@@ -313,7 +313,7 @@ const SignUp = ({ setCurrentView }) => {
             Already have an account?{' '}
             <button
               onClick={() => setCurrentView('login')}
-              className="font-medium text-[#3BB273] hover:underline"
+              className="font-medium text-primary hover:underline"
             >
               Log in
             </button>

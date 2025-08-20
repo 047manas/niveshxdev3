@@ -65,7 +65,7 @@ const Login = ({ setCurrentView }) => {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="bg-[#0D1B2A] border-gray-600 text-white focus:ring-[#3BB273]"
+                className="bg-background border-border text-foreground focus:ring-ring"
               />
             </div>
             <div className="space-y-2">
@@ -74,7 +74,7 @@ const Login = ({ setCurrentView }) => {
                 <button
                   type="button"
                   onClick={() => setCurrentView('forgot-password')}
-                  className="text-sm font-medium text-[#3BB273] hover:underline"
+                  className="text-sm font-medium text-primary hover:underline"
                 >
                   Forgot Password?
                 </button>
@@ -86,11 +86,11 @@ const Login = ({ setCurrentView }) => {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="bg-[#0D1B2A] border-gray-600 text-white focus:ring-[#3BB273]"
+                className="bg-background border-border text-foreground focus:ring-ring"
               />
             </div>
             {error && <p className="text-sm text-red-500">{error}</p>}
-            <Button type="submit" className="w-full bg-[#3BB273] hover:bg-[#3BB273]/90 text-white" disabled={loading}>
+            <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" disabled={loading}>
               {loading ? 'Logging in...' : 'Log In'}
             </Button>
           </form>
@@ -98,7 +98,7 @@ const Login = ({ setCurrentView }) => {
             Don't have an account?{' '}
             <button
               onClick={() => setCurrentView('signup')}
-              className="font-medium text-[#3BB273] hover:underline"
+              className="font-medium text-primary hover:underline"
             >
               Sign up
             </button>

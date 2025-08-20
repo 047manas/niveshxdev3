@@ -84,7 +84,7 @@ const ResetPassword = ({ token }: { token: string }) => {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="bg-[#0D1B2A] border-gray-600 text-white focus:ring-[#3BB273]"
+                className="bg-background border-border text-foreground focus:ring-ring"
               />
             </div>
             <div className="space-y-2">
@@ -96,12 +96,12 @@ const ResetPassword = ({ token }: { token: string }) => {
                 required
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="bg-[#0D1B2A] border-gray-600 text-white focus:ring-[#3BB273]"
+                className="bg-background border-border text-foreground focus:ring-ring"
               />
             </div>
             {error && <p className="text-sm text-red-500">{error}</p>}
             {message && <p className="text-sm text-green-500">{message}</p>}
-            <Button type="submit" className="w-full bg-[#3BB273] hover:bg-[#3BB273]/90 text-white" disabled={loading}>
+            <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" disabled={loading}>
               {loading ? 'Resetting...' : 'Reset Password'}
             </Button>
           </form>
