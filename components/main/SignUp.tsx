@@ -100,14 +100,14 @@ const SignUp = ({ setCurrentView }) => {
   }
 
   const renderCompanyForm = () => (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+    <Form {...companyForm}>
+      <form onSubmit={companyForm.handleSubmit(onSubmit)} className="space-y-8">
         <div>
           <h3 className="text-lg font-medium text-[#3BB273]">Founder Information</h3>
           <div className="space-y-4 mt-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
-                control={form.control}
+                control={companyForm.control}
                 name="firstName"
                 render={({ field }) => (
                   <FormItem>
@@ -120,7 +120,7 @@ const SignUp = ({ setCurrentView }) => {
                 )}
               />
               <FormField
-                control={form.control}
+                control={companyForm.control}
                 name="lastName"
                 render={({ field }) => (
                   <FormItem>
@@ -134,7 +134,7 @@ const SignUp = ({ setCurrentView }) => {
               />
             </div>
             <FormField
-              control={form.control}
+              control={companyForm.control}
               name="designation"
               render={({ field }) => (
                 <FormItem>
@@ -156,7 +156,7 @@ const SignUp = ({ setCurrentView }) => {
               )}
             />
             <FormField
-              control={form.control}
+              control={companyForm.control}
               name="email"
               render={({ field }) => (
                 <FormItem>
@@ -169,7 +169,7 @@ const SignUp = ({ setCurrentView }) => {
               )}
             />
             <FormField
-              control={form.control}
+              control={companyForm.control}
               name="phone"
               render={({ field }) => (
                 <FormItem>
@@ -186,7 +186,7 @@ const SignUp = ({ setCurrentView }) => {
               )}
             />
             <FormField
-              control={form.control}
+              control={companyForm.control}
               name="linkedin"
               render={({ field }) => (
                 <FormItem>
@@ -205,7 +205,7 @@ const SignUp = ({ setCurrentView }) => {
           <h3 className="text-lg font-medium text-[#3BB273]">Company Details</h3>
           <div className="space-y-4 mt-4">
             <FormField
-              control={form.control}
+              control={companyForm.control}
               name="companyName"
               render={({ field }) => (
                 <FormItem>
@@ -218,7 +218,7 @@ const SignUp = ({ setCurrentView }) => {
               )}
             />
             <FormField
-              control={form.control}
+              control={companyForm.control}
               name="companyStage"
               render={({ field }) => (
                 <FormItem>
@@ -243,7 +243,7 @@ const SignUp = ({ setCurrentView }) => {
               )}
             />
             <FormField
-              control={form.control}
+              control={companyForm.control}
               name="latestValuation"
               render={({ field }) => (
                 <FormItem>
@@ -256,7 +256,7 @@ const SignUp = ({ setCurrentView }) => {
               )}
             />
             <FormField
-              control={form.control}
+              control={companyForm.control}
               name="shareType"
               render={({ field }) => (
                 <FormItem>
@@ -279,7 +279,7 @@ const SignUp = ({ setCurrentView }) => {
               )}
             />
             <FormField
-              control={form.control}
+              control={companyForm.control}
               name="dealSize"
               render={({ field }) => (
                 <FormItem>
