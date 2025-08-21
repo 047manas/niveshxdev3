@@ -44,8 +44,8 @@ const Login = ({ setCurrentView }) => {
       // The login logic (storing token, user data) will be handled by AuthContext
       await login(data.token);
 
-      // Redirect to dashboard on successful login
-      router.push('/dashboard');
+      // Redirect to auth-redirect on successful login
+      router.push('/auth-redirect');
 
     } catch (err) {
       setError(err.message);
