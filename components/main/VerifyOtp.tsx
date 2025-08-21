@@ -80,9 +80,14 @@ const VerifyOtp = ({ setCurrentView }) => {
               </InputOTP>
             </div>
             {error && <p className="text-sm text-center text-red-500">{error}</p>}
-            <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" disabled={loading}>
-              {loading ? 'Verifying...' : 'Verify'}
-            </Button>
+            <div className="flex justify-between items-center gap-4">
+                <Button type="button" variant="outline" onClick={() => setCurrentView('signup')} className="w-full text-white border-gray-600 hover:bg-gray-700">
+                    Back
+                </Button>
+                <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" disabled={loading}>
+                {loading ? 'Verifying...' : 'Verify'}
+                </Button>
+            </div>
           </form>
         </CardContent>
       </Card>
