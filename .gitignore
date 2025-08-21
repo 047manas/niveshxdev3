@@ -28,4 +28,3 @@ next-env.d.ts
 
 # logs
 dev.log
-.env*.local
