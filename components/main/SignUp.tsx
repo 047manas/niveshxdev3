@@ -131,17 +131,17 @@ const SignUp = ({ setCurrentView }) => {
           <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); nextStep(); }}>
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="firstName" className="text-gray-400">First Name *</Label>
-                <Input id="firstName" value={formData.firstName} onChange={handleChange('firstName')} required className="bg-background border-border text-foreground" />
+                <Label htmlFor="firstName" className="text-input-label">First Name *</Label>
+                <Input id="firstName" value={formData.firstName} onChange={handleChange('firstName')} required className="bg-background border-border text-foreground placeholder:text-input-label" />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="lastName" className="text-gray-400">Last Name *</Label>
-                <Input id="lastName" value={formData.lastName} onChange={handleChange('lastName')} required className="bg-background border-border text-foreground" />
+                <Label htmlFor="lastName" className="text-input-label">Last Name *</Label>
+                <Input id="lastName" value={formData.lastName} onChange={handleChange('lastName')} required className="bg-background border-border text-foreground placeholder:text-input-label" />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="designation" className="text-gray-400">Designation *</Label>
+                <Label htmlFor="designation" className="text-input-label">Designation *</Label>
                 <Select onValueChange={handleSelectChange('designation')} defaultValue={formData.designation}>
-                  <SelectTrigger className="bg-background border-border text-foreground"><SelectValue placeholder="Select..." /></SelectTrigger>
+                  <SelectTrigger className="bg-background border-border text-white"><SelectValue placeholder="Select..." className="placeholder:text-white" /></SelectTrigger>
                   <SelectContent className="bg-card border-border text-foreground">
                     <SelectItem value="founder">Founder</SelectItem>
                     <SelectItem value="cxo">CXOs</SelectItem>
@@ -150,16 +150,25 @@ const SignUp = ({ setCurrentView }) => {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="linkedinProfile" className="text-gray-400">LinkedIn Profile *</Label>
-                <Input id="linkedinProfile" value={formData.linkedinProfile} onChange={handleChange('linkedinProfile')} placeholder="https://www.linkedin.com/in/yourprofile/" required className="bg-background border-border text-foreground" />
+                <Label htmlFor="linkedinProfile" className="text-input-label">LinkedIn Profile *</Label>
+                <Input id="linkedinProfile" value={formData.linkedinProfile} onChange={handleChange('linkedinProfile')} placeholder="https://www.linkedin.com/in/yourprofile/" required className="bg-background border-border text-foreground placeholder:text-input-label" />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-gray-400">Email *</Label>
-                <Input id="email" type="email" value={formData.email} onChange={handleChange('email')} placeholder="test@gmail.com" required className="bg-background border-border text-foreground" />
+                <Label htmlFor="email" className="text-input-label">Email *</Label>
+                <Input id="email" type="email" value={formData.email} onChange={handleChange('email')} placeholder="test@gmail.com" required className="bg-background border-border text-foreground placeholder:text-input-label" />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="phoneNumber" className="text-gray-400">Phone number *</Label>
-                <div className="flex"><Select defaultValue={formData.countryCode} onValueChange={handleSelectChange('countryCode')}><SelectTrigger className="w-1/4 bg-background border-border text-foreground"><SelectValue /></SelectTrigger><SelectContent className="bg-card border-border text-foreground"><SelectItem value="+91">IN (+91)</SelectItem><SelectItem value="+1">US (+1)</SelectItem></SelectContent></Select><Input id="phoneNumber" type="tel" value={formData.phoneNumber} onChange={handleChange('phoneNumber')} className="w-3/4 bg-background border-border text-foreground" required /></div>
+                <Label htmlFor="phoneNumber" className="text-input-label">Phone number *</Label>
+                <div className="flex">
+                  <Select defaultValue={formData.countryCode} onValueChange={handleSelectChange('countryCode')}>
+                    <SelectTrigger className="w-1/4 bg-background border-border text-white"><SelectValue /></SelectTrigger>
+                    <SelectContent className="bg-card border-border text-foreground">
+                      <SelectItem value="+91">IN (+91)</SelectItem>
+                      <SelectItem value="+1">US (+1)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Input id="phoneNumber" type="tel" value={formData.phoneNumber} onChange={handleChange('phoneNumber')} className="w-3/4 bg-background border-border text-foreground placeholder:text-input-label" required />
+                </div>
               </div>
             </div>
             <div className="flex justify-end pt-4">
@@ -172,13 +181,13 @@ const SignUp = ({ setCurrentView }) => {
           <form className="space-y-4" onSubmit={onRegister}>
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="companyName" className="text-gray-400">Company Name *</Label>
-                <Input id="companyName" value={formData.companyName} onChange={handleChange('companyName')} required className="bg-background border-border text-foreground" />
+                <Label htmlFor="companyName" className="text-input-label">Company Name *</Label>
+                <Input id="companyName" value={formData.companyName} onChange={handleChange('companyName')} required className="bg-background border-border text-foreground placeholder:text-input-label" />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="companyStage" className="text-gray-400">Company Stage *</Label>
+                <Label htmlFor="companyStage" className="text-input-label">Company Stage *</Label>
                 <Select onValueChange={handleSelectChange('companyStage')} defaultValue={formData.companyStage}>
-                  <SelectTrigger className="bg-background border-border text-foreground"><SelectValue placeholder="Select..." /></SelectTrigger>
+                  <SelectTrigger className="bg-background border-border text-white"><SelectValue placeholder="Select..." className="placeholder:text-white" /></SelectTrigger>
                   <SelectContent className="bg-card border-border text-foreground">
                     <SelectItem value="series_a">Series A</SelectItem>
                     <SelectItem value="series_b">Series B</SelectItem>
@@ -190,11 +199,11 @@ const SignUp = ({ setCurrentView }) => {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="latestValuation" className="text-gray-400">Latest Valuation (INR CR) *</Label>
-                <Input id="latestValuation" value={formData.latestValuation} onChange={handleChange('latestValuation')} required className="bg-background border-border text-foreground" />
+                <Label htmlFor="latestValuation" className="text-input-label">Latest Valuation (INR CR) *</Label>
+                <Input id="latestValuation" value={formData.latestValuation} onChange={handleChange('latestValuation')} required className="bg-background border-border text-foreground placeholder:text-input-label" />
               </div>
               <div className="space-y-2">
-                <Label className="text-gray-400">Share Type *</Label>
+                <Label className="text-input-label">Share Type *</Label>
                 <ToggleGroup type="multiple" onValueChange={handleShareTypeChange} defaultValue={formData.shareType} className="flex flex-wrap gap-2">
                   <ToggleGroupItem value="common" className="data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">Common Shares</ToggleGroupItem>
                   <ToggleGroupItem value="preferred" className="data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">Preferred Shares</ToggleGroupItem>
@@ -202,17 +211,17 @@ const SignUp = ({ setCurrentView }) => {
                 </ToggleGroup>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="dealSize" className="text-gray-400">Deal Size (INR CR) *</Label>
-                <Input id="dealSize" value={formData.dealSize} onChange={handleChange('dealSize')} required className="bg-background border-border text-foreground" />
+                <Label htmlFor="dealSize" className="text-input-label">Deal Size (INR CR) *</Label>
+                <Input id="dealSize" value={formData.dealSize} onChange={handleChange('dealSize')} required className="bg-background border-border text-foreground placeholder:text-input-label" />
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-gray-400">Password *</Label>
-              <Input id="password" type="password" value={formData.password} onChange={handleChange('password')} required className="bg-background border-border text-foreground" />
+              <Label htmlFor="password" className="text-input-label">Password *</Label>
+              <Input id="password" type="password" value={formData.password} onChange={handleChange('password')} required className="bg-background border-border text-foreground placeholder:text-input-label" />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword" className="text-gray-400">Confirm Password *</Label>
-              <Input id="confirmPassword" type="password" value={formData.confirmPassword} onChange={handleChange('confirmPassword')} required className="bg-background border-border text-foreground" />
+              <Label htmlFor="confirmPassword" className="text-input-label">Confirm Password *</Label>
+              <Input id="confirmPassword" type="password" value={formData.confirmPassword} onChange={handleChange('confirmPassword')} required className="bg-background border-border text-foreground placeholder:text-input-label" />
             </div>
             {error && <p className="text-sm text-red-500">{error}</p>}
             <div className="flex justify-between pt-4">
@@ -231,7 +240,7 @@ const SignUp = ({ setCurrentView }) => {
   const renderInvestorForm = () => (
     <form className="space-y-4" onSubmit={onRegister}>
       <div className="space-y-2">
-        <Label htmlFor="investorFullName" className="text-gray-400">Full Name</Label>
+        <Label htmlFor="investorFullName" className="text-input-label">Full Name</Label>
         <Input
           id="investorFullName"
           type="text"
@@ -239,11 +248,11 @@ const SignUp = ({ setCurrentView }) => {
           required
           value={formData.fullName}
           onChange={handleChange('fullName')}
-          className="bg-background border-border text-foreground focus:ring-ring"
+          className="bg-background border-border text-foreground focus:ring-ring placeholder:text-input-label"
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="investorEmail" className="text-gray-400">Email</Label>
+        <Label htmlFor="investorEmail" className="text-input-label">Email</Label>
         <Input
           id="investorEmail"
           type="email"
@@ -251,11 +260,11 @@ const SignUp = ({ setCurrentView }) => {
           required
           value={formData.email}
           onChange={handleChange('email')}
-          className="bg-background border-border text-foreground focus:ring-ring"
+          className="bg-background border-border text-foreground focus:ring-ring placeholder:text-input-label"
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="investorPassword" className="text-gray-400">Password</Label>
+        <Label htmlFor="investorPassword" className="text-input-label">Password</Label>
         <Input
           id="investorPassword"
           type="password"
@@ -263,11 +272,11 @@ const SignUp = ({ setCurrentView }) => {
           required
           value={formData.password}
           onChange={handleChange('password')}
-          className="bg-background border-border text-foreground focus:ring-ring"
+          className="bg-background border-border text-foreground focus:ring-ring placeholder:text-input-label"
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="investorConfirmPassword" className="text-gray-400">Confirm Password</Label>
+        <Label htmlFor="investorConfirmPassword" className="text-input-label">Confirm Password</Label>
         <Input
           id="investorConfirmPassword"
           type="password"
@@ -275,7 +284,7 @@ const SignUp = ({ setCurrentView }) => {
           required
           value={formData.confirmPassword}
           onChange={handleChange('confirmPassword')}
-          className="bg-background border-border text-foreground focus:ring-ring"
+          className="bg-background border-border text-foreground focus:ring-ring placeholder:text-input-label"
         />
       </div>
       {error && <p className="text-sm text-red-500">{error}</p>}
@@ -287,10 +296,10 @@ const SignUp = ({ setCurrentView }) => {
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-background">
-      <Card className="w-full max-w-md bg-primary text-primary-foreground">
+      <Card className="w-full max-w-md bg-[#1a2332] text-white">
         <CardHeader className="text-center">
-          <CardTitle className="text-3xl font-bold">Create an account</CardTitle>
-          <p className="text-gray-400">Join our community of founders and investors.</p>
+          <CardTitle className="text-3xl font-bold text-white">Create an account</CardTitle>
+          <p className="text-sub-heading">Join our community of founders and investors.</p>
         </CardHeader>
         <CardContent>
           <Tabs value={userType} onValueChange={setUserType} className="w-full">
@@ -309,11 +318,11 @@ const SignUp = ({ setCurrentView }) => {
               {renderInvestorForm()}
             </TabsContent>
           </Tabs>
-          <p className="mt-6 text-sm text-center text-gray-400">
+          <p className="mt-6 text-sm text-center text-sub-heading">
             Already have an account?{' '}
             <button
               onClick={() => setCurrentView('login')}
-              className="font-medium text-primary hover:underline"
+              className="font-medium text-link hover:underline"
             >
               Log in
             </button>
