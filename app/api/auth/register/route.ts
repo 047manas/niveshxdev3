@@ -79,10 +79,11 @@ export async function POST(req: NextRequest) {
 
     } else { // Investor
       const {
-        firstName, lastName, investorType, linkedinProfile, countryCode, phoneNumber
+        firstName, lastName, investorType, linkedinProfile, countryCode, phoneNumber,
+        chequeSize, interestedSectors
       } = formData;
 
-      if (!firstName || !lastName || !investorType || !linkedinProfile || !countryCode || !phoneNumber) {
+      if (!firstName || !lastName || !investorType || !linkedinProfile || !countryCode || !phoneNumber || !chequeSize || !interestedSectors) {
         return NextResponse.json({ error: 'Missing required fields for investor registration.' }, { status: 400 });
       }
 
@@ -100,8 +101,10 @@ export async function POST(req: NextRequest) {
           countryCode,
           number: phoneNumber,
         },
+        chequeSize,
+        interestedSectors,
         isVerified: false,
-        profileComplete: false,
+        profileComplete: true,
         otp,
         otpExpires,
         createdAt: admin.firestore.FieldValue.serverTimestamp(),

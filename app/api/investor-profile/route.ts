@@ -13,11 +13,15 @@ export async function POST(req: NextRequest) {
     const userId = decodedToken.uid;
 
     const {
+      investorType,
+      linkedinProfile,
+      countryCode,
+      phoneNumber,
       chequeSize,
       interestedSectors,
     } = await req.json();
 
-    if (!chequeSize || !interestedSectors) {
+    if (!investorType || !linkedinProfile || !phoneNumber || !chequeSize || !interestedSectors) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
@@ -25,6 +29,12 @@ export async function POST(req: NextRequest) {
     const userRef = firestore.collection('users').doc(userId);
 
     await userRef.update({
+      investorType,
+      linkedinProfile,
+      phone: {
+        countryCode,
+        number: phoneNumber,
+      },
       chequeSize,
       interestedSectors,
       profileComplete: true,
