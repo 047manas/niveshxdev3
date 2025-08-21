@@ -40,6 +40,7 @@ export async function POST(req: NextRequest) {
 
       emailRecipientName = `${firstName} ${lastName}`;
 
+      // Core user data
       const newUserData = {
         email,
         password: hashedPassword,
@@ -54,12 +55,15 @@ export async function POST(req: NextRequest) {
           number: phoneNumber,
         },
         isVerified: false,
+        // For companies, profile is complete after this step
+        profileComplete: true,
         otp,
         otpExpires,
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
       };
       await newUserRef.set(newUserData);
 
+      // Company-specific data (no redundancy)
       const companyData = {
         userId: newUserRef.id,
         name: companyName,
@@ -67,13 +71,6 @@ export async function POST(req: NextRequest) {
         latestValuation,
         shareType,
         dealSize,
-        contact: {
-          name: emailRecipientName,
-          email,
-          designation,
-          linkedinProfile,
-          phone: `${countryCode} ${phoneNumber}`,
-        }
       };
       await firestore.collection('companies').add(companyData);
 
@@ -88,6 +85,8 @@ export async function POST(req: NextRequest) {
       }
 
       emailRecipientName = `${firstName} ${lastName}`;
+
+      // Core user data
       const newUserData = {
         email,
         password: hashedPassword,
@@ -95,6 +94,17 @@ export async function POST(req: NextRequest) {
         firstName,
         lastName,
         fullName: `${firstName} ${lastName}`,
+        isVerified: false,
+        profileComplete: true,
+        otp,
+        otpExpires,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      };
+      await newUserRef.set(newUserData);
+
+      // Investor-specific profile data
+      const investorData = {
+        userId: newUserRef.id,
         investorType,
         linkedinProfile,
         phone: {
@@ -103,13 +113,8 @@ export async function POST(req: NextRequest) {
         },
         chequeSize,
         interestedSectors,
-        isVerified: false,
-        profileComplete: true,
-        otp,
-        otpExpires,
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
       };
-      await newUserRef.set(newUserData);
+      await firestore.collection('investors').add(investorData);
     }
 
     // Send the OTP email
