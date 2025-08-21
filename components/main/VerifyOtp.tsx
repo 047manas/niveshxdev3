@@ -7,10 +7,12 @@ const VerifyOtp = ({ setCurrentView }) => {
   const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [email, setEmail] = useState('');
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const [resendLoading, setResendLoading] = useState(false);
 
   useEffect(() => {
-    // Retrieve email from local storage
     const storedEmail = window.localStorage.getItem('emailForVerification');
     if (storedEmail) {
       setEmail(storedEmail);
@@ -19,10 +21,19 @@ const VerifyOtp = ({ setCurrentView }) => {
     }
   }, []);
 
+  useEffect(() => {
+    let timer;
+    if (resendCooldown > 0) {
+      timer = setTimeout(() => setResendCooldown(resendCooldown - 1), 1000);
+    }
+    return () => clearTimeout(timer);
+  }, [resendCooldown]);
+
   const onVerify = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
+    setSuccess('');
 
     if (otp.length !== 6) {
       setError("Please enter a 6-digit OTP.");
@@ -33,26 +44,42 @@ const VerifyOtp = ({ setCurrentView }) => {
     try {
       const response = await fetch('/api/auth/verify-otp', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, otp }),
       });
-
       const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'OTP verification failed');
 
-      if (!response.ok) {
-        throw new Error(data.error || 'OTP verification failed');
-      }
-
-      // On successful verification, switch to the login view
       window.localStorage.removeItem('emailForVerification');
       setCurrentView('login');
-
     } catch (err) {
       setError(err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    if (resendCooldown > 0) return;
+    setResendLoading(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      const response = await fetch('/api/auth/resend-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Failed to resend OTP.');
+
+      setSuccess(data.message);
+      setResendCooldown(60); // Start 60-second cooldown
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setResendLoading(false);
     }
   };
 
@@ -79,8 +106,27 @@ const VerifyOtp = ({ setCurrentView }) => {
                 </InputOTPGroup>
               </InputOTP>
             </div>
+
+            <div className="text-center">
+              <Button
+                type="button"
+                variant="link"
+                onClick={handleResendOtp}
+                disabled={resendCooldown > 0 || resendLoading}
+                className="text-sm text-link hover:underline"
+              >
+                {resendLoading
+                  ? 'Sending...'
+                  : resendCooldown > 0
+                    ? `Resend OTP in ${resendCooldown}s`
+                    : 'Did not receive code? Resend OTP'}
+              </Button>
+            </div>
+
             {error && <p className="text-sm text-center text-red-500">{error}</p>}
-            <div className="flex justify-between items-center gap-4">
+            {success && <p className="text-sm text-center text-green-500">{success}</p>}
+
+            <div className="flex justify-between items-center gap-4 pt-2">
                 <Button type="button" variant="outline" onClick={() => setCurrentView('signup')} className="w-full text-white border-gray-600 hover:bg-gray-700">
                     Back
                 </Button>
