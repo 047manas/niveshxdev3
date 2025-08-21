@@ -85,9 +85,10 @@ const InvestorOnboardingPage2 = () => {
                 <SelectContent className="bg-card border-border text-foreground">
                   <SelectItem value="1-5L">₹ 1-5 L</SelectItem>
                   <SelectItem value="5-25L">₹ 5-25 L</SelectItem>
-                  <SelectItem value="25-50L">₹ 25-50 L</SelectItem>
-                  <SelectItem value="50L-1Cr">₹ 50 L - 1 Cr</SelectItem>
-                  <SelectItem value="1Cr+">₹ 1 Cr+</SelectItem>
+                  <SelectItem value="25L-1Cr">₹ 25-1 cr</SelectItem>
+                  <SelectItem value="1Cr+">₹ 1 cr+</SelectItem>
+                  <SelectItem value="10Cr+">₹ 10 cr+</SelectItem>
+                  <SelectItem value="100Cr+">₹ 100 cr+</SelectItem>
                 </SelectContent>
               </Select>
             </div>
