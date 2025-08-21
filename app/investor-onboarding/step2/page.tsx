@@ -1,8 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -70,8 +69,8 @@ const InvestorOnboardingPage2 = () => {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-background">
-      <Card className="w-full max-w-md bg-primary text-primary-foreground">
+    <div className="flex items-center justify-center min-h-screen bg-[#0D1B2A]">
+      <Card className="w-full max-w-md bg-[#1a2332] border-gray-700 text-white">
         <CardHeader className="text-center">
           <CardTitle className="text-3xl font-bold">Complete Your Investor Profile</CardTitle>
           <p className="text-gray-400">Step 2: Investment Preferences</p>
@@ -93,13 +92,13 @@ const InvestorOnboardingPage2 = () => {
             </div>
             <div className="space-y-2">
               <Label htmlFor="interestedSectors" className="text-gray-400">What sectors / startups are you interested in? *</Label>
-              <Textarea id="interestedSectors" value={formData.interestedSectors} onChange={handleChange('interestedSectors')} placeholder="e.g., FinTech, HealthTech, SaaS" required className="bg-background border-border text-foreground" />
+              <Textarea id="interestedSectors" value={formData.interestedSectors} onChange={handleChange('interestedSectors')} placeholder="e.g., FinTech, HealthTech, SaaS" required className="bg-background border-border text-foreground focus:ring-ring" />
             </div>
           </div>
           {error && <p className="text-sm text-red-500 pt-4">{error}</p>}
           <div className="flex justify-between pt-4">
             <Button onClick={() => router.back()} variant="outline" className="text-white border-gray-600 hover:bg-gray-700">Back</Button>
-            <Button onClick={onSubmit} className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" disabled={loading}>
+            <Button onClick={onSubmit} className="bg-primary hover:bg-primary/90 text-primary-foreground" disabled={loading}>
               {loading ? 'Submitting...' : 'Submit Profile'}
             </Button>
           </div>

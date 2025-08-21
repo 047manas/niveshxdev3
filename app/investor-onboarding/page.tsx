@@ -44,8 +44,8 @@ const InvestorOnboardingPage1 = () => {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-background">
-      <Card className="w-full max-w-md bg-primary text-primary-foreground">
+    <div className="flex items-center justify-center min-h-screen bg-[#0D1B2A]">
+      <Card className="w-full max-w-md bg-[#1a2332] border-gray-700 text-white">
         <CardHeader className="text-center">
           <CardTitle className="text-3xl font-bold">Complete Your Investor Profile</CardTitle>
           <p className="text-gray-400">Step 1: Investor Details</p>
@@ -66,7 +66,7 @@ const InvestorOnboardingPage1 = () => {
             </div>
             <div className="space-y-2">
               <Label htmlFor="linkedinProfile" className="text-gray-400">LinkedIn Profile *</Label>
-              <Input id="linkedinProfile" value={formData.linkedinProfile} onChange={handleChange('linkedinProfile')} placeholder="https://www.linkedin.com/in/yourprofile/" required className="bg-background border-border text-foreground" />
+              <Input id="linkedinProfile" value={formData.linkedinProfile} onChange={handleChange('linkedinProfile')} placeholder="https://www.linkedin.com/in/yourprofile/" required className="bg-background border-border text-foreground focus:ring-ring" />
             </div>
             <div className="space-y-2">
               <Label htmlFor="phoneNumber" className="text-gray-400">Phone number *</Label>
@@ -78,7 +78,7 @@ const InvestorOnboardingPage1 = () => {
                     <SelectItem value="+1">US (+1)</SelectItem>
                   </SelectContent>
                 </Select>
-                <Input id="phoneNumber" type="tel" value={formData.phoneNumber} onChange={handleChange('phoneNumber')} className="w-3/4 bg-background border-border text-foreground" required />
+                <Input id="phoneNumber" type="tel" value={formData.phoneNumber} onChange={handleChange('phoneNumber')} className="w-3/4 bg-background border-border text-foreground focus:ring-ring" required />
               </div>
             </div>
           </div>
