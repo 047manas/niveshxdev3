@@ -16,9 +16,15 @@ const Login = ({ setCurrentView }) => {
 
   const onLogin = async (e) => {
     e.preventDefault();
-    setLoading(true);
     setError('');
 
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setError('Please enter a valid email address.');
+      return;
+    }
+
+    setLoading(true);
     try {
       const response = await fetch('/api/auth/login', {
         method: 'POST',

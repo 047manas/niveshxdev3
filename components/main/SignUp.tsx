@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,49 +9,23 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Textarea } from "@/components/ui/textarea";
 import { Building2, User } from 'lucide-react';
 
-const SignUp = ({ setCurrentView }) => {
-  const [userType, setUserType] = useState('company');
-  const [step, setStep] = useState(1); // For two-step company registration
-  const [investorStep, setInvestorStep] = useState(1); // For two-step investor registration
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-
-  const [formData, setFormData] = useState({
-    // Common fields
-    email: '',
-    password: '',
-    confirmPassword: '',
-    firstName: '',
-    lastName: '',
-    linkedinProfile: '',
-    countryCode: '+91',
-    phoneNumber: '',
-
-    // Investor specific
-    investorType: '',
-    chequeSize: '',
-    interestedSectors: '',
-
-    // Company registration fields
-    designation: '',
-    companyName: '',
-    companyStage: '',
-    latestValuation: '',
-    shareType: [],
-    dealSize: '',
-  });
-
-  const handleChange = (input) => (e) => {
-    setFormData({ ...formData, [input]: e.target.value });
-  };
-
-  const handleSelectChange = (input) => (value) => {
-    setFormData({ ...formData, [input]: value });
-  };
-
-  const handleShareTypeChange = (value) => {
-    setFormData({ ...formData, shareType: value });
-  };
+const SignUp = ({
+  setCurrentView,
+  userType,
+  setUserType,
+  step,
+  setStep,
+  investorStep,
+  setInvestorStep,
+  loading,
+  setLoading,
+  error,
+  setError,
+  formData,
+  handleChange,
+  handleSelectChange,
+  handleShareTypeChange,
+}) => {
 
   // Company form steps
   const nextStep = () => {
@@ -149,10 +123,7 @@ const SignUp = ({ setCurrentView }) => {
         throw new Error(data.error || 'Something went wrong');
       }
 
-      // Save email for OTP verification page
       window.localStorage.setItem('emailForVerification', formData.email);
-
-      // Switch to OTP verification view
       setCurrentView('verify-otp');
 
     } catch (err) {
