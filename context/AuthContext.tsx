@@ -3,8 +3,6 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { jwtDecode } from 'jwt-decode';
 
-import { jwtDecode } from 'jwt-decode';
-
 // Define the structure of the user object we'll get from the decoded JWT
 interface UserProfile {
   userId: string;
