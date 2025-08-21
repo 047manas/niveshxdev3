@@ -12,11 +12,7 @@ const AuthRedirectPage = () => {
   useEffect(() => {
     if (!loading) {
       if (user) {
-        if (user.userType === 'investor' && !user.profileComplete) {
-          router.push('/investor-onboarding');
-        } else {
-          router.push('/dashboard');
-        }
+        router.push('/dashboard');
       } else {
         // Not authenticated, redirect to login
         router.push('/auth');

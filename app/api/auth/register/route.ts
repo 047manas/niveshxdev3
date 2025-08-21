@@ -11,7 +11,7 @@ const generateOtp = () => {
 export async function POST(req: NextRequest) {
   try {
     const { userType, ...formData } = await req.json();
-    const { email, password, fullName } = formData;
+    const { email, password } = formData;
 
     if (!email || !password || !userType) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -40,6 +40,7 @@ export async function POST(req: NextRequest) {
 
       emailRecipientName = `${firstName} ${lastName}`;
 
+      // Core user data
       const newUserData = {
         email,
         password: hashedPassword,
@@ -54,12 +55,15 @@ export async function POST(req: NextRequest) {
           number: phoneNumber,
         },
         isVerified: false,
+        // For companies, profile is complete after this step
+        profileComplete: true,
         otp,
         otpExpires,
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
       };
       await newUserRef.set(newUserData);
 
+      // Company-specific data (no redundancy)
       const companyData = {
         userId: newUserRef.id,
         name: companyName,
@@ -67,34 +71,50 @@ export async function POST(req: NextRequest) {
         latestValuation,
         shareType,
         dealSize,
-        contact: {
-          name: emailRecipientName,
-          email,
-          designation,
-          linkedinProfile,
-          phone: `${countryCode} ${phoneNumber}`,
-        }
       };
       await firestore.collection('companies').add(companyData);
 
     } else { // Investor
-      if (!fullName) {
-        return NextResponse.json({ error: 'Full name is required for investors.' }, { status: 400 });
+      const {
+        firstName, lastName, investorType, linkedinProfile, countryCode, phoneNumber,
+        chequeSize, interestedSectors
+      } = formData;
+
+      if (!firstName || !lastName || !investorType || !linkedinProfile || !countryCode || !phoneNumber || !chequeSize || !interestedSectors) {
+        return NextResponse.json({ error: 'Missing required fields for investor registration.' }, { status: 400 });
       }
-      emailRecipientName = fullName;
+
+      emailRecipientName = `${firstName} ${lastName}`;
+
+      // Core user data
       const newUserData = {
         email,
         password: hashedPassword,
         userType,
-        fullName,
-        investmentFirm: formData.investmentFirm || null,
+        firstName,
+        lastName,
+        fullName: `${firstName} ${lastName}`,
         isVerified: false,
-        profileComplete: false,
+        profileComplete: true,
         otp,
         otpExpires,
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
       };
       await newUserRef.set(newUserData);
+
+      // Investor-specific profile data
+      const investorData = {
+        userId: newUserRef.id,
+        investorType,
+        linkedinProfile,
+        phone: {
+          countryCode,
+          number: phoneNumber,
+        },
+        chequeSize,
+        interestedSectors,
+      };
+      await firestore.collection('investors').add(investorData);
     }
 
     // Send the OTP email

@@ -6,11 +6,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Textarea } from "@/components/ui/textarea";
 import { Building2, User } from 'lucide-react';
 
 const SignUp = ({ setCurrentView }) => {
   const [userType, setUserType] = useState('company');
   const [step, setStep] = useState(1); // For two-step company registration
+  const [investorStep, setInvestorStep] = useState(1); // For two-step investor registration
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -19,16 +21,19 @@ const SignUp = ({ setCurrentView }) => {
     email: '',
     password: '',
     confirmPassword: '',
-    fullName: '', // Kept for investor form
-    investmentFirm: '', // For investor form
-
-    // Company registration fields
     firstName: '',
     lastName: '',
-    designation: '',
     linkedinProfile: '',
     countryCode: '+91',
     phoneNumber: '',
+
+    // Investor specific
+    investorType: '',
+    chequeSize: '',
+    interestedSectors: '',
+
+    // Company registration fields
+    designation: '',
     companyName: '',
     companyStage: '',
     latestValuation: '',
@@ -48,6 +53,7 @@ const SignUp = ({ setCurrentView }) => {
     setFormData({ ...formData, shareType: value });
   };
 
+  // Company form steps
   const nextStep = () => {
     // Step 1 Validation
     const { firstName, lastName, designation, linkedinProfile, email, phoneNumber } = formData;
@@ -68,8 +74,33 @@ const SignUp = ({ setCurrentView }) => {
     setError('');
     setStep(step + 1);
   };
-
   const prevStep = () => setStep(step - 1);
+
+  // Investor form steps
+  const nextInvestorStep = () => {
+    const { firstName, lastName, email, password, investorType, linkedinProfile, phoneNumber } = formData;
+    if (!firstName || !lastName || !email || !password || !investorType || !linkedinProfile || !phoneNumber) {
+        setError('Please fill in all required fields.');
+        return;
+    }
+    if (password !== formData.confirmPassword) {
+      setError('Passwords do not match.');
+      return;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setError('Please enter a valid email address.');
+      return;
+    }
+    const linkedinRegex = /^https:\/\/www\.linkedin\.com\/in\/.+/;
+    if (!linkedinRegex.test(linkedinProfile)) {
+      setError('LinkedIn Profile must start with https://www.linkedin.com/in/');
+      return;
+    }
+    setError('');
+    setInvestorStep(investorStep + 1);
+  };
+  const prevInvestorStep = () => setInvestorStep(investorStep - 1);
 
   const onRegister = async (e) => {
     e.preventDefault();
@@ -80,6 +111,13 @@ const SignUp = ({ setCurrentView }) => {
       const { companyName, companyStage, latestValuation, dealSize, shareType } = formData;
       if (!companyName || !companyStage || !latestValuation || !dealSize || shareType.length === 0) {
         setError('Please fill in all required fields for Step 2.');
+        setLoading(false);
+        return;
+      }
+    } else if (userType === 'investor') {
+      const { chequeSize, interestedSectors } = formData;
+      if (!chequeSize || !interestedSectors) {
+        setError('Please fill in all required fields.');
         setLoading(false);
         return;
       }
@@ -237,62 +275,102 @@ const SignUp = ({ setCurrentView }) => {
     }
   };
 
-  const renderInvestorForm = () => (
-    <form className="space-y-4" onSubmit={onRegister}>
-      <div className="space-y-2">
-        <Label htmlFor="investorFullName" className="text-input-label">Full Name</Label>
-        <Input
-          id="investorFullName"
-          type="text"
-          placeholder="Jane Smith"
-          required
-          value={formData.fullName}
-          onChange={handleChange('fullName')}
-          className="bg-background border-border text-foreground focus:ring-ring placeholder:text-input-label"
-        />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="investorEmail" className="text-input-label">Email</Label>
-        <Input
-          id="investorEmail"
-          type="email"
-          placeholder="investor@domain.com"
-          required
-          value={formData.email}
-          onChange={handleChange('email')}
-          className="bg-background border-border text-foreground focus:ring-ring placeholder:text-input-label"
-        />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="investorPassword" className="text-input-label">Password</Label>
-        <Input
-          id="investorPassword"
-          type="password"
-          placeholder="••••••••"
-          required
-          value={formData.password}
-          onChange={handleChange('password')}
-          className="bg-background border-border text-foreground focus:ring-ring placeholder:text-input-label"
-        />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="investorConfirmPassword" className="text-input-label">Confirm Password</Label>
-        <Input
-          id="investorConfirmPassword"
-          type="password"
-          placeholder="••••••••"
-          required
-          value={formData.confirmPassword}
-          onChange={handleChange('confirmPassword')}
-          className="bg-background border-border text-foreground focus:ring-ring placeholder:text-input-label"
-        />
-      </div>
-      {error && <p className="text-sm text-red-500">{error}</p>}
-      <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" disabled={loading}>
-        {loading ? 'Creating Account...' : 'Create Account'}
-      </Button>
-    </form>
-  );
+  const renderInvestorForm = () => {
+    switch (investorStep) {
+      case 1:
+        return (
+          <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); nextInvestorStep(); }}>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="firstName" className="text-input-label">First Name *</Label>
+                <Input id="firstName" value={formData.firstName} onChange={handleChange('firstName')} required className="bg-background border-border text-foreground placeholder:text-input-label" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="lastName" className="text-input-label">Last Name *</Label>
+                <Input id="lastName" value={formData.lastName} onChange={handleChange('lastName')} required className="bg-background border-border text-foreground placeholder:text-input-label" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-input-label">Email *</Label>
+              <Input id="email" type="email" value={formData.email} onChange={handleChange('email')} placeholder="test@gmail.com" required className="bg-background border-border text-foreground placeholder:text-input-label" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="investorType" className="text-input-label">Investor Type *</Label>
+              <Select onValueChange={handleSelectChange('investorType')} defaultValue={formData.investorType}>
+                <SelectTrigger className="bg-background border-border text-white"><SelectValue placeholder="Select..." className="placeholder:text-white" /></SelectTrigger>
+                <SelectContent className="bg-card border-border text-foreground">
+                  <SelectItem value="uhni_hni">UHNI/HNI</SelectItem>
+                  <SelectItem value="family_office">Family Office</SelectItem>
+                  <SelectItem value="vc">VC</SelectItem>
+                  <SelectItem value="private_equity">Private Equity</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="linkedinProfile" className="text-input-label">LinkedIn Profile *</Label>
+              <Input id="linkedinProfile" value={formData.linkedinProfile} onChange={handleChange('linkedinProfile')} placeholder="https://www.linkedin.com/in/yourprofile/" required className="bg-background border-border text-foreground placeholder:text-input-label" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="phoneNumber" className="text-input-label">Phone number *</Label>
+              <div className="flex">
+                <Select defaultValue={formData.countryCode} onValueChange={handleSelectChange('countryCode')}>
+                  <SelectTrigger className="w-1/4 bg-background border-border text-white"><SelectValue /></SelectTrigger>
+                  <SelectContent className="bg-card border-border text-foreground">
+                    <SelectItem value="+91">IN (+91)</SelectItem>
+                    <SelectItem value="+1">US (+1)</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Input id="phoneNumber" type="tel" value={formData.phoneNumber} onChange={handleChange('phoneNumber')} className="w-3/4 bg-background border-border text-foreground placeholder:text-input-label" required />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password" className="text-input-label">Password *</Label>
+              <Input id="password" type="password" value={formData.password} onChange={handleChange('password')} required className="bg-background border-border text-foreground placeholder:text-input-label" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword" className="text-input-label">Confirm Password *</Label>
+              <Input id="confirmPassword" type="password" value={formData.confirmPassword} onChange={handleChange('confirmPassword')} required className="bg-background border-border text-foreground placeholder:text-input-label" />
+            </div>
+            {error && <p className="text-sm text-red-500">{error}</p>}
+            <div className="flex justify-end pt-4">
+              <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">Next</Button>
+            </div>
+          </form>
+        );
+      case 2:
+        return (
+          <form className="space-y-4" onSubmit={onRegister}>
+            <div className="space-y-2">
+              <Label htmlFor="chequeSize" className="text-input-label">What cheque sizes are you comfortable with? *</Label>
+              <Select onValueChange={handleSelectChange('chequeSize')} defaultValue={formData.chequeSize}>
+                <SelectTrigger className="bg-background border-border text-foreground"><SelectValue placeholder="Select..." /></SelectTrigger>
+                <SelectContent className="bg-card border-border text-foreground">
+                  <SelectItem value="1-5L">₹ 1-5 L</SelectItem>
+                  <SelectItem value="5-25L">₹ 5-25 L</SelectItem>
+                  <SelectItem value="25L-1Cr">₹ 25-1 cr</SelectItem>
+                  <SelectItem value="1Cr+">₹ 1 cr+</SelectItem>
+                  <SelectItem value="10Cr+">₹ 10 cr+</SelectItem>
+                  <SelectItem value="100Cr+">₹ 100 cr+</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="interestedSectors" className="text-input-label">What sectors / startups are you interested in? *</Label>
+              <Textarea id="interestedSectors" value={formData.interestedSectors} onChange={handleChange('interestedSectors')} placeholder="e.g., FinTech, HealthTech, SaaS" required className="bg-background border-border text-foreground" />
+            </div>
+            {error && <p className="text-sm text-red-500 pt-4">{error}</p>}
+            <div className="flex justify-between pt-4">
+              <Button type="button" onClick={prevInvestorStep} variant="outline" className="text-white border-gray-600 hover:bg-gray-700">Back</Button>
+              <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" disabled={loading}>
+                {loading ? 'Submitting...' : 'Submit'}
+              </Button>
+            </div>
+          </form>
+        );
+      default:
+        return <p>Something went wrong</p>;
+    }
+  };
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-background">
