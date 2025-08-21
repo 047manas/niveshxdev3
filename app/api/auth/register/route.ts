@@ -89,6 +89,7 @@ export async function POST(req: NextRequest) {
         fullName,
         investmentFirm: formData.investmentFirm || null,
         isVerified: false,
+        profileComplete: false,
         otp,
         otpExpires,
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
