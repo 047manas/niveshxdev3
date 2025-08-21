@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import admin from '@/lib/firebase-admin';
-import { getAuth } from 'firebase-admin/auth';
+import jwt from 'jsonwebtoken';
 
 export async function GET(req: NextRequest) {
   try {
@@ -10,8 +10,8 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'No token provided' }, { status: 401 });
     }
 
-    const decodedToken = await getAuth().verifyIdToken(token);
-    const userId = decodedToken.uid;
+    const decodedToken: any = jwt.verify(token, process.env.JWT_SECRET || 'your-default-secret');
+    const userId = decodedToken.userId;
 
 
     const firestore = admin.firestore();
@@ -24,8 +24,11 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(userDoc.data());
   } catch (error) {
     console.error('Failed to fetch user data:', error);
-    if (error.code === 'auth/id-token-expired') {
+    if (error.name === 'TokenExpiredError') {
       return NextResponse.json({ error: 'Token expired' }, { status: 401 });
+    }
+    if (error.name === 'JsonWebTokenError') {
+      return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
     }
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
