@@ -3,20 +3,23 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { jwtDecode } from 'jwt-decode';
 
+import { jwtDecode } from 'jwt-decode';
+
 // Define the structure of the user object we'll get from the decoded JWT
-interface DecodedToken {
+interface UserProfile {
   userId: string;
   email: string;
   userType: 'company' | 'investor';
-  iat: number;
-  exp: number;
+  profileComplete?: boolean;
+  // Add any other fields from your Firestore user document
+  [key: string]: any;
 }
 
 interface AuthContextType {
-  user: DecodedToken | null;
+  user: UserProfile | null;
   loading: boolean;
   isAuthenticated: boolean;
-  login: (token: string) => void;
+  login: (token: string) => Promise<void>;
   logout: () => void;
 }
 
@@ -24,13 +27,32 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true,
   isAuthenticated: false,
-  login: () => {},
+  login: async () => {},
   logout: () => {},
 });
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const [user, setUser] = useState<DecodedToken | null>(null);
+  const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const fetchUserData = useCallback(async (token: string) => {
+    try {
+      const response = await fetch('/api/user', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch user data');
+      }
+      const userData = await response.json();
+      const decodedToken = jwtDecode<UserProfile>(token);
+      setUser({ ...decodedToken, ...userData });
+    } catch (error) {
+      console.error(error);
+      logout(); // Log out if we can't fetch user data
+    }
+  }, []);
 
   const logout = useCallback(() => {
     console.log("Logging out...");
@@ -39,39 +61,32 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   useEffect(() => {
-    setLoading(true);
-    try {
+    const initializeAuth = async () => {
+      setLoading(true);
       const token = localStorage.getItem('authToken');
       if (token) {
-        const decoded = jwtDecode<DecodedToken>(token);
-        // Check if the token is expired
-        if (decoded.exp * 1000 > Date.now()) {
-          setUser(decoded);
-        } else {
-          // Token is expired, so log the user out
+        try {
+          const decoded = jwtDecode<{ exp: number }>(token);
+          if (decoded.exp * 1000 > Date.now()) {
+            await fetchUserData(token);
+          } else {
+            logout();
+          }
+        } catch (error) {
+          console.error("Token validation failed", error);
           logout();
         }
       }
-    } catch (error) {
-      console.error("Failed to decode token on initial load", error);
-      logout(); // Clear any invalid token
-    } finally {
       setLoading(false);
-    }
-  }, [logout]);
+    };
+    initializeAuth();
+  }, [fetchUserData, logout]);
 
-  const login = (token: string) => {
+  const login = async (token: string) => {
     setLoading(true);
-    try {
-      localStorage.setItem('authToken', token);
-      const decoded = jwtDecode<DecodedToken>(token);
-      setUser(decoded);
-    } catch (error) {
-      console.error("Failed to decode token on login", error);
-      logout(); // Ensure we don't leave a bad token
-    } finally {
-      setLoading(false);
-    }
+    localStorage.setItem('authToken', token);
+    await fetchUserData(token);
+    setLoading(false);
   };
 
   return (
