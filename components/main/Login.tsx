@@ -31,14 +31,21 @@ const Login = ({ setCurrentView }) => {
       const data = await response.json();
 
       if (!response.ok) {
+        if (data.error === 'NOT_VERIFIED') {
+          // Save email for OTP verification page and redirect
+          window.localStorage.setItem('emailForVerification', email);
+          setCurrentView('verify-otp');
+          // No need to set error message here, the view will change
+          return;
+        }
         throw new Error(data.error || 'Login failed');
       }
 
       // The login logic (storing token, user data) will be handled by AuthContext
       await login(data.token);
 
-      // Redirect to auth-redirect on successful login
-      router.push('/auth-redirect');
+      // Redirect to dashboard on successful login
+      router.push('/dashboard');
 
     } catch (err) {
       setError(err.message);

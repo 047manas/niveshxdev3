@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import admin from '@/lib/firebase-admin';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { sendOtpEmail } from '@/lib/email';
+
+const generateOtp = () => {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+};
 
 export async function POST(req: NextRequest) {
   try {
@@ -22,14 +27,29 @@ export async function POST(req: NextRequest) {
     const userDoc = userQuery.docs[0];
     const userData = userDoc.data();
 
-    if (!userData.isVerified) {
-      return NextResponse.json({ error: 'Please verify your email before logging in.' }, { status: 403 });
-    }
-
     const isPasswordValid = await bcrypt.compare(password, userData.password);
 
     if (!isPasswordValid) {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
+    }
+
+    if (!userData.isVerified) {
+      // User is not verified, re-send OTP
+      const otp = generateOtp();
+      const otpExpires = admin.firestore.Timestamp.fromMillis(Date.now() + 10 * 60 * 1000);
+
+      await userDoc.ref.update({ otp, otpExpires });
+
+      const emailSubject = "Your Niveshx Verification Code";
+      const emailBody = `
+        <p>Hello ${userData.fullName},</p>
+        <p>You requested to log in, but your account is not yet verified. Please use the new One-Time Password (OTP) below to verify your account:</p>
+        <h2>${otp}</h2>
+        <p>This code will expire in 10 minutes.</p>
+      `;
+      await sendOtpEmail(email, emailBody, emailSubject);
+
+      return NextResponse.json({ error: 'NOT_VERIFIED' }, { status: 401 });
     }
 
     // Generate JWT
