@@ -2,21 +2,22 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/context/AuthContext';
 
-const InvestorOnboardingPage1 = () => {
+const InvestorOnboardingPage = () => {
   const router = useRouter();
+  const { user } = useAuth();
   const [formData, setFormData] = useState({
-    investorType: '',
-    linkedinProfile: '',
-    countryCode: '+91',
-    phoneNumber: '',
+    chequeSize: '',
+    interestedSectors: '',
   });
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (input) => (e) => {
     setFormData({ ...formData, [input]: e.target.value });
@@ -26,21 +27,42 @@ const InvestorOnboardingPage1 = () => {
     setFormData({ ...formData, [input]: value });
   };
 
-  const onNext = () => {
-    const { investorType, linkedinProfile, phoneNumber } = formData;
-    if (!investorType || !linkedinProfile || !phoneNumber) {
+  const onSubmit = async () => {
+    const { chequeSize, interestedSectors } = formData;
+    if (!chequeSize || !interestedSectors) {
       setError('Please fill in all required fields.');
       return;
     }
-    const linkedinRegex = /^https:\/\/www\.linkedin\.com\/in\/.+/;
-    if (!linkedinRegex.test(linkedinProfile)) {
-        setError('LinkedIn Profile must start with https://www.linkedin.com/in/');
-        return;
-    }
     setError('');
-    // Store data in local storage to pass to the next step
-    localStorage.setItem('investorOnboardingData', JSON.stringify(formData));
-    router.push('/investor-onboarding/step2');
+    setLoading(true);
+
+    const profileData = {
+      ...formData,
+      userId: user?.userId,
+    };
+
+    try {
+      const response = await fetch('/api/investor-profile', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+        },
+        body: JSON.stringify(profileData),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to update profile');
+      }
+
+      router.push('/dashboard');
+
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -48,44 +70,33 @@ const InvestorOnboardingPage1 = () => {
       <Card className="w-full max-w-md bg-primary text-primary-foreground">
         <CardHeader className="text-center">
           <CardTitle className="text-3xl font-bold">Complete Your Investor Profile</CardTitle>
-          <p className="text-gray-400">Step 1: Investor Details</p>
+          <p className="text-gray-400">Investment Preferences</p>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="investorType" className="text-gray-400">Investor Type *</Label>
-              <Select onValueChange={handleSelectChange('investorType')} defaultValue={formData.investorType}>
+              <Label htmlFor="chequeSize" className="text-gray-400">What cheque sizes are you comfortable with? *</Label>
+              <Select onValueChange={handleSelectChange('chequeSize')} defaultValue={formData.chequeSize}>
                 <SelectTrigger className="bg-background border-border text-foreground"><SelectValue placeholder="Select..." /></SelectTrigger>
                 <SelectContent className="bg-card border-border text-foreground">
-                  <SelectItem value="uhni_hni">UHNI/HNI</SelectItem>
-                  <SelectItem value="family_office">Family Office</SelectItem>
-                  <SelectItem value="vc">VC</SelectItem>
-                  <SelectItem value="private_equity">Private Equity</SelectItem>
+                  <SelectItem value="1-5L">₹ 1-5 L</SelectItem>
+                  <SelectItem value="5-25L">₹ 5-25 L</SelectItem>
+                  <SelectItem value="25L-1Cr">₹ 25-1 cr</SelectItem>
+                  <SelectItem value="1Cr+">₹ 1 cr+</SelectItem>
+                  <SelectItem value="10Cr+">₹ 10 cr+</SelectItem>
+                  <SelectItem value="100Cr+">₹ 100 cr+</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="linkedinProfile" className="text-gray-400">LinkedIn Profile *</Label>
-              <Input id="linkedinProfile" value={formData.linkedinProfile} onChange={handleChange('linkedinProfile')} placeholder="https://www.linkedin.com/in/yourprofile/" required className="bg-background border-border text-foreground" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="phoneNumber" className="text-gray-400">Phone number *</Label>
-              <div className="flex">
-                <Select defaultValue={formData.countryCode} onValueChange={handleSelectChange('countryCode')}>
-                  <SelectTrigger className="w-1/4 bg-background border-border text-foreground"><SelectValue /></SelectTrigger>
-                  <SelectContent className="bg-card border-border text-foreground">
-                    <SelectItem value="+91">IN (+91)</SelectItem>
-                    <SelectItem value="+1">US (+1)</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Input id="phoneNumber" type="tel" value={formData.phoneNumber} onChange={handleChange('phoneNumber')} className="w-3/4 bg-background border-border text-foreground" required />
-              </div>
+              <Label htmlFor="interestedSectors" className="text-gray-400">What sectors / startups are you interested in? *</Label>
+              <Textarea id="interestedSectors" value={formData.interestedSectors} onChange={handleChange('interestedSectors')} placeholder="e.g., FinTech, HealthTech, SaaS" required className="bg-background border-border text-foreground" />
             </div>
           </div>
           {error && <p className="text-sm text-red-500 pt-4">{error}</p>}
-          <div className="flex justify-end pt-4">
-            <Button onClick={onNext} className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
-              Next
+          <div className="pt-4">
+            <Button onClick={onSubmit} className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" disabled={loading}>
+              {loading ? 'Submitting...' : 'Submit Profile'}
             </Button>
           </div>
         </CardContent>
@@ -94,4 +105,4 @@ const InvestorOnboardingPage1 = () => {
   );
 };
 
-export default InvestorOnboardingPage1;
+export default InvestorOnboardingPage;

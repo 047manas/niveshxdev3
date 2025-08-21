@@ -11,7 +11,7 @@ const generateOtp = () => {
 export async function POST(req: NextRequest) {
   try {
     const { userType, ...formData } = await req.json();
-    const { email, password, fullName } = formData;
+    const { email, password } = formData;
 
     if (!email || !password || !userType) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -78,16 +78,28 @@ export async function POST(req: NextRequest) {
       await firestore.collection('companies').add(companyData);
 
     } else { // Investor
-      if (!fullName) {
-        return NextResponse.json({ error: 'Full name is required for investors.' }, { status: 400 });
+      const {
+        firstName, lastName, investorType, linkedinProfile, countryCode, phoneNumber
+      } = formData;
+
+      if (!firstName || !lastName || !investorType || !linkedinProfile || !countryCode || !phoneNumber) {
+        return NextResponse.json({ error: 'Missing required fields for investor registration.' }, { status: 400 });
       }
-      emailRecipientName = fullName;
+
+      emailRecipientName = `${firstName} ${lastName}`;
       const newUserData = {
         email,
         password: hashedPassword,
         userType,
-        fullName,
-        investmentFirm: formData.investmentFirm || null,
+        firstName,
+        lastName,
+        fullName: `${firstName} ${lastName}`,
+        investorType,
+        linkedinProfile,
+        phone: {
+          countryCode,
+          number: phoneNumber,
+        },
         isVerified: false,
         profileComplete: false,
         otp,
