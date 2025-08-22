@@ -60,7 +60,7 @@ export default function HomePage() {
       </nav>
 
       {/* Hero Section */}
-      <section className="relative py-20 px-4 text-center overflow-hidden">
+      <section className="relative py-16 sm:py-20 px-4 text-center overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-background via-card to-background" />
         <div className="container mx-auto relative z-10">
           <h1 className="text-4xl md:text-7xl font-bold mb-4 leading-tight">
@@ -115,9 +115,9 @@ export default function HomePage() {
       </section>
 
       {/* Why NiveshX? Section */}
-      <section id="why-niveshx" className="py-20 px-4 bg-background">
+      <section id="why-niveshx" className="py-12 sm:py-16 md:py-20 px-4 bg-background">
         <div className="container mx-auto text-center">
-          <h2 className="text-3xl md:text-5xl font-bold text-white mb-4">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-4">
             The Startup Ecosystem Has a Data Problem. <span className="text-primary">We're Solving It.</span>
           </h2>
           <p className="text-lg md:text-xl text-gray-300 max-w-4xl mx-auto mb-12">
@@ -149,9 +149,9 @@ export default function HomePage() {
       </section>
 
       {/* How It Works Section */}
-      <section id="how-it-works" className="py-20 px-4">
+      <section id="how-it-works" className="py-12 sm:py-16 md:py-20 px-4">
         <div className="container mx-auto text-center">
-          <h2 className="text-3xl md:text-5xl font-bold text-white mb-12">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-12">
             How it Works for <span className="text-primary">You</span>
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-16">
@@ -226,12 +226,12 @@ export default function HomePage() {
       </section>
 
       {/* Value Propositions Section */}
-      <section className="py-20 px-4 bg-background">
+      <section className="py-12 sm:py-16 md:py-20 px-4 bg-background">
         <div className="container mx-auto grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
           {/* For Founders */}
           <div className="text-center md:text-left">
             <p className="text-lg text-primary font-semibold">FOR FOUNDERS: YOUR FINANCIAL CO-PILOT</p>
-            <h2 className="text-3xl md:text-4xl font-bold text-white mt-2 mb-4">Growth, On Your Terms. Keep Your Equity. 🚀</h2>
+            <h2 className="text-3xl sm:text-4xl font-bold text-white mt-2 mb-4">Growth, On Your Terms. Keep Your Equity. 🚀</h2>
             <p className="text-gray-300 mb-8">We help you raise capital without raising your anxiety. NiveshX turns your data into your most powerful fundraising tool.</p>
             <div className="space-y-4 text-left">
               <div className="flex items-start"><CheckCircle className="h-6 w-6 text-primary mr-3 flex-shrink-0" /><span>"Build a single source of truth for your startup."</span></div>
@@ -243,7 +243,7 @@ export default function HomePage() {
           {/* For Investors */}
           <div className="text-center md:text-left">
             <p className="text-lg text-primary font-semibold">FOR INVESTORS: INVEST SMARTER, NOT HARDER</p>
-            <h2 className="text-3xl md:text-4xl font-bold text-white mt-2 mb-4">Discover Data-Driven Deals. Find Smarter Investments.</h2>
+            <h2 className="text-3xl sm:text-4xl font-bold text-white mt-2 mb-4">Discover Data-Driven Deals. Find Smarter Investments.</h2>
             <p className="text-gray-300 mb-8">NiveshX gives you a single, clear dashboard for portfolio management and a curated pipeline of high-growth startups.</p>
             <div className="space-y-4 text-left">
               <div className="flex items-start"><FileCheck className="h-6 w-6 text-primary mr-3 flex-shrink-0" /><span>Curated Deal Flow: We bring you a curated pipeline of high-growth startups, vetted by data. Invest smarter, not harder.</span></div>
@@ -254,9 +254,9 @@ export default function HomePage() {
       </section>
 
       {/* Closing Section */}
-      <section className="py-20 px-4 text-center">
+      <section className="py-12 sm:py-16 md:py-20 px-4 text-center">
         <div className="container mx-auto">
-          <h2 className="text-3xl md:text-5xl font-bold text-white mb-4">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-4">
             The Future of Funding is Built on <span className="text-primary">Data</span>.
           </h2>
           <p className="text-lg md:text-xl text-gray-300 mb-8">
@@ -274,7 +274,7 @@ export default function HomePage() {
       </section>
 
       {/* Footer */}
-      <footer className="py-12 px-4 bg-background border-t border-border">
+      <footer className="py-8 sm:py-12 px-4 bg-background border-t border-border">
         <div className="container mx-auto flex flex-col md:flex-row justify-between items-center text-center md:text-left space-y-4 md:space-y-0">
           <div className="text-2xl font-bold">
             <span className="text-white">Nivesh</span>
