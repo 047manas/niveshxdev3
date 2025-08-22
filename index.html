@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NiveshX - Company Registration</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for better UX */
+        .form-step {
+            display: none;
+        }
+        .form-step-active {
+            display: block;
+        }
+        .tag {
+            display: inline-flex;
+            align-items: center;
+            background-color: #374151; /* bg-gray-700 */
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            margin-right: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+        .tag-close {
+            margin-left: 0.5rem;
+            cursor: pointer;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white font-sans">
+
+    <div class="container mx-auto p-4 md:p-8 max-w-3xl">
+        <!-- Progress Bar -->
+        <div class="mb-8">
+            <h2 id="progress-text" class="text-xl font-bold text-center mb-2">Step 1 of 5: Create Account</h2>
+            <div class="w-full bg-gray-700 rounded-full h-2.5">
+                <div id="progress-bar" class="bg-blue-600 h-2.5 rounded-full" style="width: 20%"></div>
+            </div>
+        </div>
+
+        <!-- Form Container -->
+        <div class="bg-gray-800 p-6 md:p-10 rounded-xl shadow-2xl">
+            <form id="registration-form" novalidate>
+                <!-- Step 1: Create Your Account -->
+                <div id="step-1" class="form-step form-step-active">
+                    <h3 class="text-2xl font-semibold mb-6">Create Your Account</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="firstName" class="block mb-2 text-sm font-medium text-gray-300">First Name</label>
+                            <input type="text" id="firstName" name="firstName" class="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" placeholder="e.g., Ananya" required>
+                        </div>
+                        <div>
+                            <label for="lastName" class="block mb-2 text-sm font-medium text-gray-300">Last Name</label>
+                            <input type="text" id="lastName" name="lastName" class="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" placeholder="e.g., Sharma" required>
+                        </div>
+                    </div>
+                    <div class="mt-6">
+                        <label for="designation" class="block mb-2 text-sm font-medium text-gray-300">Your Designation</label>
+                        <select id="designation" name="designation" class="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" required>
+                            <option value="" disabled selected>Select your role</option>
+                            <option value="co-founder">Co-founder</option>
+                            <option value="ceo">CEO</option>
+                            <option value="cto">CTO</option>
+                            <option value="hr">HR</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div class="mt-6">
+                        <label for="linkedin" class="block mb-2 text-sm font-medium text-gray-300">Personal LinkedIn Profile</label>
+                        <input type="url" id="linkedin" name="linkedin" class="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" placeholder="https://linkedin.com/in/yourprofile" required>
+                    </div>
+                    <div class="mt-6">
+                        <label for="workEmail" class="block mb-2 text-sm font-medium text-gray-300">Your Work Email</label>
+                        <input type="email" id="workEmail" name="workEmail" class="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" placeholder="you@company.com" required>
+                    </div>
+                    <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="password" class="block mb-2 text-sm font-medium text-gray-300">Create Password</label>
+                            <input type="password" id="password" name="password" class="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" required>
+                            <p id="password-strength" class="text-xs mt-1 text-gray-400">min. 8 characters, 1 uppercase, 1 lowercase, 1 number</p>
+                        </div>
+                        <div>
+                            <label for="confirmPassword" class="block mb-2 text-sm font-medium text-gray-300">Confirm Password</label>
+                            <input type="password" id="confirmPassword" name="confirmPassword" class="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" required>
+                            <p id="password-match" class="text-xs mt-1 text-red-500 hidden">Passwords do not match.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 2: Company Profile -->
+                <div id="step-2" class="form-step">
+                    <h3 class="text-2xl font-semibold mb-6">Company Profile</h3>
+                    <div class="mt-6">
+                        <label for="companyName" class="block mb-2 text-sm font-medium text-gray-300">Company Name</label>
+                        <input type="text" id="companyName" name="companyName" class="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" placeholder="e.g., NiveshX" required>
+                    </div>
+                    <div class="mt-6">
+                        <label for="companyWebsite" class="block mb-2 text-sm font-medium text-gray-300">Company Website</label>
+                        <input type="url" id="companyWebsite" name="companyWebsite" class="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" placeholder="https://company.com" required>
+                    </div>
+                    <div class="mt-6">
+                        <label for="companyLinkedin" class="block mb-2 text-sm font-medium text-gray-300">Company LinkedIn Profile (Optional)</label>
+                        <input type="url" id="companyLinkedin" name="companyLinkedin" class="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" placeholder="https://linkedin.com/company/yourcompany">
+                    </div>
+                    <div class="mt-6">
+                        <label for="oneLiner" class="block mb-2 text-sm font-medium text-gray-300">One-Liner Pitch</label>
+                        <input type="text" id="oneLiner" name="oneLiner" maxlength="150" class="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" required>
+                        <p class="text-xs mt-1 text-gray-400 text-right"><span id="oneLiner-count">0</span> / 150</p>
+                    </div>
+                    <div class="mt-6">
+                        <label for="aboutCompany" class="block mb-2 text-sm font-medium text-gray-300">About Your Company</label>
+                        <textarea id="aboutCompany" name="aboutCompany" rows="4" maxlength="1000" class="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" required></textarea>
+                        <p class="text-xs mt-1 text-gray-400 text-right"><span id="aboutCompany-count">0</span> / 1000</p>
+                    </div>
+                </div>
+
+                <!-- Step 3: Company Details -->
+                <div id="step-3" class="form-step">
+                    <h3 class="text-2xl font-semibold mb-6">Company Details</h3>
+                    <div class="mt-6">
+                        <label class="block mb-2 text-sm font-medium text-gray-300">Industry (Select all that apply)</label>
+                        <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                            <div><label class="flex items-center"><input type="checkbox" name="industry" value="technology" class="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded"> <span class="ml-2">Technology</span></label></div>
+                            <div><label class="flex items-center"><input type="checkbox" name="industry" value="sports" class="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded"> <span class="ml-2">Sports</span></label></div>
+                            <div><label class="flex items-center"><input type="checkbox" name="industry" value="retail" class="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded"> <span class="ml-2">Retail</span></label></div>
+                            <div><label class="flex items-center"><input type="checkbox" name="industry" value="finance" class="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded"> <span class="ml-2">Finance</span></label></div>
+                            <div><label class="flex items-center"><input type="checkbox" name="industry" value="healthcare" class="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded"> <span class="ml-2">Healthcare</span></label></div>
+                            <div><label class="flex items-center"><input type="checkbox" name="industry" value="media" class="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded"> <span class="ml-2">Media</span></label></div>
+                        </div>
+                    </div>
+                     <div class="mt-6">
+                        <label for="primarySector" class="block mb-2 text-sm font-medium text-gray-300">Primary Company Sector</label>
+                        <select id="primarySector" name="primarySector" class="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" required>
+                            <option value="" disabled selected>Select a sector</option>
+                            <option value="edtech">Edtech</option>
+                            <option value="fintech">Fintech</option>
+                            <option value="ai">AI</option>
+                            <option value="saas">SaaS</option>
+                            <option value="healthtech">Healthtech</option>
+                        </select>
+                    </div>
+                    <div class="mt-6">
+                        <label for="businessModel" class="block mb-2 text-sm font-medium text-gray-300">Primary Business Model</label>
+                        <select id="businessModel" name="businessModel" class="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" required>
+                            <option value="" disabled selected>Select a model</option>
+                            <option value="b2b">B2B</option>
+                            <option value="b2c">B2C</option>
+                            <option value="d2c">D2C</option>
+                            <option value="b2b2c">B2B2C</option>
+                        </select>
+                    </div>
+                    <div class="mt-6">
+                        <label for="companyStage" class="block mb-2 text-sm font-medium text-gray-300">Company Stage</label>
+                        <select id="companyStage" name="companyStage" class="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" required>
+                            <option value="" disabled selected>Select a stage</option>
+                            <option value="pre-seed">Pre-seed</option>
+                            <option value="seed">Seed</option>
+                            <option value="series-a">Series A</option>
+                            <option value="series-b">Series B</option>
+                            <option value="growth">Growth</option>
+                        </select>
+                    </div>
+                    <div class="mt-6">
+                        <label for="teamSize" class="block mb-2 text-sm font-medium text-gray-300">Team Size</label>
+                        <input type="number" id="teamSize" name="teamSize" min="1" class="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" placeholder="e.g., 10" required>
+                    </div>
+                    <div class="mt-6">
+                        <label for="locations" class="block mb-2 text-sm font-medium text-gray-300">Location(s)</label>
+                        <div id="locations-container" class="bg-gray-700 border border-gray-600 rounded-lg p-2.5 flex flex-wrap items-center">
+                            <input type="text" id="locations" class="bg-transparent text-white text-sm focus:ring-0 border-0 flex-grow" placeholder="Type a city and press Enter...">
+                        </div>
+                         <p class="text-xs mt-1 text-gray-400">e.g., Mumbai, New York, London</p>
+                    </div>
+                </div>
+
+                <!-- Step 4: Funding History -->
+                <div id="step-4" class="form-step">
+                    <h3 class="text-2xl font-semibold mb-6">Funding History</h3>
+                    <div class="mt-6">
+                        <label class="block mb-2 text-sm font-medium text-gray-300">Have you raised external funding?</label>
+                        <div class="flex items-center gap-x-6">
+                            <label><input type="radio" name="raisedFunding" value="yes" class="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600"> <span class="ml-2">Yes</span></label>
+                            <label><input type="radio" name="raisedFunding" value="no" class="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600" checked> <span class="ml-2">No</span></label>
+                        </div>
+                    </div>
+                    <div id="funding-details" class="hidden mt-6 space-y-6">
+                        <div>
+                            <label for="totalFunding" class="block mb-2 text-sm font-medium text-gray-300">Total Funding Raised</label>
+                            <div class="flex">
+                                <select id="currency" name="currency" class="bg-gray-700 border border-r-0 border-gray-600 text-white text-sm rounded-l-lg focus:ring-blue-500 focus:border-blue-500 p-2.5">
+                                    <option value="inr">₹ INR</option>
+                                    <option value="usd">$ USD</option>
+                                </select>
+                                <input type="number" id="totalFunding" name="totalFunding" min="0" class="bg-gray-700 border border-gray-600 text-white text-sm rounded-r-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" placeholder="e.g., 500000">
+                            </div>
+                        </div>
+                         <div>
+                            <label for="fundingRounds" class="block mb-2 text-sm font-medium text-gray-300">Number of Funding Rounds</label>
+                            <input type="number" id="fundingRounds" name="fundingRounds" min="0" class="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" placeholder="e.g., 2">
+                        </div>
+                        <div>
+                            <label for="latestRound" class="block mb-2 text-sm font-medium text-gray-300">Latest Funding Round</label>
+                            <select id="latestRound" name="latestRound" class="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
+                                <option value="" disabled selected>Select the latest round</option>
+                                <option value="pre-seed">Pre-seed</option>
+                                <option value="seed">Seed</option>
+                                <option value="series-a">Series A</option>
+                                <option value="series-b">Series B</option>
+                                <option value="series-c">Series C</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 5: Company Contact -->
+                <div id="step-5" class="form-step">
+                    <h3 class="text-2xl font-semibold mb-6">Company Contact</h3>
+                     <div class="mt-6">
+                        <label for="companyEmail" class="block mb-2 text-sm font-medium text-gray-300">Company's Work Email</label>
+                        <input type="email" id="companyEmail" name="companyEmail" class="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" placeholder="contact@company.com" required>
+                    </div>
+                    <div class="mt-6">
+                        <label for="companyPhone" class="block mb-2 text-sm font-medium text-gray-300">Company's Phone Number</label>
+                        <div class="flex">
+                             <select id="countryCode" name="countryCode" class="bg-gray-700 border border-r-0 border-gray-600 text-white text-sm rounded-l-lg focus:ring-blue-500 focus:border-blue-500 p-2.5">
+                                <option value="+91">+91 (IN)</option>
+                                <option value="+1">+1 (US)</option>
+                                <option value="+44">+44 (UK)</option>
+                            </select>
+                            <input type="tel" id="companyPhone" name="companyPhone" class="bg-gray-700 border border-gray-600 text-white text-sm rounded-r-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" placeholder="e.g., 9876543210" required>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Navigation Buttons -->
+                <div class="mt-8 pt-6 border-t border-gray-700 flex justify-between">
+                    <button type="button" id="back-btn" class="bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-6 rounded-lg transition duration-300 ease-in-out hidden">Back</button>
+                    <button type="button" id="next-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition duration-300 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed ml-auto">Next</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- DOM Elements ---
+            const steps = Array.from(document.querySelectorAll('.form-step'));
+            const nextBtn = document.getElementById('next-btn');
+            const backBtn = document.getElementById('back-btn');
+            const progressBar = document.getElementById('progress-bar');
+            const progressText = document.getElementById('progress-text');
+            const form = document.getElementById('registration-form');
+
+            // --- State ---
+            let currentStep = 1;
+            const totalSteps = steps.length;
+            const formData = { industry: [], locations: [] };
+            const stepTitles = ["Create Account", "Company Profile", "Company Details", "Funding History", "Company Contact"];
+
+            // --- UTILITY FUNCTIONS ---
+            const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+            const validateUrl = (url) => { try { new URL(url); return true; } catch (_) { return false; } };
+            const setFieldValidity = (field, isValid) => {
+                field.classList.toggle('border-red-500', !isValid);
+                field.classList.toggle('border-gray-600', isValid);
+            };
+
+            // --- VALIDATION LOGIC ---
+            const validators = {
+                1: () => {
+                    const firstName = form.elements.firstName, lastName = form.elements.lastName, designation = form.elements.designation,
+                          linkedin = form.elements.linkedin, workEmail = form.elements.workEmail, password = form.elements.password,
+                          confirmPassword = form.elements.confirmPassword, passwordStrength = document.getElementById('password-strength'),
+                          passwordMatch = document.getElementById('password-match');
+
+                    const isFirstNameValid = firstName.value.trim() !== ''; setFieldValidity(firstName, isFirstNameValid);
+                    const isLastNameValid = lastName.value.trim() !== ''; setFieldValidity(lastName, isLastNameValid);
+                    const isDesignationValid = designation.value !== ''; setFieldValidity(designation, isDesignationValid);
+                    const isLinkedinValid = validateUrl(linkedin.value); setFieldValidity(linkedin, isLinkedinValid);
+                    const isWorkEmailValid = validateEmail(workEmail.value); setFieldValidity(workEmail, isWorkEmailValid);
+
+                    const isPasswordStrong = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/.test(password.value);
+                    setFieldValidity(password, isPasswordStrong);
+                    passwordStrength.classList.toggle('text-red-500', !isPasswordStrong);
+
+                    const doPasswordsMatch = password.value === confirmPassword.value && confirmPassword.value !== '';
+                    setFieldValidity(confirmPassword, doPasswordsMatch);
+                    passwordMatch.classList.toggle('hidden', doPasswordsMatch);
+
+                    return isFirstNameValid && isLastNameValid && isDesignationValid && isLinkedinValid && isWorkEmailValid && isPasswordStrong && doPasswordsMatch;
+                },
+                2: () => {
+                    const companyName = form.elements.companyName, companyWebsite = form.elements.companyWebsite,
+                          oneLiner = form.elements.oneLiner, aboutCompany = form.elements.aboutCompany;
+
+                    const isNameValid = companyName.value.trim() !== ''; setFieldValidity(companyName, isNameValid);
+                    const isWebsiteValid = validateUrl(companyWebsite.value); setFieldValidity(companyWebsite, isWebsiteValid);
+                    const isOneLinerValid = oneLiner.value.trim() !== ''; setFieldValidity(oneLiner, isOneLinerValid);
+                    const isAboutValid = aboutCompany.value.trim() !== ''; setFieldValidity(aboutCompany, isAboutValid);
+
+                    return isNameValid && isWebsiteValid && isOneLinerValid && isAboutValid;
+                },
+                3: () => {
+                    const industryCheckboxes = form.querySelectorAll('input[name="industry"]:checked');
+                    const primarySector = form.elements.primarySector, businessModel = form.elements.businessModel,
+                          companyStage = form.elements.companyStage, teamSize = form.elements.teamSize,
+                          locations = document.querySelectorAll('#locations-container .tag'),
+                          locationsInput = document.getElementById('locations');
+
+                    const isIndustryValid = industryCheckboxes.length > 0;
+                    const isSectorValid = primarySector.value !== ''; setFieldValidity(primarySector, isSectorValid);
+                    const isModelValid = businessModel.value !== ''; setFieldValidity(businessModel, isModelValid);
+                    const isStageValid = companyStage.value !== ''; setFieldValidity(companyStage, isStageValid);
+                    const isTeamSizeValid = teamSize.value !== '' && teamSize.value >= 1; setFieldValidity(teamSize, isTeamSizeValid);
+                    const areLocationsValid = locations.length > 0; setFieldValidity(locationsInput, areLocationsValid);
+
+                    return isIndustryValid && isSectorValid && isModelValid && isStageValid && isTeamSizeValid && areLocationsValid;
+                },
+                4: () => {
+                    if (form.elements.raisedFunding.value === 'no') return true;
+
+                    const totalFunding = form.elements.totalFunding, fundingRounds = form.elements.fundingRounds, latestRound = form.elements.latestRound;
+
+                    const isTotalFundingValid = totalFunding.value !== '' && totalFunding.value >= 0; setFieldValidity(totalFunding, isTotalFundingValid);
+                    const isRoundsValid = fundingRounds.value !== '' && fundingRounds.value >= 0; setFieldValidity(fundingRounds, isRoundsValid);
+                    const isLatestRoundValid = latestRound.value !== ''; setFieldValidity(latestRound, isLatestRoundValid);
+
+                    return isTotalFundingValid && isRoundsValid && isLatestRoundValid;
+                },
+                5: () => {
+                    const companyEmail = form.elements.companyEmail, companyPhone = form.elements.companyPhone;
+
+                    const isEmailValid = validateEmail(companyEmail.value); setFieldValidity(companyEmail, isEmailValid);
+                    const isPhoneValid = companyPhone.value.trim().length >= 5; setFieldValidity(companyPhone, isPhoneValid);
+
+                    return isEmailValid && isPhoneValid;
+                }
+            };
+
+            function validateCurrentStep() {
+                const isValid = validators[currentStep] ? validators[currentStep]() : false;
+                nextBtn.disabled = !isValid;
+                return isValid;
+            }
+
+            // --- CORE LOGIC ---
+            function updateProgress() {
+                progressBar.style.width = `${((currentStep - 1) / (totalSteps - 1)) * 100}%`;
+                progressText.textContent = `Step ${currentStep} of ${totalSteps}: ${stepTitles[currentStep - 1]}`;
+            }
+
+            function showStep(stepNumber) {
+                steps.forEach((step, index) => step.classList.toggle('form-step-active', index + 1 === stepNumber));
+                backBtn.classList.toggle('hidden', stepNumber === 1);
+                nextBtn.textContent = (stepNumber === totalSteps) ? 'Complete Profile' : 'Next';
+                updateProgress();
+            }
+
+            function saveStepData() {
+                const inputs = steps[currentStep - 1].querySelectorAll('input, select, textarea');
+                inputs.forEach(input => {
+                    if (!input.name) return;
+                    if (input.type === 'checkbox') {
+                        formData.industry = Array.from(form.querySelectorAll('input[name="industry"]:checked')).map(cb => cb.value);
+                    } else if (input.type === 'radio') {
+                        if (input.checked) formData[input.name] = input.value;
+                    } else {
+                        formData[input.name] = input.value;
+                    }
+                });
+                if (currentStep === 3) {
+                    formData.locations = Array.from(document.querySelectorAll('#locations-container .tag')).map(tag => tag.firstChild.textContent);
+                }
+            }
+
+            function loadStepData(stepNumber) {
+                const inputs = steps[stepNumber - 1].querySelectorAll('input, select, textarea');
+                inputs.forEach(input => {
+                    if (!input.name) return;
+                    if (input.type === 'checkbox') {
+                        input.checked = (formData.industry || []).includes(input.value);
+                    } else if (input.type === 'radio') {
+                        input.checked = formData[input.name] === input.value;
+                    } else if (formData[input.name]) {
+                        input.value = formData[input.name];
+                    }
+                });
+                if (stepNumber === 3) {
+                    const container = document.getElementById('locations-container'), inputEl = document.getElementById('locations');
+                    container.querySelectorAll('.tag').forEach(tag => tag.remove());
+                    (formData.locations || []).forEach(loc => container.insertBefore(createTag(loc), inputEl));
+                }
+            }
+
+            // --- EVENT LISTENERS & HANDLERS ---
+            nextBtn.addEventListener('click', () => {
+                if (!validateCurrentStep()) return;
+                saveStepData();
+                if (currentStep < totalSteps) {
+                    currentStep++;
+                    showStep(currentStep);
+                    loadStepData(currentStep);
+                    validateCurrentStep();
+                } else {
+                    console.log('Form submission data:', formData);
+                    alert('Profile Completed! Check the console for the form data.');
+                    form.reset();
+                    Object.keys(formData).forEach(key => formData[key] = Array.isArray(formData[key]) ? [] : undefined);
+                    currentStep = 1;
+                    showStep(1);
+                    validateCurrentStep();
+                }
+            });
+
+            backBtn.addEventListener('click', () => {
+                if (currentStep > 1) {
+                    saveStepData(); // Save data before going back
+                    currentStep--;
+                    showStep(currentStep);
+                    loadStepData(currentStep);
+                    validateCurrentStep();
+                }
+            });
+
+            form.addEventListener('input', () => validateCurrentStep());
+
+            // --- FIELD-SPECIFIC LOGIC ---
+            // Character Counters
+            ['oneLiner', 'aboutCompany'].forEach(id => {
+                const input = document.getElementById(id);
+                const count = document.getElementById(`${id}-count`);
+                input.addEventListener('input', () => count.textContent = input.value.length);
+            });
+
+            // Conditional Funding Fields
+            document.querySelectorAll('input[name="raisedFunding"]').forEach(radio => {
+                radio.addEventListener('change', () => {
+                    document.getElementById('funding-details').classList.toggle('hidden', radio.value === 'no');
+                    validateCurrentStep();
+                });
+            });
+
+            // Tag input for locations
+            const locationsInput = document.getElementById('locations'), locationsContainer = document.getElementById('locations-container');
+            function createTag(label) {
+                const div = document.createElement('div');
+                div.className = 'tag';
+                div.textContent = label;
+                const closeIcon = document.createElement('span');
+                closeIcon.className = 'tag-close';
+                closeIcon.innerHTML = '&times;';
+                closeIcon.onclick = () => { div.remove(); validateCurrentStep(); };
+                div.appendChild(closeIcon);
+                return div;
+            }
+            locationsInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && this.value.trim()) {
+                    e.preventDefault();
+                    locationsContainer.insertBefore(createTag(this.value.trim()), this);
+                    this.value = '';
+                    validateCurrentStep();
+                }
+            });
+
+            // Initial setup
+            showStep(currentStep);
+            validateCurrentStep();
+        });
+    </script>
+
+</body>
+</html>
