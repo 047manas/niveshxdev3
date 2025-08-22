@@ -38,7 +38,6 @@ const AuthFlow = () => {
     countryCode: '+91',
     phoneNumber: '',
     investorType: '',
-    investmentType: [],
     chequeSize: '',
     interestedSectors: '',
     designation: '',
