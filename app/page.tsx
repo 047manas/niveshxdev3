@@ -70,10 +70,10 @@ export default function HomePage() {
             Turn your growth into a single source of truth and get funded faster, without endless pitch decks.
           </p>
           <div className="flex flex-col md:flex-row justify-center gap-4">
-            <Link href="/auth">
+            <Link href="/auth?view=signup&userType=company">
                 <Button size="lg" className="w-full md:w-auto bg-primary hover:bg-primary/90 text-primary-foreground">I’m a Founder</Button>
             </Link>
-            <Link href="/auth">
+            <Link href="/auth?view=signup&userType=investor">
                 <Button size="lg" variant="outline" className="w-full md:w-auto text-foreground border-foreground hover:bg-primary hover:text-primary-foreground">I’m an Investor</Button>
             </Link>
           </div>
@@ -263,10 +263,10 @@ export default function HomePage() {
             Join the community that's changing how startups grow.
           </p>
           <div className="flex flex-col md:flex-row justify-center gap-4">
-            <Link href="/auth">
+            <Link href="/auth?view=signup&userType=company">
                 <Button size="lg" className="w-full md:w-auto bg-primary hover:bg-primary/90 text-primary-foreground">Get Started as a Founder</Button>
             </Link>
-            <Link href="/auth">
+            <Link href="/auth?view=signup&userType=investor">
                 <Button size="lg" variant="outline" className="w-full md:w-auto text-foreground border-foreground hover:bg-primary hover:text-primary-foreground">Get Started as an Investor</Button>
             </Link>
           </div>
