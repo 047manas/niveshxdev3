@@ -138,6 +138,7 @@ When a user's `userType` is "Company", their data is stored across two additiona
 
 -   `userId`: (String) A reference to the document ID from the `users` collection, linking this profile to a specific user.
 -   `investorType`: (String) The type of investor (e.g., "Angel", "VC", "Family Office").
+-   `investmentType`: (Array of Strings) The type of investments they make (e.g., ["Equity investments", "Debt financing"]).
 -   `linkedinProfile`: (String) The URL to their LinkedIn profile.
 -   `chequeSize`: (String) The range of their typical investment size (e.g., "25L-1Cr").
 -   `interestedSectors`: (String or Array) The industries they are interested in.

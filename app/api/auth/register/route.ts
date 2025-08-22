@@ -99,24 +99,26 @@ export async function POST(req: NextRequest) {
 
     } else { // Investor
       const {
-        firstName, lastName, investorType, linkedinProfile, countryCode, phoneNumber,
-        chequeSize, interestedSectors
+        // Step 1
+        firstName, lastName, phoneCountryCode, phoneNumber, linkedinId,
+        // Step 2
+        investorType, investmentType, chequeSize, interestedSectors
       } = formData;
-
-      if (!firstName || !lastName || !investorType || !linkedinProfile || !countryCode || !phoneNumber || !chequeSize || !interestedSectors) {
-        return NextResponse.json({ error: 'Missing required fields for investor registration.' }, { status: 400 });
-      }
 
       emailRecipientName = `${firstName} ${lastName}`;
 
       // Core user data
       const newUserData = {
-        email,
+        email, // from formData
         password: hashedPassword,
         userType,
         firstName,
         lastName,
         fullName: `${firstName} ${lastName}`,
+        phone: {
+          countryCode: phoneCountryCode,
+          number: phoneNumber,
+        },
         isVerified: false,
         profileComplete: true,
         otp,
@@ -129,13 +131,12 @@ export async function POST(req: NextRequest) {
       const investorData = {
         userId: newUserRef.id,
         investorType,
-        linkedinProfile,
-        phone: {
-          countryCode,
-          number: phoneNumber,
-        },
+        investmentType,
+        linkedinProfile: linkedinId,
         chequeSize,
         interestedSectors,
+        isVerified: false, // Explicitly set verification status
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
       };
       await firestore.collection('investors').add(investorData);
     }
