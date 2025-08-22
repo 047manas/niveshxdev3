@@ -443,6 +443,6 @@ const SignUp = ({
       </Card>
     </div>
   );
-};
+}
 
 export default SignUp;
