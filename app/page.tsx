@@ -118,10 +118,10 @@ export default function HomePage() {
       <section id="why-niveshx" className="py-12 sm:py-16 md:py-20 px-4 bg-background">
         <div className="container mx-auto text-center">
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-4">
-            The Startup Ecosystem Has a Data Problem. <span className="text-primary">We're Solving It.</span>
+            The Startup Ecosystem Has a Data Problem. <span className="text-primary">We&apos;re Solving It.</span>
           </h2>
           <p className="text-lg md:text-xl text-gray-300 max-w-4xl mx-auto mb-12">
-            Startups and investors are stuck in a cycle of inefficiency and mistrust, but the problem isn't a lack of capital—it's a lack of data.
+            Startups and investors are stuck in a cycle of inefficiency and mistrust, but the problem isn&apos;t a lack of capital—it&apos;s a lack of data.
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
             <Card className="bg-card border-border p-6">
@@ -130,7 +130,7 @@ export default function HomePage() {
               </CardHeader>
               <CardContent>
                 <p className="text-gray-300">
-                  You're trapped in a messy process of managing spreadsheets and chasing investors. Even when you get a meeting, you don't have the clean, verified data to prove your growth. This leads to endless meetings and funding delays.
+                  You&apos;re trapped in a messy process of managing spreadsheets and chasing investors. Even when you get a meeting, you don&apos;t have the clean, verified data to prove your growth. This leads to endless meetings and funding delays.
                 </p>
               </CardContent>
             </Card>
@@ -140,7 +140,7 @@ export default function HomePage() {
               </CardHeader>
               <CardContent>
                 <p className="text-gray-300">
-                  You're overwhelmed by disorganized pitch decks and scattered portfolio data. It's difficult to find and vet high-quality deals, and you’re missing a central source of truth to monitor your investments.
+                  You&apos;re overwhelmed by disorganized pitch decks and scattered portfolio data. It&apos;s difficult to find and vet high-quality deals, and you’re missing a central source of truth to monitor your investments.
                 </p>
               </CardContent>
             </Card>
@@ -234,10 +234,10 @@ export default function HomePage() {
             <h2 className="text-3xl sm:text-4xl font-bold text-white mt-2 mb-4">Growth, On Your Terms. Keep Your Equity. 🚀</h2>
             <p className="text-gray-300 mb-8">We help you raise capital without raising your anxiety. NiveshX turns your data into your most powerful fundraising tool.</p>
             <div className="space-y-4 text-left">
-              <div className="flex items-start"><CheckCircle className="h-6 w-6 text-primary mr-3 flex-shrink-0" /><span>"Build a single source of truth for your startup."</span></div>
-              <div className="flex items-start"><CheckCircle className="h-6 w-6 text-primary mr-3 flex-shrink-0" /><span>"Get investor-ready in minutes, not months."</span></div>
-              <div className="flex items-start"><CheckCircle className="h-6 w-6 text-primary mr-3 flex-shrink-0" /><span>"Share a professional, data-rich dashboard with investors. Build trust without endless meetings."</span></div>
-              <div className="flex items-start"><CheckCircle className="h-6 w-6 text-primary mr-3 flex-shrink-0" /><span>"Cut months off your fundraising timeline."</span></div>
+              <div className="flex items-start"><CheckCircle className="h-6 w-6 text-primary mr-3 flex-shrink-0" /><span>&quot;Build a single source of truth for your startup.&quot;</span></div>
+              <div className="flex items-start"><CheckCircle className="h-6 w-6 text-primary mr-3 flex-shrink-0" /><span>&quot;Get investor-ready in minutes, not months.&quot;</span></div>
+              <div className="flex items-start"><CheckCircle className="h-6 w-6 text-primary mr-3 flex-shrink-0" /><span>&quot;Share a professional, data-rich dashboard with investors. Build trust without endless meetings.&quot;</span></div>
+              <div className="flex items-start"><CheckCircle className="h-6 w-6 text-primary mr-3 flex-shrink-0" /><span>&quot;Cut months off your fundraising timeline.&quot;</span></div>
             </div>
           </div>
           {/* For Investors */}
@@ -260,7 +260,7 @@ export default function HomePage() {
             The Future of Funding is Built on <span className="text-primary">Data</span>.
           </h2>
           <p className="text-lg md:text-xl text-gray-300 mb-8">
-            Join the community that's changing how startups grow.
+            Join the community that&apos;s changing how startups grow.
           </p>
           <div className="flex flex-col md:flex-row justify-center gap-4">
             <Link href="/auth?view=signup&userType=company">

@@ -108,7 +108,7 @@ const Login = ({ setCurrentView }) => {
             </Button>
           </form>
           <p className="mt-6 text-sm text-center text-sub-heading">
-            Don't have an account?{' '}
+            Don&apos;t have an account?{' '}
             <button
               onClick={() => setCurrentView('signup')}
               className="font-medium text-link hover:underline"
