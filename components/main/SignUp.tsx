@@ -14,8 +14,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { Building2, User } from 'lucide-react';
 
-// Schemas for each step
-const step1Schema = z.object({
+declare function triggerOtpVerification(email: string): void;
+
+// --- SCHEMAS FOR COMPANY FORM ---
+const companyStep1Schema = z.object({
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
   designation: z.enum(["Co-founder", "CEO", "CTO", "HR", "Other"]),
@@ -32,16 +34,15 @@ const step1Schema = z.object({
   message: "Passwords do not match",
   path: ["confirmPassword"],
 });
-
-const step2Schema = z.object({
+const companyStep2Schema = z.object({
   companyName: z.string().min(1, "Company name is required"),
   companyWebsite: z.string().url("Please enter a valid website URL"),
   companyLinkedin: z.string().url("Please enter a valid LinkedIn URL").optional().or(z.literal('')),
   oneLiner: z.string().max(150, "Pitch must be 150 characters or less"),
   aboutCompany: z.string().max(1000, "About section must be 1000 characters or less"),
+  companyCulture: z.string().optional(),
 });
-
-const step3Schema = z.object({
+const companyStep3Schema = z.object({
   industry: z.array(z.string()).min(1, "Please select at least one industry"),
   primarySector: z.string().min(1, "Primary sector is required"),
   businessModel: z.string().min(1, "Business model is required"),
@@ -49,99 +50,99 @@ const step3Schema = z.object({
   teamSize: z.number().min(1, "Team size must be at least 1"),
   locations: z.string().min(1, "Location is required"),
 });
-
-const step4Schema = z.object({
+const companyStep4Schema = z.object({
   hasFunding: z.enum(["yes", "no"]),
   totalFundingRaised: z.number().optional(),
   fundingCurrency: z.enum(["INR", "USD"]).optional(),
   fundingRounds: z.number().optional(),
   latestFundingRound: z.string().optional(),
 }).refine(data => {
-    if (data.hasFunding === 'yes') {
-        return data.totalFundingRaised !== undefined && data.fundingRounds !== undefined && data.latestFundingRound !== undefined;
-    }
+    if (data.hasFunding === 'yes') return data.totalFundingRaised !== undefined && data.fundingRounds !== undefined && data.latestFundingRound !== undefined;
     return true;
-}, {
-    message: "Please fill all funding details",
-    path: ["totalFundingRaised"],
-});
-
-const step5Schema = z.object({
+}, { message: "Please fill all funding details", path: ["totalFundingRaised"] });
+const companyStep5Schema = z.object({
   companyEmail: z.string().email("Invalid email address"),
   companyPhoneCountryCode: z.string(),
   companyPhoneNumber: z.string().min(1, "Phone number is required"),
 });
+const allCompanyStepSchemas = [companyStep1Schema, companyStep2Schema, companyStep3Schema, companyStep4Schema, companyStep5Schema];
 
-const allStepsSchemas = [step1Schema, step2Schema, step3Schema, step4Schema, step5Schema];
 
-const SignUp = ({
-  setCurrentView,
-  userType,
-  setUserType,
-}) => {
-  const [step, setStep] = useState(1);
+// --- SCHEMAS FOR INVESTOR FORM ---
+const investorStep1Schema = z.object({
+    firstName: z.string().min(1, "First name is required"),
+    lastName: z.string().min(1, "Last name is required"),
+    email: z.string().email("Invalid email address"),
+    phoneCountryCode: z.string(),
+    phoneNumber: z.string().min(1, "Phone number is required"),
+    linkedinId: z.string().url("Please enter a valid LinkedIn URL"),
+    password: z.string().min(8, "Password must be at least 8 characters"),
+    confirmPassword: z.string(),
+}).refine(data => data.password === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+});
+const investorStep2Schema = z.object({
+    investorType: z.enum(["UHNI/HNI", "Family Office", "VC", "Private Equity"]),
+    investmentType: z.array(z.string()).min(1, "Please select at least one investment type"),
+    chequeSize: z.string().min(1, "Please select a cheque size"),
+    interestedSectors: z.string().min(1, "Please list interested sectors"),
+});
+const allInvestorStepSchemas = [investorStep1Schema, investorStep2Schema];
+
+
+const SignUp = ({ setCurrentView, userType, setUserType }) => {
+  const [companyStep, setCompanyStep] = useState(1);
+  const [investorStep, setInvestorStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const {
-    register,
-    handleSubmit,
-    trigger,
-    control,
-    formState: { errors, isValid },
-  } = useForm({
-    resolver: zodResolver(allStepsSchemas[step - 1]),
+  // --- COMPANY FORM HOOK ---
+  const companyForm = useForm({
+    resolver: zodResolver(allCompanyStepSchemas[companyStep - 1]),
     mode: 'onChange',
-    defaultValues: {
-        firstName: '',
-        lastName: '',
-        designation: undefined,
-        linkedinProfile: '',
-        workEmail: '',
-        password: '',
-        confirmPassword: '',
-        companyName: '',
-        companyWebsite: '',
-        companyLinkedin: '',
-        oneLiner: '',
-        aboutCompany: '',
-        industry: [],
-        primarySector: undefined,
-        businessModel: undefined,
-        companyStage: undefined,
-        teamSize: 1,
-        locations: '',
-        hasFunding: 'no',
-        fundingCurrency: 'USD',
-        companyEmail: '',
-        companyPhoneCountryCode: '+91',
-        companyPhoneNumber: '',
-    }
+    defaultValues: { /* ... company default values ... */ }
   });
 
-  const nextStep = async () => {
-    const isStepValid = await trigger();
-    if (isStepValid) {
-      setStep(prev => prev + 1);
-    }
-  };
+  // --- INVESTOR FORM HOOK ---
+  const investorForm = useForm({
+      resolver: zodResolver(allInvestorStepSchemas[investorStep - 1]),
+      mode: 'onChange',
+      defaultValues: {
+          firstName: '',
+          lastName: '',
+          email: '',
+          phoneCountryCode: '+91',
+          phoneNumber: '',
+          linkedinId: '',
+          password: '',
+          confirmPassword: '',
+          investorType: undefined,
+          investmentType: [],
+          chequeSize: undefined,
+          interestedSectors: '',
+      }
+  });
 
-  const prevStep = () => setStep(prev => prev - 1);
+  // --- NAVIGATION LOGIC ---
+  const nextCompanyStep = async () => { if (await companyForm.trigger()) setCompanyStep(p => p + 1); };
+  const prevCompanyStep = () => setCompanyStep(p => p - 1);
+  const nextInvestorStep = async () => { if (await investorForm.trigger()) setInvestorStep(p => p + 1); };
+  const prevInvestorStep = () => setInvestorStep(p => p - 1);
 
-  const onRegister = async (data) => {
+  // --- SUBMISSION LOGIC ---
+  const onRegister = async (data, type) => {
     setLoading(true);
     setError('');
-
     try {
       const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userType: 'company', ...data }),
+        body: JSON.stringify({ userType: type, ...data }),
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || 'Something went wrong');
-      window.localStorage.setItem('emailForVerification', data.workEmail);
-      setCurrentView('verify-otp');
+      triggerOtpVerification(data.email || data.workEmail);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -149,41 +150,48 @@ const SignUp = ({
     }
   };
 
-  const stepTitles = [
-    "Create Your Account",
-    "Company Profile",
-    "Company Details",
-    "Funding History",
-    "Company Contact"
-  ];
+  const onCompanySubmit = (data) => onRegister(data, 'company');
+  const onInvestorSubmit = (data) => onRegister(data, 'investor');
 
+  // --- RENDER FUNCTIONS ---
   const renderCompanyForm = () => (
     <div className="space-y-6">
         <div className="text-center">
-            <p className="text-sm text-gray-400">Step {step} of 5: {stepTitles[step-1]}</p>
-            <Progress value={step * 20} className="mt-2" />
+            <p className="text-sm text-gray-400">Step {companyStep} of 5: {["Create Your Account", "Company Profile", "Company Details", "Funding History", "Company Contact"][companyStep-1]}</p>
+            <Progress value={companyStep * 20} className="mt-2" />
         </div>
-        <form onSubmit={handleSubmit(onRegister)} className="space-y-4">
-            {step === 1 && <Step1 control={control} register={register} errors={errors} />}
-            {step === 2 && <Step2 control={control} register={register} errors={errors} />}
-            {step === 3 && <Step3 control={control} errors={errors} />}
-            {step === 4 && <Step4 control={control} register={register} errors={errors} />}
-            {step === 5 && <Step5 control={control} register={register} errors={errors} />}
-
+        <form onSubmit={companyForm.handleSubmit(onCompanySubmit)} className="space-y-4">
+            {companyStep === 1 && <CompanyStep1 control={companyForm.control} register={companyForm.register} errors={companyForm.formState.errors} />}
+            {companyStep === 2 && <CompanyStep2 control={companyForm.control} register={companyForm.register} errors={companyForm.formState.errors} />}
+            {companyStep === 3 && <CompanyStep3 control={companyForm.control} errors={companyForm.formState.errors} />}
+            {companyStep === 4 && <CompanyStep4 control={companyForm.control} register={companyForm.register} errors={companyForm.formState.errors} />}
+            {companyStep === 5 && <CompanyStep5 control={companyForm.control} register={companyForm.register} errors={companyForm.formState.errors} />}
             {error && <p className="text-sm text-red-500">{error}</p>}
-
             <div className="flex justify-between pt-4">
-                {step > 1 && <Button type="button" onClick={prevStep} variant="outline" className="text-white border-gray-600 hover:bg-gray-700">Back</Button>}
-                {step < 5 && <Button type="button" onClick={nextStep} disabled={!isValid} className="ml-auto">Next</Button>}
-                {step === 5 && <Button type="submit" disabled={loading || !isValid} className="ml-auto w-full">{loading ? 'Submitting...' : 'Complete Profile'}</Button>}
+                {companyStep > 1 && <Button type="button" onClick={prevCompanyStep} variant="outline" className="text-white border-gray-600 hover:bg-gray-700">Back</Button>}
+                {companyStep < 5 && <Button type="button" onClick={nextCompanyStep} disabled={!companyForm.formState.isValid} className="ml-auto">Next</Button>}
+                {companyStep === 5 && <Button type="submit" disabled={loading || !companyForm.formState.isValid} className="ml-auto w-full">{loading ? 'Submitting...' : 'Submit & Verify Email'}</Button>}
             </div>
         </form>
     </div>
   );
 
   const renderInvestorForm = () => (
-    <div>
-        <p className="text-center text-gray-400">Investor registration form is currently under maintenance.</p>
+    <div className="space-y-6">
+        <div className="text-center">
+            <p className="text-sm text-gray-400">Step {investorStep} of 2: {["Create Account", "Investment Profile"][investorStep-1]}</p>
+            <Progress value={investorStep * 50} className="mt-2" />
+        </div>
+        <form onSubmit={investorForm.handleSubmit(onInvestorSubmit)} className="space-y-4">
+            {investorStep === 1 && <InvestorStep1 control={investorForm.control} register={investorForm.register} errors={investorForm.formState.errors} />}
+            {investorStep === 2 && <InvestorStep2 control={investorForm.control} errors={investorForm.formState.errors} />}
+            {error && <p className="text-sm text-red-500">{error}</p>}
+            <div className="flex justify-between pt-4">
+                {investorStep > 1 && <Button type="button" onClick={prevInvestorStep} variant="outline" className="text-white border-gray-600 hover:bg-gray-700">Back</Button>}
+                {investorStep < 2 && <Button type="button" onClick={nextInvestorStep} disabled={!investorForm.formState.isValid} className="ml-auto">Next</Button>}
+                {investorStep === 2 && <Button type="submit" disabled={loading || !investorForm.formState.isValid} className="ml-auto w-full">{loading ? 'Submitting...' : 'Submit & Verify Email'}</Button>}
+            </div>
+        </form>
     </div>
   );
 
@@ -191,7 +199,7 @@ const SignUp = ({
     <div className="flex items-center justify-center min-h-screen bg-gray-900">
       <Card className="w-full max-w-2xl bg-gray-800 text-white border-gray-700">
         <CardHeader className="text-center">
-          <CardTitle className="text-3xl font-bold">NiveshX Company Registration</CardTitle>
+          <CardTitle className="text-3xl font-bold">Create an Account</CardTitle>
           <p className="text-gray-400">Join our community of founders and investors.</p>
         </CardHeader>
         <CardContent>
@@ -200,12 +208,8 @@ const SignUp = ({
               <TabsTrigger value="company" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><Building2 className="mr-2 h-4 w-4" /> Company</TabsTrigger>
               <TabsTrigger value="investor" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><User className="mr-2 h-4 w-4" /> Investor</TabsTrigger>
             </TabsList>
-            <TabsContent value="company" className="mt-6">
-              {renderCompanyForm()}
-            </TabsContent>
-            <TabsContent value="investor" className="mt-6">
-              {renderInvestorForm()}
-            </TabsContent>
+            <TabsContent value="company" className="mt-6">{renderCompanyForm()}</TabsContent>
+            <TabsContent value="investor" className="mt-6">{renderInvestorForm()}</TabsContent>
           </Tabs>
            <p className="mt-6 text-sm text-center text-gray-400">
             Already have an account?{' '}
@@ -217,9 +221,8 @@ const SignUp = ({
   );
 };
 
-
-// Step Components
-const Step1 = ({ control, register, errors }) => (
+// --- COMPANY STEP COMPONENTS ---
+const CompanyStep1 = ({ control, register, errors }) => (
     <div className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -234,7 +237,7 @@ const Step1 = ({ control, register, errors }) => (
             </div>
         </div>
         <div className="space-y-2">
-            <Label htmlFor="designation">Your Designation</Label>
+            <Label htmlFor="designation">Your Designation in the Organisation</Label>
             <Controller
                 name="designation"
                 control={control}
@@ -259,7 +262,7 @@ const Step1 = ({ control, register, errors }) => (
             {errors.linkedinProfile && <p className="text-red-500 text-xs">{errors.linkedinProfile.message}</p>}
         </div>
         <div className="space-y-2">
-            <Label htmlFor="workEmail">Your Work Email</Label>
+            <Label htmlFor="workEmail">Company&apos;s Work Email</Label>
             <Input id="workEmail" type="email" {...register("workEmail")} className="bg-gray-700 border-gray-600" />
             {errors.workEmail && <p className="text-red-500 text-xs">{errors.workEmail.message}</p>}
         </div>
@@ -278,7 +281,7 @@ const Step1 = ({ control, register, errors }) => (
     </div>
 );
 
-const Step2 = ({ control, register, errors }) => {
+const CompanyStep2 = ({ control, register, errors }) => {
     const oneLiner = useWatch({ control, name: 'oneLiner' });
     const aboutCompany = useWatch({ control, name: 'aboutCompany' });
     return (
@@ -305,16 +308,21 @@ const Step2 = ({ control, register, errors }) => {
                 {errors.oneLiner && <p className="text-red-500 text-xs">{errors.oneLiner.message}</p>}
             </div>
             <div className="space-y-2">
-                <Label htmlFor="aboutCompany">About Your Company</Label>
+                <Label htmlFor="aboutCompany">About Company</Label>
                 <Textarea id="aboutCompany" {...register("aboutCompany")} className="bg-gray-700 border-gray-600" />
                 <p className="text-xs text-gray-400 text-right">{aboutCompany?.length || 0}/1000</p>
                 {errors.aboutCompany && <p className="text-red-500 text-xs">{errors.aboutCompany.message}</p>}
+            </div>
+            <div className="space-y-2">
+                <Label htmlFor="companyCulture">Company Culture (Optional)</Label>
+                <Textarea id="companyCulture" {...register("companyCulture")} className="bg-gray-700 border-gray-600" />
+                {errors.companyCulture && <p className="text-red-500 text-xs">{errors.companyCulture.message}</p>}
             </div>
         </div>
     );
 };
 
-const Step3 = ({ control, errors }) => {
+const CompanyStep3 = ({ control, errors }) => {
     const industries = ["Technology", "Sports", "Retail", "Finance", "Healthcare", "Gaming"];
     return (
         <div className="space-y-4">
@@ -346,7 +354,7 @@ const Step3 = ({ control, errors }) => {
                 {errors.industry && <p className="text-red-500 text-xs">{errors.industry.message}</p>}
             </div>
             <div className="space-y-2">
-                <Label>Primary Company Sector</Label>
+                <Label>Company Sector</Label>
                 <Controller
                     name="primarySector"
                     control={control}
@@ -366,7 +374,7 @@ const Step3 = ({ control, errors }) => {
                 {errors.primarySector && <p className="text-red-500 text-xs">{errors.primarySector.message}</p>}
             </div>
              <div className="space-y-2">
-                <Label>Primary Business Model</Label>
+                <Label>Company’s Primary Business Model</Label>
                 <Controller
                     name="businessModel"
                     control={control}
@@ -404,7 +412,7 @@ const Step3 = ({ control, errors }) => {
                 {errors.companyStage && <p className="text-red-500 text-xs">{errors.companyStage.message}</p>}
             </div>
              <div className="space-y-2">
-                <Label htmlFor="teamSize">Team Size</Label>
+                <Label htmlFor="teamSize">Company Team Size</Label>
                 <Controller
                     name="teamSize"
                     control={control}
@@ -430,7 +438,7 @@ const Step3 = ({ control, errors }) => {
     );
 };
 
-const Step4 = ({ control, register, errors }) => {
+const CompanyStep4 = ({ control, register, errors }) => {
     const hasFunding = useWatch({ control, name: 'hasFunding' });
 
     return (
@@ -514,7 +522,7 @@ const Step4 = ({ control, register, errors }) => {
     );
 };
 
-const Step5 = ({ control, register, errors }) => (
+const CompanyStep5 = ({ control, register, errors }) => (
     <div className="space-y-4">
         <div className="space-y-2">
             <Label htmlFor="companyEmail">Company&apos;s Work Email</Label>
@@ -543,5 +551,95 @@ const Step5 = ({ control, register, errors }) => (
         </div>
     </div>
 );
+
+
+// --- INVESTOR STEP COMPONENTS ---
+const InvestorStep1 = ({ control, register, errors }) => (
+    <div className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div><Label>First Name</Label><Input {...register("firstName")} className="bg-gray-700 border-gray-600" />{errors.firstName && <p className="text-red-500 text-xs">{errors.firstName.message}</p>}</div>
+            <div><Label>Last Name</Label><Input {...register("lastName")} className="bg-gray-700 border-gray-600" />{errors.lastName && <p className="text-red-500 text-xs">{errors.lastName.message}</p>}</div>
+        </div>
+        <div><Label>Email</Label><Input type="email" {...register("email")} className="bg-gray-700 border-gray-600" />{errors.email && <p className="text-red-500 text-xs">{errors.email.message}</p>}</div>
+        <div>
+            <Label>Phone Number</Label>
+            <div className="flex">
+                <Controller name="phoneCountryCode" control={control} render={({ field }) => (
+                    <Select onValueChange={field.onChange} value={field.value}>
+                        <SelectTrigger className="w-1/4 bg-gray-700 border-gray-600"><SelectValue /></SelectTrigger>
+                        <SelectContent className="bg-gray-800 text-white border-gray-700"><SelectItem value="+91">IN (+91)</SelectItem><SelectItem value="+1">US (+1)</SelectItem></SelectContent>
+                    </Select>
+                )} />
+                <Input type="tel" {...register("phoneNumber")} className="w-3/4 bg-gray-700 border-gray-600" />
+            </div>
+            {errors.phoneNumber && <p className="text-red-500 text-xs">{errors.phoneNumber.message}</p>}
+        </div>
+        <div><Label>LinkedIn Id</Label><Input {...register("linkedinId")} placeholder="https://linkedin.com/in/..." className="bg-gray-700 border-gray-600" />{errors.linkedinId && <p className="text-red-500 text-xs">{errors.linkedinId.message}</p>}</div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div><Label>Create Password</Label><Input type="password" {...register("password")} className="bg-gray-700 border-gray-600" />{errors.password && <p className="text-red-500 text-xs">{errors.password.message}</p>}</div>
+            <div><Label>Confirm Password</Label><Input type="password" {...register("confirmPassword")} className="bg-gray-700 border-gray-600" />{errors.confirmPassword && <p className="text-red-500 text-xs">{errors.confirmPassword.message}</p>}</div>
+        </div>
+    </div>
+);
+
+const InvestorStep2 = ({ control, errors }) => {
+    const investmentTypes = ["Equity investments", "Debt financing"];
+    const chequeSizes = ["₹ 1-5 L", "₹ 5-25 L", "₹ 25-1 Cr", "₹ 1 Cr+", "₹ 10 Cr+", "₹ 100 Cr+"];
+    return (
+        <div className="space-y-4">
+            <div>
+                <Label>Investor Type</Label>
+                <Controller name="investorType" control={control} render={({ field }) => (
+                    <Select onValueChange={field.onChange} value={field.value}>
+                        <SelectTrigger className="bg-gray-700 border-gray-600"><SelectValue placeholder="Select..." /></SelectTrigger>
+                        <SelectContent className="bg-gray-800 text-white border-gray-700">
+                            <SelectItem value="UHNI/HNI">UHNI/HNI</SelectItem>
+                            <SelectItem value="Family Office">Family Office</SelectItem>
+                            <SelectItem value="VC">VC</SelectItem>
+                            <SelectItem value="Private Equity">Private Equity</SelectItem>
+                        </SelectContent>
+                    </Select>
+                )} />
+                {errors.investorType && <p className="text-red-500 text-xs">{errors.investorType.message}</p>}
+            </div>
+            <div>
+                <Label>Investment Type</Label>
+                <Controller name="investmentType" control={control} render={({ field }) => (
+                    <div className="flex items-center space-x-4 pt-2">
+                        {investmentTypes.map(type => (
+                            <div key={type} className="flex items-center space-x-2">
+                                <Checkbox id={type} checked={field.value?.includes(type)} onCheckedChange={checked => {
+                                    const newValue = checked ? [...field.value, type] : field.value.filter(item => item !== type);
+                                    field.onChange(newValue);
+                                }} />
+                                <Label htmlFor={type} className="font-normal">{type}</Label>
+                            </div>
+                        ))}
+                    </div>
+                )} />
+                {errors.investmentType && <p className="text-red-500 text-xs">{errors.investmentType.message}</p>}
+            </div>
+            <div>
+                <Label>What Cheque Size are you comfortable with?</Label>
+                <Controller name="chequeSize" control={control} render={({ field }) => (
+                    <RadioGroup onValueChange={field.onChange} value={field.value} className="grid grid-cols-2 md:grid-cols-3 gap-2 pt-2">
+                        {chequeSizes.map(size => (
+                            <div key={size} className="flex items-center space-x-2">
+                                <RadioGroupItem value={size} id={size} />
+                                <Label htmlFor={size} className="font-normal">{size}</Label>
+                            </div>
+                        ))}
+                    </RadioGroup>
+                )} />
+                {errors.chequeSize && <p className="text-red-500 text-xs">{errors.chequeSize.message}</p>}
+            </div>
+            <div>
+                <Label>What sectors / startups are you interested in?</Label>
+                <Textarea {...control.register("interestedSectors")} placeholder="e.g., FinTech, HealthTech, SaaS" className="bg-gray-700 border-gray-600" />
+                {errors.interestedSectors && <p className="text-red-500 text-xs">{errors.interestedSectors.message}</p>}
+            </div>
+        </div>
+    );
+};
 
 export default SignUp;
