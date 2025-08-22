@@ -89,7 +89,7 @@ const VerifyOtp = ({ setCurrentView }) => {
         <CardHeader className="text-center">
           <CardTitle className="text-3xl font-bold">Verify your email</CardTitle>
           <CardDescription className="text-gray-400">
-            We've sent a 6-digit code to {email}. Please enter it below.
+            We&apos;ve sent a 6-digit code to {email}. Please enter it below.
           </CardDescription>
         </CardHeader>
         <CardContent>
