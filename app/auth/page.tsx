@@ -61,6 +61,27 @@ const AuthFlow = () => {
     setFormData({ ...formData, shareType: value });
   };
 
+  const handleInvestmentTypeChange = (value) => {
+    let newInvestmentType = [...formData.investmentType];
+    const hasEquity = newInvestmentType.includes("Equity investments");
+    const hasDebt = newInvestmentType.includes("Debt financing");
+
+    if (value === "Both") {
+      if (hasEquity && hasDebt) {
+        newInvestmentType = [];
+      } else {
+        newInvestmentType = ["Equity investments", "Debt financing"];
+      }
+    } else {
+      if (newInvestmentType.includes(value)) {
+        newInvestmentType = newInvestmentType.filter(v => v !== value);
+      } else {
+        newInvestmentType.push(value);
+      }
+    }
+    setFormData({ ...formData, investmentType: newInvestmentType });
+  };
+
   const resetFormState = () => {
       setStep(1);
       setInvestorStep(1);
@@ -95,6 +116,7 @@ const AuthFlow = () => {
             handleChange={handleChange}
             handleSelectChange={handleSelectChange}
             handleShareTypeChange={handleShareTypeChange}
+            handleInvestmentTypeChange={handleInvestmentTypeChange}
           />
         );
       case 'verify-otp':

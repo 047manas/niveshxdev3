@@ -29,6 +29,7 @@ const SignUp = ({
   handleChange,
   handleSelectChange,
   handleShareTypeChange,
+  handleInvestmentTypeChange,
 }) => {
   const [isInvestorStepValid, setInvestorStepValid] = useState(false);
 
@@ -330,6 +331,8 @@ const SignUp = ({
             case 2:
               const chequeSizes = ["₹ 1-5 L", "₹ 5-25 L", "₹ 25-1 Cr", "₹ 1 Cr+", "₹ 10 Cr+", "₹ 100 Cr+"];
               const investmentTypes = ["Equity investments", "Debt financing"];
+              const isBothChecked = formData.investmentType.includes("Equity investments") && formData.investmentType.includes("Debt financing");
+
               return (
                 <form className="space-y-6" onSubmit={onRegister}>
                    <div className="space-y-2">
@@ -351,16 +354,20 @@ const SignUp = ({
                           <div key={type} className="flex items-center space-x-2">
                             <Checkbox
                               id={`invest-type-${type}`}
-                              value={type}
                               checked={formData.investmentType.includes(type)}
-                              onCheckedChange={(checked) => {
-                                const event = { target: { value: type, checked: checked, type: 'checkbox' } };
-                                handleChange('investmentType')(event);
-                              }}
+                              onCheckedChange={() => handleInvestmentTypeChange(type)}
                             />
                             <Label htmlFor={`invest-type-${type}`} className="font-normal">{type}</Label>
                           </div>
                         ))}
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="invest-type-both"
+                            checked={isBothChecked}
+                            onCheckedChange={() => handleInvestmentTypeChange("Both")}
+                          />
+                          <Label htmlFor="invest-type-both" className="font-normal">Both</Label>
+                        </div>
                       </div>
                     </div>
                     <div className="space-y-2">
