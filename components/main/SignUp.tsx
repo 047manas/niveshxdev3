@@ -28,7 +28,6 @@ const SignUp = ({
   setFormData,
   handleChange,
   handleSelectChange,
-  handleRadioChange,
 }) => {
   const [isStepValid, setIsStepValid] = useState(false);
 
@@ -107,13 +106,10 @@ const SignUp = ({
   const onRegister = async (e) => {
     e.preventDefault();
 
-    // Final validation of all steps before submitting
-    for (let i = 1; i <= 5; i++) {
-      if (!validateStep(i)) {
-        setError(`Please complete all required fields in Step ${i} correctly.`);
-        setStep(i); // Take user to the invalid step
-        return;
-      }
+    if (formData.password !== formData.confirmPassword) {
+      setError('Passwords do not match. Please correct them before submitting.');
+      setStep(1); // Go back to the password step
+      return;
     }
 
     setLoading(true);

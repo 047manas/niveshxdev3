@@ -71,6 +71,11 @@ const AuthFlow = () => {
     interestedSectors: '',
     countryCode: '+91',
     phoneNumber: '',
+
+    // Legacy company fields required by backend
+    latestValuation: '',
+    shareType: [],
+    dealSize: '',
   });
 
   const handleChange = (input) => (e) => {
@@ -82,17 +87,6 @@ const AuthFlow = () => {
 
   const handleSelectChange = (input) => (value) => {
     setFormData({ ...formData, [input]: value });
-  };
-
-  const handleRadioChange = (input) => (e) => {
-    setFormData({ ...formData, [input]: e.target.value });
-  };
-
-  // This function is for the old toggle group, will be replaced by checkbox handler
-  const handleShareTypeChange = (value) => {
-    // This can be repurposed or removed if not used elsewhere.
-    // For now, let's make it a generic multi-select handler.
-    setFormData({ ...formData, industry: value });
   };
 
   const resetFormState = () => {
@@ -128,8 +122,6 @@ const AuthFlow = () => {
             setFormData={setFormData}
             handleChange={handleChange}
             handleSelectChange={handleSelectChange}
-            handleShareTypeChange={handleShareTypeChange}
-            handleRadioChange={handleRadioChange}
             setFormData={setFormData}
           />
         );
