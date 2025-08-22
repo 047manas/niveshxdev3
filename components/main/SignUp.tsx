@@ -14,6 +14,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { Building2, User } from 'lucide-react';
 
+declare function triggerOtpVerification(email: string): void;
+
 // Schemas for each step
 const step1Schema = z.object({
   firstName: z.string().min(1, "First name is required"),
@@ -39,6 +41,7 @@ const step2Schema = z.object({
   companyLinkedin: z.string().url("Please enter a valid LinkedIn URL").optional().or(z.literal('')),
   oneLiner: z.string().max(150, "Pitch must be 150 characters or less"),
   aboutCompany: z.string().max(1000, "About section must be 1000 characters or less"),
+  companyCulture: z.string().optional(),
 });
 
 const step3Schema = z.object({
@@ -105,6 +108,7 @@ const SignUp = ({
         companyLinkedin: '',
         oneLiner: '',
         aboutCompany: '',
+        companyCulture: '',
         industry: [],
         primarySector: undefined,
         businessModel: undefined,
@@ -140,8 +144,10 @@ const SignUp = ({
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || 'Something went wrong');
-      window.localStorage.setItem('emailForVerification', data.workEmail);
-      setCurrentView('verify-otp');
+
+      // Call the global OTP verification function instead of switching views
+      triggerOtpVerification(data.workEmail);
+
     } catch (err) {
       setError(err.message);
     } finally {
@@ -175,7 +181,7 @@ const SignUp = ({
             <div className="flex justify-between pt-4">
                 {step > 1 && <Button type="button" onClick={prevStep} variant="outline" className="text-white border-gray-600 hover:bg-gray-700">Back</Button>}
                 {step < 5 && <Button type="button" onClick={nextStep} disabled={!isValid} className="ml-auto">Next</Button>}
-                {step === 5 && <Button type="submit" disabled={loading || !isValid} className="ml-auto w-full">{loading ? 'Submitting...' : 'Complete Profile'}</Button>}
+                {step === 5 && <Button type="submit" disabled={loading || !isValid} className="ml-auto w-full">{loading ? 'Submitting...' : 'Submit & Verify Email'}</Button>}
             </div>
         </form>
     </div>
@@ -234,7 +240,7 @@ const Step1 = ({ control, register, errors }) => (
             </div>
         </div>
         <div className="space-y-2">
-            <Label htmlFor="designation">Your Designation</Label>
+            <Label htmlFor="designation">Your Designation in the Organisation</Label>
             <Controller
                 name="designation"
                 control={control}
@@ -259,7 +265,7 @@ const Step1 = ({ control, register, errors }) => (
             {errors.linkedinProfile && <p className="text-red-500 text-xs">{errors.linkedinProfile.message}</p>}
         </div>
         <div className="space-y-2">
-            <Label htmlFor="workEmail">Your Work Email</Label>
+            <Label htmlFor="workEmail">Company&apos;s Work Email</Label>
             <Input id="workEmail" type="email" {...register("workEmail")} className="bg-gray-700 border-gray-600" />
             {errors.workEmail && <p className="text-red-500 text-xs">{errors.workEmail.message}</p>}
         </div>
@@ -305,10 +311,15 @@ const Step2 = ({ control, register, errors }) => {
                 {errors.oneLiner && <p className="text-red-500 text-xs">{errors.oneLiner.message}</p>}
             </div>
             <div className="space-y-2">
-                <Label htmlFor="aboutCompany">About Your Company</Label>
+                <Label htmlFor="aboutCompany">About Company</Label>
                 <Textarea id="aboutCompany" {...register("aboutCompany")} className="bg-gray-700 border-gray-600" />
                 <p className="text-xs text-gray-400 text-right">{aboutCompany?.length || 0}/1000</p>
                 {errors.aboutCompany && <p className="text-red-500 text-xs">{errors.aboutCompany.message}</p>}
+            </div>
+            <div className="space-y-2">
+                <Label htmlFor="companyCulture">Company Culture (Optional)</Label>
+                <Textarea id="companyCulture" {...register("companyCulture")} className="bg-gray-700 border-gray-600" />
+                {errors.companyCulture && <p className="text-red-500 text-xs">{errors.companyCulture.message}</p>}
             </div>
         </div>
     );
@@ -346,7 +357,7 @@ const Step3 = ({ control, errors }) => {
                 {errors.industry && <p className="text-red-500 text-xs">{errors.industry.message}</p>}
             </div>
             <div className="space-y-2">
-                <Label>Primary Company Sector</Label>
+                <Label>Company Sector</Label>
                 <Controller
                     name="primarySector"
                     control={control}
@@ -366,7 +377,7 @@ const Step3 = ({ control, errors }) => {
                 {errors.primarySector && <p className="text-red-500 text-xs">{errors.primarySector.message}</p>}
             </div>
              <div className="space-y-2">
-                <Label>Primary Business Model</Label>
+                <Label>Company’s Primary Business Model</Label>
                 <Controller
                     name="businessModel"
                     control={control}
@@ -404,7 +415,7 @@ const Step3 = ({ control, errors }) => {
                 {errors.companyStage && <p className="text-red-500 text-xs">{errors.companyStage.message}</p>}
             </div>
              <div className="space-y-2">
-                <Label htmlFor="teamSize">Team Size</Label>
+                <Label htmlFor="teamSize">Company Team Size</Label>
                 <Controller
                     name="teamSize"
                     control={control}
