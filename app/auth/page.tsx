@@ -1,14 +1,28 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Login from '@/components/main/Login';
 import SignUp from '@/components/main/SignUp';
 import VerifyOtp from '@/components/main/VerifyOtp';
 import ForgotPassword from '@/components/main/ForgotPassword';
 
 const AuthPage = () => {
-  const [view, setView] = useState('signup');
+  const [view, setView] = useState('login');
   const [userType, setUserType] = useState('company');
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const viewParam = searchParams.get('view');
+    const userTypeParam = searchParams.get('userType');
+
+    if (viewParam) {
+      setView(viewParam);
+    }
+    if (userTypeParam) {
+      setUserType(userTypeParam);
+    }
+  }, [searchParams]);
   const [step, setStep] = useState(1); // For company registration
   const [investorStep, setInvestorStep] = useState(1); // For investor registration
   const [loading, setLoading] = useState(false);
