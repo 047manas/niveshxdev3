@@ -50,10 +50,28 @@ When a user's `userType` is "Company", their data is stored across two additiona
 #### Fields
 
 -   `name`: (String) The legal name of the company.
+-   `website`: (String) The company's official website URL.
+-   `linkedin`: (String, Optional) The company's LinkedIn profile URL.
+-   `oneLiner`: (String) A short, one-liner pitch for the company.
+-   `about`: (String) A detailed description of the company.
+-   `culture`: (String, Optional) A description of the company's culture.
+-   `industry`: (Array of Strings) A list of industries the company operates in.
+-   `primarySector`: (String) The primary sector of the company (e.g., "Fintech").
+-   `businessModel`: (String) The company's primary business model (e.g., "B2B").
 -   `stage`: (String) The current funding stage (e.g., "Pre-Seed", "Seed").
--   `latestValuation`: (String or Number) The company's latest valuation in INR.
--   `dealSize`: (String or Number) The funding amount the company is seeking in INR.
--   `shareType`: (String) e.g., "Common Shares", "Preferred Shares".
+-   `teamSize`: (Number) The number of employees in the company.
+-   `locations`: (String) Comma-separated list of company locations.
+-   `contactEmail`: (String) The official contact email for the company.
+-   `contactPhone`: (Map) The official contact phone for the company.
+    -   `countryCode`: (String) e.g., "+91"
+    -   `number`: (String) e.g., "9876543210"
+-   `funding`: (Map) Information about the company's funding history.
+    -   `hasRaised`: (Boolean) Whether the company has raised external funding.
+    -   `totalRaised`: (Number, Optional) The total amount of funding raised.
+    -   `currency`: (String, Optional) The currency of the funding (e.g., "USD").
+    -   `rounds`: (Number, Optional) The number of funding rounds.
+    -   `latestRound`: (String, Optional) The name of the latest funding round.
+-   `userId`: (String) A reference to the creating user's ID in the `users` collection.
 -   `createdAt`: (Timestamp) The timestamp when the company was registered.
 
 #### Sample Document
@@ -61,10 +79,27 @@ When a user's `userType` is "Company", their data is stored across two additiona
 ```json
 {
   "name": "Innovatech Solutions Pvt. Ltd.",
+  "website": "https://innovatech.com",
+  "linkedin": "https://linkedin.com/company/innovatech",
+  "oneLiner": "AI-powered solutions for modern businesses.",
+  "about": "We provide cutting-edge AI tools to optimize...",
+  "culture": "A culture of innovation and collaboration.",
+  "industry": ["Technology", "AI"],
+  "primarySector": "SaaS",
+  "businessModel": "B2B",
   "stage": "Seed",
-  "latestValuation": "50000000",
-  "dealSize": "10000000",
-  "shareType": "Preferred Shares",
+  "teamSize": 25,
+  "locations": "Mumbai, Bangalore",
+  "contactEmail": "contact@innovatech.com",
+  "contactPhone": { "countryCode": "+91", "number": "1234567890" },
+  "funding": {
+    "hasRaised": true,
+    "totalRaised": 500000,
+    "currency": "USD",
+    "rounds": 2,
+    "latestRound": "Seed"
+  },
+  "userId": "auth_user_id_123",
   "createdAt": "2024-08-21T10:05:00Z"
 }
 ```

@@ -34,28 +34,31 @@ export async function POST(req: NextRequest) {
 
     if (userType === 'company') {
       const {
-        firstName, lastName, designation, linkedinProfile, countryCode,
-        phoneNumber, companyName, companyStage, latestValuation, shareType, dealSize
+        // Step 1
+        firstName, lastName, designation, linkedinProfile,
+        // Step 2
+        companyName, companyWebsite, companyLinkedin, oneLiner, aboutCompany, companyCulture,
+        // Step 3
+        industry, primarySector, businessModel, companyStage, teamSize, locations,
+        // Step 4
+        hasFunding, totalFundingRaised, fundingCurrency, fundingRounds, latestFundingRound,
+        // Step 5
+        companyEmail, companyPhoneCountryCode, companyPhoneNumber
       } = formData;
 
       emailRecipientName = `${firstName} ${lastName}`;
 
-      // Core user data
+      // Core user data (related to the person signing up)
       const newUserData = {
-        email,
+        email, // This is the user's login email from step 1
         password: hashedPassword,
         userType,
         firstName,
         lastName,
         fullName: `${firstName} ${lastName}`,
         designation,
-        linkedinProfile,
-        phone: {
-          countryCode,
-          number: phoneNumber,
-        },
+        linkedinProfile, // Personal LinkedIn
         isVerified: false,
-        // For companies, profile is complete after this step
         profileComplete: true,
         otp,
         otpExpires,
@@ -63,14 +66,34 @@ export async function POST(req: NextRequest) {
       };
       await newUserRef.set(newUserData);
 
-      // Company-specific data (no redundancy)
+      // Company-specific data, linked to the user
       const companyData = {
         userId: newUserRef.id,
         name: companyName,
+        website: companyWebsite,
+        linkedin: companyLinkedin,
+        oneLiner,
+        about: aboutCompany,
+        culture: companyCulture,
+        industry,
+        primarySector,
+        businessModel,
         stage: companyStage,
-        latestValuation,
-        shareType,
-        dealSize,
+        teamSize,
+        locations,
+        contactEmail: companyEmail,
+        contactPhone: {
+          countryCode: companyPhoneCountryCode,
+          number: companyPhoneNumber,
+        },
+        funding: {
+          hasRaised: hasFunding === 'yes',
+          totalRaised: totalFundingRaised,
+          currency: fundingCurrency,
+          rounds: fundingRounds,
+          latestRound: latestFundingRound,
+        },
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
       };
       await firestore.collection('companies').add(companyData);
 
