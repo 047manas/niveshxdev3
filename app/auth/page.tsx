@@ -1,13 +1,13 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Login from '@/components/main/Login';
 import SignUp from '@/components/main/SignUp';
 import VerifyOtp from '@/components/main/VerifyOtp';
 import ForgotPassword from '@/components/main/ForgotPassword';
 
-const AuthPage = () => {
+const AuthFlow = () => {
   const [view, setView] = useState('login');
   const [userType, setUserType] = useState('company');
   const searchParams = useSearchParams();
@@ -109,6 +109,14 @@ const AuthPage = () => {
     <div>
       {renderView()}
     </div>
+  );
+};
+
+const AuthPage = () => {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <AuthFlow />
+    </Suspense>
   );
 };
 
