@@ -57,17 +57,12 @@ const AuthFlow = () => {
     setFormData({ ...formData, [input]: value });
   };
 
-  const handleShareTypeChange = (value) => {
-    setFormData({ ...formData, shareType: value });
-  };
-
   const handleInvestmentTypeChange = (value) => {
     let newInvestmentType = [...formData.investmentType];
-    const hasEquity = newInvestmentType.includes("Equity investments");
-    const hasDebt = newInvestmentType.includes("Debt financing");
 
     if (value === "Both") {
-      if (hasEquity && hasDebt) {
+      const hasBoth = newInvestmentType.includes("Equity investments") && newInvestmentType.includes("Debt financing");
+      if (hasBoth) {
         newInvestmentType = [];
       } else {
         newInvestmentType = ["Equity investments", "Debt financing"];
@@ -80,6 +75,10 @@ const AuthFlow = () => {
       }
     }
     setFormData({ ...formData, investmentType: newInvestmentType });
+  };
+
+  const handleShareTypeChange = (value) => {
+    setFormData({ ...formData, shareType: value });
   };
 
   const resetFormState = () => {

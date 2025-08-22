@@ -52,15 +52,15 @@ const SignUp = ({
   }
 
   useEffect(() => {
+    // This effect now only handles the investor form validation
     if (userType === 'investor') {
       setInvestorStepValid(validateInvestorStep(investorStep));
     }
   }, [formData, investorStep, userType]);
 
 
-  // Company form steps
+  // Company form steps (original, unchanged)
   const nextStep = () => {
-    // Step 1 Validation
     const { firstName, lastName, designation, linkedinProfile, email, phoneNumber } = formData;
     if (!firstName || !lastName || !designation || !linkedinProfile || !email || !phoneNumber) {
       setError('Please fill in all required fields for Step 1.');
@@ -105,11 +105,11 @@ const SignUp = ({
         return;
       }
     } else if (userType === 'investor') {
-      const { chequeSize, interestedSectors } = formData;
-      if (!chequeSize || !interestedSectors) {
-        setError('Please fill in all required fields.');
-        setLoading(false);
-        return;
+      // Final validation for investor form
+      if (!validateInvestorStep(1) || !validateInvestorStep(2)) {
+         setError('Please ensure all steps are completed correctly.');
+         setLoading(false);
+         return;
       }
     }
 
@@ -410,7 +410,7 @@ const SignUp = ({
     <div className="flex items-center justify-center min-h-screen bg-background">
       <Card className="w-full max-w-md bg-[#1a2332] text-white">
         <CardHeader className="text-center">
-          <CardTitle className="text-3xl font-bold text-white">Create an account</CardTitle>
+          <CardTitle className="text-3xl font-bold text-white">Create an account</Title>
           <p className="text-sub-heading">Join our community of founders and investors.</p>
         </CardHeader>
         <CardContent>
