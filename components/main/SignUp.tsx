@@ -196,13 +196,13 @@ const SignUp = ({ setCurrentView, userType, setUserType }) => {
   );
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-900">
+    <div className="flex items-center justify-center min-h-screen bg-gray-900 p-4">
       <Card className="w-full max-w-2xl bg-gray-800 text-white border-gray-700">
         <CardHeader className="text-center">
           <CardTitle className="text-3xl font-bold">Create an Account</CardTitle>
           <p className="text-gray-400">Join our community of founders and investors.</p>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-4 sm:p-6">
           <Tabs value={userType} onValueChange={(val) => setUserType(val)} className="w-full">
             <TabsList className="grid w-full grid-cols-2 bg-gray-900 border-gray-700">
               <TabsTrigger value="company" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><Building2 className="mr-2 h-4 w-4" /> Company</TabsTrigger>
@@ -461,13 +461,13 @@ const CompanyStep4 = ({ control, register, errors }) => {
                 <div className="space-y-4 pt-4 border-t border-gray-700">
                     <div className="space-y-2">
                         <Label htmlFor="totalFundingRaised">Total Funding Raised</Label>
-                        <div className="flex">
+                        <div className="grid grid-cols-1 sm:grid-cols-4 gap-2">
                              <Controller
                                 name="fundingCurrency"
                                 control={control}
                                 render={({ field }) => (
                                     <Select onValueChange={field.onChange} value={field.value}>
-                                        <SelectTrigger className="w-1/4 bg-gray-700 border-gray-600"><SelectValue /></SelectTrigger>
+                                        <SelectTrigger className="sm:col-span-1 bg-gray-700 border-gray-600"><SelectValue /></SelectTrigger>
                                         <SelectContent className="bg-gray-800 text-white border-gray-700">
                                             <SelectItem value="INR">₹ INR</SelectItem>
                                             <SelectItem value="USD">$ USD</SelectItem>
@@ -479,7 +479,7 @@ const CompanyStep4 = ({ control, register, errors }) => {
                                 name="totalFundingRaised"
                                 control={control}
                                 render={({ field }) => (
-                                    <Input id="totalFundingRaised" type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value, 10))} className="w-3/4 bg-gray-700 border-gray-600" />
+                                    <Input id="totalFundingRaised" type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value, 10))} className="sm:col-span-3 bg-gray-700 border-gray-600" />
                                 )}
                             />
                         </div>
@@ -531,13 +531,13 @@ const CompanyStep5 = ({ control, register, errors }) => (
         </div>
         <div className="space-y-2">
             <Label htmlFor="companyPhoneNumber">Company&apos;s Phone Number</Label>
-            <div className="flex">
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-2">
                 <Controller
                     name="companyPhoneCountryCode"
                     control={control}
                     render={({ field }) => (
                         <Select onValueChange={field.onChange} value={field.value}>
-                            <SelectTrigger className="w-1/4 bg-gray-700 border-gray-600"><SelectValue /></SelectTrigger>
+                            <SelectTrigger className="sm:col-span-1 bg-gray-700 border-gray-600"><SelectValue /></SelectTrigger>
                             <SelectContent className="bg-gray-800 text-white border-gray-700">
                                 <SelectItem value="+91">IN (+91)</SelectItem>
                                 <SelectItem value="+1">US (+1)</SelectItem>
@@ -545,7 +545,7 @@ const CompanyStep5 = ({ control, register, errors }) => (
                         </Select>
                     )}
                 />
-                <Input id="companyPhoneNumber" type="tel" {...register("companyPhoneNumber")} className="w-3/4 bg-gray-700 border-gray-600" />
+                <Input id="companyPhoneNumber" type="tel" {...register("companyPhoneNumber")} className="sm:col-span-3 bg-gray-700 border-gray-600" />
             </div>
             {errors.companyPhoneNumber && <p className="text-red-500 text-xs">{errors.companyPhoneNumber.message}</p>}
         </div>
@@ -563,14 +563,14 @@ const InvestorStep1 = ({ control, register, errors }) => (
         <div><Label>Email</Label><Input type="email" {...register("email")} className="bg-gray-700 border-gray-600" />{errors.email && <p className="text-red-500 text-xs">{errors.email.message}</p>}</div>
         <div>
             <Label>Phone Number</Label>
-            <div className="flex">
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-2">
                 <Controller name="phoneCountryCode" control={control} render={({ field }) => (
                     <Select onValueChange={field.onChange} value={field.value}>
-                        <SelectTrigger className="w-1/4 bg-gray-700 border-gray-600"><SelectValue /></SelectTrigger>
+                        <SelectTrigger className="sm:col-span-1 bg-gray-700 border-gray-600"><SelectValue /></SelectTrigger>
                         <SelectContent className="bg-gray-800 text-white border-gray-700"><SelectItem value="+91">IN (+91)</SelectItem><SelectItem value="+1">US (+1)</SelectItem></SelectContent>
                     </Select>
                 )} />
-                <Input type="tel" {...register("phoneNumber")} className="w-3/4 bg-gray-700 border-gray-600" />
+                <Input type="tel" {...register("phoneNumber")} className="sm:col-span-3 bg-gray-700 border-gray-600" />
             </div>
             {errors.phoneNumber && <p className="text-red-500 text-xs">{errors.phoneNumber.message}</p>}
         </div>

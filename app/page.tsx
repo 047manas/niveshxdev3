@@ -123,7 +123,7 @@ export default function HomePage() {
             Startups and investors are stuck in a cycle of inefficiency and mistrust, but the problem isn&apos;t a lack of capital—it&apos;s a lack of data.
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
-            <Card className="bg-card border-border p-6">
+            <Card className="bg-card border-border p-4 sm:p-6">
               <CardHeader>
                 <CardTitle className="text-2xl text-white">For Founders</CardTitle>
               </CardHeader>
@@ -133,7 +133,7 @@ export default function HomePage() {
                 </p>
               </CardContent>
             </Card>
-            <Card className="bg-card border-border p-6">
+            <Card className="bg-card border-border p-4 sm:p-6">
               <CardHeader>
                 <CardTitle className="text-2xl text-white">For Investors</CardTitle>
               </CardHeader>
@@ -153,7 +153,7 @@ export default function HomePage() {
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-12">
             How it Works for <span className="text-primary">You</span>
           </h2>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-24">
             {/* For Founders */}
             <div>
               <h3 className="text-2xl md:text-3xl font-bold text-white mb-8">For Founders: Get Funded in 3 Simple Steps.</h3>
@@ -226,7 +226,7 @@ export default function HomePage() {
 
       {/* Value Propositions Section */}
       <section className="py-16 sm:py-20 md:py-24 px-4 bg-background">
-        <div className="container mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+        <div className="container mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-24 items-center">
           {/* For Founders */}
           <div className="text-center lg:text-left">
             <p className="text-lg text-primary font-semibold">FOR FOUNDERS: YOUR FINANCIAL CO-PILOT</p>
@@ -287,12 +287,12 @@ export default function HomePage() {
               Privacy Policy
             </Link>
           </div>
-          <div className="flex space-x-4">
+          <div className="flex space-x-6">
             <Link href="#" className="text-muted-foreground hover:text-foreground transition-colors">
-              <Twitter className="h-5 w-5" />
+              <Twitter className="h-6 w-6" />
             </Link>
             <Link href="#" className="text-muted-foreground hover:text-foreground transition-colors">
-              <Linkedin className="h-5 w-5" />
+              <Linkedin className="h-6 w-6" />
             </Link>
           </div>
         </div>
