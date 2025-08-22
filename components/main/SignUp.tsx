@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,10 +8,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Textarea } from "@/components/ui/textarea";
 import { Building2, User } from 'lucide-react';
-import { Progress } from "@/components/ui/progress";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Checkbox } from "@/components/ui/checkbox";
-
 
 const SignUp = ({
   setCurrentView,
@@ -29,38 +25,11 @@ const SignUp = ({
   handleChange,
   handleSelectChange,
   handleShareTypeChange,
-  handleInvestmentTypeChange,
 }) => {
-  const [isInvestorStepValid, setInvestorStepValid] = useState(false);
 
-  const validateInvestorStep = (stepToValidate) => {
-    const {
-      firstName, lastName, email, phoneNumber, linkedinProfile, password, confirmPassword,
-      investorType, investmentType, chequeSize, interestedSectors
-    } = formData;
-
-    switch(stepToValidate) {
-      case 1:
-        const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
-        return firstName && lastName && email && phoneNumber && linkedinProfile &&
-               passwordRegex.test(password) && password === confirmPassword;
-      case 2:
-        return investorType && investmentType.length > 0 && chequeSize && interestedSectors;
-      default:
-        return false;
-    }
-  }
-
-  useEffect(() => {
-    // This effect now only handles the investor form validation
-    if (userType === 'investor') {
-      setInvestorStepValid(validateInvestorStep(investorStep));
-    }
-  }, [formData, investorStep, userType]);
-
-
-  // Company form steps (original, unchanged)
+  // Company form steps
   const nextStep = () => {
+    // Step 1 Validation
     const { firstName, lastName, designation, linkedinProfile, email, phoneNumber } = formData;
     if (!firstName || !lastName || !designation || !linkedinProfile || !email || !phoneNumber) {
       setError('Please fill in all required fields for Step 1.');
@@ -83,12 +52,27 @@ const SignUp = ({
 
   // Investor form steps
   const nextInvestorStep = () => {
-    if (validateInvestorStep(investorStep)) {
-      setError('');
-      setInvestorStep(investorStep + 1);
-    } else {
-      setError('Please fill in all required fields correctly.');
+    const { firstName, lastName, email, password, investorType, linkedinProfile, phoneNumber } = formData;
+    if (!firstName || !lastName || !email || !password || !investorType || !linkedinProfile || !phoneNumber) {
+        setError('Please fill in all required fields.');
+        return;
     }
+    if (password !== formData.confirmPassword) {
+      setError('Passwords do not match.');
+      return;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setError('Please enter a valid email address.');
+      return;
+    }
+    const linkedinRegex = /^https:\/\/www\.linkedin\.com\/in\/.+/;
+    if (!linkedinRegex.test(linkedinProfile)) {
+      setError('LinkedIn Profile must start with https://www.linkedin.com/in/');
+      return;
+    }
+    setError('');
+    setInvestorStep(investorStep + 1);
   };
   const prevInvestorStep = () => setInvestorStep(investorStep - 1);
 
@@ -105,11 +89,11 @@ const SignUp = ({
         return;
       }
     } else if (userType === 'investor') {
-      // Final validation for investor form
-      if (!validateInvestorStep(1) || !validateInvestorStep(2)) {
-         setError('Please ensure all steps are completed correctly.');
-         setLoading(false);
-         return;
+      const { chequeSize, interestedSectors } = formData;
+      if (!chequeSize || !interestedSectors) {
+        setError('Please fill in all required fields.');
+        setLoading(false);
+        return;
       }
     }
 
@@ -262,155 +246,108 @@ const SignUp = ({
     }
   };
 
-  const investorStepTitles = [
-    "Create Your Account",
-    "Investment Profile",
-  ];
-
   const renderInvestorForm = () => {
-    return (
-      <div>
-        <div className="mb-8">
-          <p className="text-sm text-gray-400">Step {investorStep} of 2: {investorStepTitles[investorStep - 1]}</p>
-          <Progress value={(investorStep / 2) * 100} className="w-full mt-2" />
-        </div>
-
-        {(() => {
-          switch (investorStep) {
-            case 1:
-              return (
-                <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); nextInvestorStep(); }}>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="firstName">First Name *</Label>
-                      <Input id="firstName" value={formData.firstName} onChange={handleChange('firstName')} required className="bg-background border-border" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="lastName">Last Name *</Label>
-                      <Input id="lastName" value={formData.lastName} onChange={handleChange('lastName')} required className="bg-background border-border" />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email *</Label>
-                    <Input id="email" type="email" value={formData.email} onChange={handleChange('email')} required className="bg-background border-border" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="phoneNumber">Phone Number *</Label>
-                    <div className="flex">
-                      <Select onValueChange={handleSelectChange('countryCode')} value={formData.countryCode}>
-                        <SelectTrigger className="w-1/4 bg-background border-border"><SelectValue /></SelectTrigger>
-                        <SelectContent className="bg-card border-border">
-                          <SelectItem value="+91">IN (+91)</SelectItem>
-                          <SelectItem value="+1">US (+1)</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <Input id="phoneNumber" type="tel" value={formData.phoneNumber} onChange={handleChange('phoneNumber')} required className="w-3/4 bg-background border-border" />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="linkedinProfile">LinkedIn Profile *</Label>
-                    <Input id="linkedinProfile" type="url" value={formData.linkedinProfile} onChange={handleChange('linkedinProfile')} placeholder="https://linkedin.com/in/your-profile" required className="bg-background border-border" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="password">Create Password *</Label>
-                    <Input id="password" type="password" value={formData.password} onChange={handleChange('password')} required className="bg-background border-border" />
-                    <p className="text-xs text-gray-400">Must be at least 8 characters and include one letter and one number.</p>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="confirmPassword">Confirm Password *</Label>
-                    <Input id="confirmPassword" type="password" value={formData.confirmPassword} onChange={handleChange('confirmPassword')} required className="bg-background border-border" />
-                    {formData.password && formData.confirmPassword && formData.password !== formData.confirmPassword && (
-                      <p className="text-xs text-red-500">Passwords do not match.</p>
-                    )}
-                  </div>
-                  <div className="flex justify-end pt-4">
-                    <Button type="submit" disabled={!isInvestorStepValid}>Next</Button>
-                  </div>
-                </form>
-              );
-            case 2:
-              const chequeSizes = ["₹ 1-5 L", "₹ 5-25 L", "₹ 25-1 Cr", "₹ 1 Cr+", "₹ 10 Cr+", "₹ 100 Cr+"];
-              const investmentTypes = ["Equity investments", "Debt financing"];
-              const isBothChecked = formData.investmentType.includes("Equity investments") && formData.investmentType.includes("Debt financing");
-
-              return (
-                <form className="space-y-6" onSubmit={onRegister}>
-                   <div className="space-y-2">
-                      <Label htmlFor="investorType">Investor Type *</Label>
-                      <Select onValueChange={handleSelectChange('investorType')} value={formData.investorType}>
-                        <SelectTrigger className="bg-background border-border"><SelectValue placeholder="Select..." /></SelectTrigger>
-                        <SelectContent className="bg-card border-border">
-                          <SelectItem value="uhni_hni">UHNI/HNI</SelectItem>
-                          <SelectItem value="family_office">Family Office</SelectItem>
-                          <SelectItem value="vc">VC</SelectItem>
-                          <SelectItem value="private_equity">Private Equity</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Investment Type *</Label>
-                       <div className="flex items-center space-x-4">
-                        {investmentTypes.map(type => (
-                          <div key={type} className="flex items-center space-x-2">
-                            <Checkbox
-                              id={`invest-type-${type}`}
-                              checked={formData.investmentType.includes(type)}
-                              onCheckedChange={() => handleInvestmentTypeChange(type)}
-                            />
-                            <Label htmlFor={`invest-type-${type}`} className="font-normal">{type}</Label>
-                          </div>
-                        ))}
-                        <div className="flex items-center space-x-2">
-                          <Checkbox
-                            id="invest-type-both"
-                            checked={isBothChecked}
-                            onCheckedChange={() => handleInvestmentTypeChange("Both")}
-                          />
-                          <Label htmlFor="invest-type-both" className="font-normal">Both</Label>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label>What Cheque Size are you comfortable with? *</Label>
-                      <RadioGroup
-                        value={formData.chequeSize}
-                        onValueChange={handleSelectChange('chequeSize')}
-                        className="grid grid-cols-3 gap-4"
-                      >
-                        {chequeSizes.map(size => (
-                           <div key={size} className="flex items-center space-x-2">
-                            <RadioGroupItem value={size} id={`cheque-${size}`} />
-                            <Label htmlFor={`cheque-${size}`} className="font-normal">{size}</Label>
-                          </div>
-                        ))}
-                      </RadioGroup>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="interestedSectors">What sectors / startups are you interested in? *</Label>
-                      <Textarea id="interestedSectors" value={formData.interestedSectors} onChange={handleChange('interestedSectors')} placeholder="e.g., FinTech, HealthTech, SaaS" required className="bg-background border-border" />
-                    </div>
-                  {error && <p className="text-sm text-red-500 pt-4">{error}</p>}
-                  <div className="flex justify-between pt-4">
-                    <Button type="button" variant="outline" onClick={prevInvestorStep}>Back</Button>
-                    <Button type="submit" disabled={!isInvestorStepValid || loading}>
-                      {loading ? 'Submitting...' : 'Complete Profile'}
-                    </Button>
-                  </div>
-                </form>
-              );
-            default:
-              return <p>Something went wrong</p>;
-          }
-        })()}
-      </div>
-    );
+    switch (investorStep) {
+      case 1:
+        return (
+          <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); nextInvestorStep(); }}>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="firstName" className="text-input-label">First Name *</Label>
+                <Input id="firstName" value={formData.firstName} onChange={handleChange('firstName')} required className="bg-background border-border text-foreground placeholder:text-input-label" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="lastName" className="text-input-label">Last Name *</Label>
+                <Input id="lastName" value={formData.lastName} onChange={handleChange('lastName')} required className="bg-background border-border text-foreground placeholder:text-input-label" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-input-label">Email *</Label>
+              <Input id="email" type="email" value={formData.email} onChange={handleChange('email')} placeholder="test@gmail.com" required className="bg-background border-border text-foreground placeholder:text-input-label" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="investorType" className="text-input-label">Investor Type *</Label>
+              <Select onValueChange={handleSelectChange('investorType')} defaultValue={formData.investorType}>
+                <SelectTrigger className="bg-background border-border text-white"><SelectValue placeholder="Select..." className="placeholder:text-white" /></SelectTrigger>
+                <SelectContent className="bg-card border-border text-foreground">
+                  <SelectItem value="uhni_hni">UHNI/HNI</SelectItem>
+                  <SelectItem value="family_office">Family Office</SelectItem>
+                  <SelectItem value="vc">VC</SelectItem>
+                  <SelectItem value="private_equity">Private Equity</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="linkedinProfile" className="text-input-label">LinkedIn Profile *</Label>
+              <Input id="linkedinProfile" value={formData.linkedinProfile} onChange={handleChange('linkedinProfile')} placeholder="https://www.linkedin.com/in/yourprofile/" required className="bg-background border-border text-foreground placeholder:text-input-label" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="phoneNumber" className="text-input-label">Phone number *</Label>
+              <div className="flex">
+                <Select defaultValue={formData.countryCode} onValueChange={handleSelectChange('countryCode')}>
+                  <SelectTrigger className="w-1/4 bg-background border-border text-white"><SelectValue /></SelectTrigger>
+                  <SelectContent className="bg-card border-border text-foreground">
+                    <SelectItem value="+91">IN (+91)</SelectItem>
+                    <SelectItem value="+1">US (+1)</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Input id="phoneNumber" type="tel" value={formData.phoneNumber} onChange={handleChange('phoneNumber')} className="w-3/4 bg-background border-border text-foreground placeholder:text-input-label" required />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password" className="text-input-label">Password *</Label>
+              <Input id="password" type="password" value={formData.password} onChange={handleChange('password')} required className="bg-background border-border text-foreground placeholder:text-input-label" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword" className="text-input-label">Confirm Password *</Label>
+              <Input id="confirmPassword" type="password" value={formData.confirmPassword} onChange={handleChange('confirmPassword')} required className="bg-background border-border text-foreground placeholder:text-input-label" />
+            </div>
+            {error && <p className="text-sm text-red-500">{error}</p>}
+            <div className="flex justify-end pt-4">
+              <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">Next</Button>
+            </div>
+          </form>
+        );
+      case 2:
+        return (
+          <form className="space-y-4" onSubmit={onRegister}>
+            <div className="space-y-2">
+              <Label htmlFor="chequeSize" className="text-input-label">What cheque sizes are you comfortable with? *</Label>
+              <Select onValueChange={handleSelectChange('chequeSize')} defaultValue={formData.chequeSize}>
+                <SelectTrigger className="bg-background border-border text-foreground"><SelectValue placeholder="Select..." /></SelectTrigger>
+                <SelectContent className="bg-card border-border text-foreground">
+                  <SelectItem value="1-5L">₹ 1-5 L</SelectItem>
+                  <SelectItem value="5-25L">₹ 5-25 L</SelectItem>
+                  <SelectItem value="25L-1Cr">₹ 25-1 cr</SelectItem>
+                  <SelectItem value="1Cr+">₹ 1 cr+</SelectItem>
+                  <SelectItem value="10Cr+">₹ 10 cr+</SelectItem>
+                  <SelectItem value="100Cr+">₹ 100 cr+</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="interestedSectors" className="text-input-label">What sectors / startups are you interested in? *</Label>
+              <Textarea id="interestedSectors" value={formData.interestedSectors} onChange={handleChange('interestedSectors')} placeholder="e.g., FinTech, HealthTech, SaaS" required className="bg-background border-border text-foreground" />
+            </div>
+            {error && <p className="text-sm text-red-500 pt-4">{error}</p>}
+            <div className="flex justify-between pt-4">
+              <Button type="button" onClick={prevInvestorStep} variant="outline" className="text-white border-gray-600 hover:bg-gray-700">Back</Button>
+              <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" disabled={loading}>
+                {loading ? 'Submitting...' : 'Submit'}
+              </Button>
+            </div>
+          </form>
+        );
+      default:
+        return <p>Something went wrong</p>;
+    }
   };
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-background">
       <Card className="w-full max-w-md bg-[#1a2332] text-white">
         <CardHeader className="text-center">
-          <CardTitle className="text-3xl font-bold text-white">Create an account</Title>
+          <CardTitle className="text-3xl font-bold text-white">Create an account</CardTitle>
           <p className="text-sub-heading">Join our community of founders and investors.</p>
         </CardHeader>
         <CardContent>

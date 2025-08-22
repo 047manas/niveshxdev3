@@ -38,7 +38,6 @@ const AuthFlow = () => {
     countryCode: '+91',
     phoneNumber: '',
     investorType: '',
-    investmentType: [],
     chequeSize: '',
     interestedSectors: '',
     designation: '',
@@ -55,26 +54,6 @@ const AuthFlow = () => {
 
   const handleSelectChange = (input) => (value) => {
     setFormData({ ...formData, [input]: value });
-  };
-
-  const handleInvestmentTypeChange = (value) => {
-    let newInvestmentType = [...formData.investmentType];
-
-    if (value === "Both") {
-      const hasBoth = newInvestmentType.includes("Equity investments") && newInvestmentType.includes("Debt financing");
-      if (hasBoth) {
-        newInvestmentType = [];
-      } else {
-        newInvestmentType = ["Equity investments", "Debt financing"];
-      }
-    } else {
-      if (newInvestmentType.includes(value)) {
-        newInvestmentType = newInvestmentType.filter(v => v !== value);
-      } else {
-        newInvestmentType.push(value);
-      }
-    }
-    setFormData({ ...formData, investmentType: newInvestmentType });
   };
 
   const handleShareTypeChange = (value) => {
@@ -136,7 +115,6 @@ const AuthFlow = () => {
             handleChange={handleChange}
             handleSelectChange={handleSelectChange}
             handleShareTypeChange={handleShareTypeChange}
-            handleInvestmentTypeChange={handleInvestmentTypeChange}
           />
         );
       case 'verify-otp':

@@ -77,10 +77,10 @@ export async function POST(req: NextRequest) {
     } else { // Investor
       const {
         firstName, lastName, investorType, linkedinProfile, countryCode, phoneNumber,
-        chequeSize, interestedSectors, investmentType
+        chequeSize, interestedSectors
       } = formData;
 
-      if (!firstName || !lastName || !investorType || !linkedinProfile || !countryCode || !phoneNumber || !chequeSize || !interestedSectors || !investmentType || investmentType.length === 0) {
+      if (!firstName || !lastName || !investorType || !linkedinProfile || !countryCode || !phoneNumber || !chequeSize || !interestedSectors) {
         return NextResponse.json({ error: 'Missing required fields for investor registration.' }, { status: 400 });
       }
 
@@ -106,7 +106,6 @@ export async function POST(req: NextRequest) {
       const investorData = {
         userId: newUserRef.id,
         investorType,
-        investmentType,
         linkedinProfile,
         phone: {
           countryCode,
