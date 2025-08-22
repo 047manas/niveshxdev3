@@ -74,7 +74,7 @@ const VerifyOtp = ({ setCurrentView }) => {
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Failed to resend OTP.');
 
-      setSuccess(data.message);
+      setSuccess(`A new OTP has been sent to ${email}.`);
       setResendCooldown(60); // Start 60-second cooldown
     } catch (err) {
       setError(err.message);
