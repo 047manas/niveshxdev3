@@ -29,64 +29,36 @@ const AuthFlow = () => {
   const [error, setError] = useState('');
 
   const [formData, setFormData] = useState({
-    // Step 1: Create Your Account
-    firstName: '',
-    lastName: '',
-    designation: '',
-    linkedinProfile: '',
     email: '',
     password: '',
     confirmPassword: '',
-
-    // Step 2: Company Profile
-    companyName: '',
-    companyWebsite: '',
-    companyLinkedIn: '',
-    oneLinerPitch: '',
-    aboutCompany: '',
-
-    // Step 3: Company Details
-    industry: [],
-    primaryCompanySector: '',
-    primaryBusinessModel: '',
-    companyStage: '',
-    teamSize: '',
-    locations: [],
-
-    // Step 4: Funding History
-    hasRaisedFunding: 'no',
-    totalFundingRaised: '',
-    fundingCurrency: 'INR',
-    numberOfFundingRounds: '',
-    latestFundingRound: '',
-
-    // Step 5: Company Contact
-    companyWorkEmail: '',
-    companyPhoneCountryCode: '+91',
-    companyPhoneNumber: '',
-
-    // Investor fields (unchanged)
-    investorType: '',
-    chequeSize: '',
-    interestedSectors: '',
+    firstName: '',
+    lastName: '',
+    linkedinProfile: '',
     countryCode: '+91',
     phoneNumber: '',
-
-    // Legacy company fields required by backend
+    investorType: '',
+    investmentType: [],
+    chequeSize: '',
+    interestedSectors: '',
+    designation: '',
+    companyName: '',
+    companyStage: '',
     latestValuation: '',
     shareType: [],
     dealSize: '',
   });
 
   const handleChange = (input) => (e) => {
-    const value = e.target.type === 'checkbox' ?
-      (e.target.checked ? [...(formData[input] || []), e.target.value] : formData[input].filter(v => v !== e.target.value))
-      : e.target.value;
-    setFormData({ ...formData, [input]: value });
+    setFormData({ ...formData, [input]: e.target.value });
   };
 
   const handleSelectChange = (input) => (value) => {
     setFormData({ ...formData, [input]: value });
+  };
+
+  const handleShareTypeChange = (value) => {
+    setFormData({ ...formData, shareType: value });
   };
 
   const resetFormState = () => {
@@ -122,7 +94,7 @@ const AuthFlow = () => {
             setFormData={setFormData}
             handleChange={handleChange}
             handleSelectChange={handleSelectChange}
-            setFormData={setFormData}
+            handleShareTypeChange={handleShareTypeChange}
           />
         );
       case 'verify-otp':
