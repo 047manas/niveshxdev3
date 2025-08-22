@@ -27,13 +27,13 @@ export default function HomePage() {
     <div className="min-h-screen bg-background text-foreground">
       {/* Navigation */}
       <nav className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
           <div className="text-2xl font-bold">
             <span className="text-white">Nivesh</span>
             <span className="text-primary">x</span>
           </div>
           <div className="hidden md:flex items-center space-x-8">
-            {/* Navigation links removed as per new design */}
+            {/* Navigation links can be added here if needed in the future */}
           </div>
           <div className="hidden md:flex items-center">
             <Link href="/auth">
@@ -41,7 +41,7 @@ export default function HomePage() {
             </Link>
           </div>
           <div className="md:hidden">
-            <button onClick={() => setIsMenuOpen(!isMenuOpen)}>
+            <button onClick={() => setIsMenuOpen(!isMenuOpen)} aria-label="Toggle menu">
               {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </button>
           </div>
@@ -49,8 +49,7 @@ export default function HomePage() {
         {/* Mobile Menu */}
         {isMenuOpen && (
           <div className="md:hidden bg-background border-t border-border">
-            <div className="container mx-auto px-4 py-4 flex flex-col space-y-4">
-                {/* Navigation links removed as per new design */}
+            <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col space-y-4">
                 <Link href="/auth">
                     <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">Login / Sign Up</Button>
                 </Link>
@@ -60,28 +59,28 @@ export default function HomePage() {
       </nav>
 
       {/* Hero Section */}
-      <section className="relative py-16 sm:py-20 px-4 text-center overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-background via-card to-background" />
+      <section className="relative py-16 sm:py-24 lg:py-32 px-4 text-center overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-background via-card to-background opacity-50" />
         <div className="container mx-auto relative z-10">
-          <h1 className="text-4xl md:text-7xl font-bold mb-4 leading-tight">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-4 leading-tight">
             Startup Funding Powered by <span className="text-primary">Data</span>.
           </h1>
-          <p className="text-lg md:text-2xl text-gray-300 mb-8 max-w-3xl mx-auto">
+          <p className="text-lg sm:text-xl md:text-2xl text-gray-300 mb-8 max-w-md sm:max-w-xl md:max-w-3xl mx-auto">
             Turn your growth into a single source of truth and get funded faster, without endless pitch decks.
           </p>
-          <div className="flex flex-col md:flex-row justify-center gap-4">
+          <div className="flex flex-col sm:flex-row justify-center gap-4">
             <Link href="/auth?view=signup&userType=company">
-                <Button size="lg" className="w-full md:w-auto bg-primary hover:bg-primary/90 text-primary-foreground">I’m a Founder</Button>
+                <Button size="lg" className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground">I’m a Founder</Button>
             </Link>
             <Link href="/auth?view=signup&userType=investor">
-                <Button size="lg" variant="outline" className="w-full md:w-auto text-foreground border-foreground hover:bg-primary hover:text-primary-foreground">I’m an Investor</Button>
+                <Button size="lg" variant="outline" className="w-full sm:w-auto text-foreground border-foreground hover:bg-primary hover:text-primary-foreground">I’m an Investor</Button>
             </Link>
           </div>
 
           {/* Dashboard Visual Placeholder */}
-          <div className="relative mt-16">
+          <div className="relative mt-16 sm:mt-20">
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-green-500/10 to-transparent" />
-            <div className="container mx-auto p-4 md:p-8 bg-background/50 backdrop-blur-sm border border-border/50 rounded-lg shadow-2xl">
+            <div className="container mx-auto p-4 md:p-6 lg:p-8 bg-background/50 backdrop-blur-sm border border-border/50 rounded-lg shadow-2xl">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full bg-red-500"></div>
@@ -91,22 +90,22 @@ export default function HomePage() {
                 <div className="w-1/3 h-6 bg-gray-700/50 rounded"></div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="col-span-1 md:col-span-2 h-40 md:h-64 bg-gray-700/30 rounded-lg flex items-end p-4">
+                <div className="col-span-1 md:col-span-2 h-48 sm:h-56 md:h-64 bg-gray-700/30 rounded-lg flex items-end p-4">
                   {/* Mock line chart */}
                   <div className="w-full h-1/2 border-b border-dashed border-gray-500 relative">
                     <div className="absolute bottom-0 left-0 w-full h-2/3 bg-gradient-to-t from-primary/30 to-transparent"></div>
                   </div>
                 </div>
                 <div className="col-span-1 space-y-4">
-                  <div className="h-20 bg-gray-700/30 rounded-lg p-3">
+                  <div className="h-24 sm:h-20 bg-gray-700/30 rounded-lg p-3">
                     <div className="w-1/2 h-4 bg-gray-600/50 rounded mb-2"></div>
                     <div className="w-3/4 h-6 bg-gray-600/50 rounded"></div>
                   </div>
-                  <div className="h-20 bg-gray-700/30 rounded-lg p-3">
+                  <div className="h-24 sm:h-20 bg-gray-700/30 rounded-lg p-3">
                     <div className="w-1/2 h-4 bg-gray-600/50 rounded mb-2"></div>
                     <div className="w-3/4 h-6 bg-gray-600/50 rounded"></div>
                   </div>
-                  <div className="h-12 bg-gray-700/30 rounded-lg"></div>
+                  <div className="h-16 sm:h-12 bg-gray-700/30 rounded-lg"></div>
                 </div>
               </div>
             </div>
@@ -115,7 +114,7 @@ export default function HomePage() {
       </section>
 
       {/* Why NiveshX? Section */}
-      <section id="why-niveshx" className="py-12 sm:py-16 md:py-20 px-4 bg-background">
+      <section id="why-niveshx" className="py-16 sm:py-20 md:py-24 px-4 bg-background">
         <div className="container mx-auto text-center">
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-4">
             The Startup Ecosystem Has a Data Problem. <span className="text-primary">We&apos;re Solving It.</span>
@@ -149,12 +148,12 @@ export default function HomePage() {
       </section>
 
       {/* How It Works Section */}
-      <section id="how-it-works" className="py-12 sm:py-16 md:py-20 px-4">
+      <section id="how-it-works" className="py-16 sm:py-20 md:py-24 px-4">
         <div className="container mx-auto text-center">
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-12">
             How it Works for <span className="text-primary">You</span>
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-16">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16">
             {/* For Founders */}
             <div>
               <h3 className="text-2xl md:text-3xl font-bold text-white mb-8">For Founders: Get Funded in 3 Simple Steps.</h3>
@@ -226,10 +225,10 @@ export default function HomePage() {
       </section>
 
       {/* Value Propositions Section */}
-      <section className="py-12 sm:py-16 md:py-20 px-4 bg-background">
-        <div className="container mx-auto grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
+      <section className="py-16 sm:py-20 md:py-24 px-4 bg-background">
+        <div className="container mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
           {/* For Founders */}
-          <div className="text-center md:text-left">
+          <div className="text-center lg:text-left">
             <p className="text-lg text-primary font-semibold">FOR FOUNDERS: YOUR FINANCIAL CO-PILOT</p>
             <h2 className="text-3xl sm:text-4xl font-bold text-white mt-2 mb-4">Growth, On Your Terms. Keep Your Equity. 🚀</h2>
             <p className="text-gray-300 mb-8">We help you raise capital without raising your anxiety. NiveshX turns your data into your most powerful fundraising tool.</p>
@@ -241,7 +240,7 @@ export default function HomePage() {
             </div>
           </div>
           {/* For Investors */}
-          <div className="text-center md:text-left">
+          <div className="text-center lg:text-left">
             <p className="text-lg text-primary font-semibold">FOR INVESTORS: INVEST SMARTER, NOT HARDER</p>
             <h2 className="text-3xl sm:text-4xl font-bold text-white mt-2 mb-4">Discover Data-Driven Deals. Find Smarter Investments.</h2>
             <p className="text-gray-300 mb-8">NiveshX gives you a single, clear dashboard for portfolio management and a curated pipeline of high-growth startups.</p>
@@ -254,7 +253,7 @@ export default function HomePage() {
       </section>
 
       {/* Closing Section */}
-      <section className="py-12 sm:py-16 md:py-20 px-4 text-center">
+      <section className="py-16 sm:py-20 md:py-24 px-4 text-center">
         <div className="container mx-auto">
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-4">
             The Future of Funding is Built on <span className="text-primary">Data</span>.
@@ -262,12 +261,12 @@ export default function HomePage() {
           <p className="text-lg md:text-xl text-gray-300 mb-8">
             Join the community that&apos;s changing how startups grow.
           </p>
-          <div className="flex flex-col md:flex-row justify-center gap-4">
+          <div className="flex flex-col sm:flex-row justify-center gap-4">
             <Link href="/auth?view=signup&userType=company">
-                <Button size="lg" className="w-full md:w-auto bg-primary hover:bg-primary/90 text-primary-foreground">Get Started as a Founder</Button>
+                <Button size="lg" className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground">Get Started as a Founder</Button>
             </Link>
             <Link href="/auth?view=signup&userType=investor">
-                <Button size="lg" variant="outline" className="w-full md:w-auto text-foreground border-foreground hover:bg-primary hover:text-primary-foreground">Get Started as an Investor</Button>
+                <Button size="lg" variant="outline" className="w-full sm:w-auto text-foreground border-foreground hover:bg-primary hover:text-primary-foreground">Get Started as an Investor</Button>
             </Link>
           </div>
         </div>
@@ -280,7 +279,7 @@ export default function HomePage() {
             <span className="text-white">Nivesh</span>
             <span className="text-primary">x</span>
           </div>
-          <div className="flex space-x-4 text-sm text-gray-400">
+          <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4 text-sm text-gray-400">
             <Link href="/terms" target="_blank" className="hover:text-white transition-colors">
               Terms & Conditions
             </Link>
