@@ -29,7 +29,6 @@ const SignUp = ({
   handleChange,
   handleSelectChange,
   handleShareTypeChange,
-  handleInvestmentTypeChange,
 }) => {
   const [isInvestorStepValid, setInvestorStepValid] = useState(false);
 
@@ -52,15 +51,15 @@ const SignUp = ({
   }
 
   useEffect(() => {
-    // This effect now only handles the investor form validation
     if (userType === 'investor') {
       setInvestorStepValid(validateInvestorStep(investorStep));
     }
   }, [formData, investorStep, userType]);
 
 
-  // Company form steps (original, unchanged)
+  // Company form steps
   const nextStep = () => {
+    // Step 1 Validation
     const { firstName, lastName, designation, linkedinProfile, email, phoneNumber } = formData;
     if (!firstName || !lastName || !designation || !linkedinProfile || !email || !phoneNumber) {
       setError('Please fill in all required fields for Step 1.');
@@ -105,7 +104,6 @@ const SignUp = ({
         return;
       }
     } else if (userType === 'investor') {
-      // Final validation for investor form
       if (!validateInvestorStep(1) || !validateInvestorStep(2)) {
          setError('Please ensure all steps are completed correctly.');
          setLoading(false);
@@ -331,8 +329,6 @@ const SignUp = ({
             case 2:
               const chequeSizes = ["₹ 1-5 L", "₹ 5-25 L", "₹ 25-1 Cr", "₹ 1 Cr+", "₹ 10 Cr+", "₹ 100 Cr+"];
               const investmentTypes = ["Equity investments", "Debt financing"];
-              const isBothChecked = formData.investmentType.includes("Equity investments") && formData.investmentType.includes("Debt financing");
-
               return (
                 <form className="space-y-6" onSubmit={onRegister}>
                    <div className="space-y-2">
@@ -354,20 +350,16 @@ const SignUp = ({
                           <div key={type} className="flex items-center space-x-2">
                             <Checkbox
                               id={`invest-type-${type}`}
+                              value={type}
                               checked={formData.investmentType.includes(type)}
-                              onCheckedChange={() => handleInvestmentTypeChange(type)}
+                              onCheckedChange={(checked) => {
+                                const event = { target: { value: type, checked: checked, type: 'checkbox' } };
+                                handleChange('investmentType')(event);
+                              }}
                             />
                             <Label htmlFor={`invest-type-${type}`} className="font-normal">{type}</Label>
                           </div>
                         ))}
-                        <div className="flex items-center space-x-2">
-                          <Checkbox
-                            id="invest-type-both"
-                            checked={isBothChecked}
-                            onCheckedChange={() => handleInvestmentTypeChange("Both")}
-                          />
-                          <Label htmlFor="invest-type-both" className="font-normal">Both</Label>
-                        </div>
                       </div>
                     </div>
                     <div className="space-y-2">
@@ -410,7 +402,7 @@ const SignUp = ({
     <div className="flex items-center justify-center min-h-screen bg-background">
       <Card className="w-full max-w-md bg-[#1a2332] text-white">
         <CardHeader className="text-center">
-          <CardTitle className="text-3xl font-bold text-white">Create an account</Title>
+          <CardTitle className="text-3xl font-bold text-white">Create an account</CardTitle>
           <p className="text-sub-heading">Join our community of founders and investors.</p>
         </CardHeader>
         <CardContent>
