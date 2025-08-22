@@ -199,7 +199,7 @@ const SignUp = ({ setCurrentView, userType, setUserType }) => {
     <div className="flex items-center justify-center min-h-screen bg-gray-900 p-4">
       <Card className="w-full max-w-2xl bg-gray-800 text-white border-gray-700">
         <CardHeader className="text-center">
-          <CardTitle className="text-3xl font-bold">Create an Account</CardTitle>
+          <CardTitle className="text-2xl sm:text-3xl font-bold">Create an Account</CardTitle>
           <p className="text-gray-400">Join our community of founders and investors.</p>
         </CardHeader>
         <CardContent className="p-4 sm:p-6">
@@ -605,7 +605,7 @@ const InvestorStep2 = ({ control, errors }) => {
             <div>
                 <Label>Investment Type</Label>
                 <Controller name="investmentType" control={control} render={({ field }) => (
-                    <div className="flex items-center space-x-4 pt-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
                         {investmentTypes.map(type => (
                             <div key={type} className="flex items-center space-x-2">
                                 <Checkbox id={type} checked={field.value?.includes(type)} onCheckedChange={checked => {
