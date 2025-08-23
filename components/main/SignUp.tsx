@@ -17,6 +17,12 @@ import { Building2, User } from 'lucide-react';
 
 declare function triggerOtpVerification(email: string): void;
 
+const companyStep1Fields = ["firstName", "lastName", "designation", "linkedinProfile", "workEmail", "password", "confirmPassword"];
+const companyStep2Fields = ["companyName", "companyWebsite", "companyLinkedin", "oneLiner", "aboutCompany", "companyCulture"];
+const companyStep3Fields = ["industry", "otherIndustry", "primarySector", "otherPrimarySector", "businessModel", "companyStage", "teamSize", "locations"];
+const companyStep4Fields = ["hasFunding", "totalFundingRaised", "fundingCurrency", "fundingRounds", "latestFundingRound"];
+const companyStep5Fields = ["companyEmail", "companyPhoneCountryCode", "companyPhoneNumber"];
+
 // --- SCHEMAS FOR COMPANY FORM ---
 const companyStep1Schema = z.object({
   firstName: z.string().min(1, "First name is required"),
@@ -108,7 +114,12 @@ const companyStep5Schema = z.object({
   companyPhoneCountryCode: z.string(),
   companyPhoneNumber: z.string().min(1, "Phone number is required"),
 });
-const allCompanyStepSchemas = [companyStep1Schema, companyStep2Schema, companyStep3Schema, companyStep4Schema, companyStep5Schema];
+
+const allCompanyStepsSchema = companyStep1Schema
+    .merge(companyStep2Schema)
+    .merge(companyStep3Schema)
+    .merge(companyStep4Schema)
+    .merge(companyStep5Schema);
 
 
 // --- SCHEMAS FOR INVESTOR FORM ---
@@ -147,7 +158,7 @@ const SignUp = ({ setCurrentView, userType, setUserType }) => {
 
   // --- COMPANY FORM HOOK ---
   const companyForm = useForm({
-    resolver: zodResolver(allCompanyStepSchemas[companyStep - 1]),
+    resolver: zodResolver(allCompanyStepsSchema),
     mode: 'onChange',
     defaultValues: {
       firstName: '',
@@ -202,7 +213,13 @@ const SignUp = ({ setCurrentView, userType, setUserType }) => {
   });
 
   // --- NAVIGATION LOGIC ---
-  const nextCompanyStep = async () => { if (await companyForm.trigger()) setCompanyStep(p => p + 1); };
+  const stepFields = [companyStep1Fields, companyStep2Fields, companyStep3Fields, companyStep4Fields, companyStep5Fields];
+  const nextCompanyStep = async () => {
+      const isValid = await companyForm.trigger(stepFields[companyStep - 1]);
+      if (isValid) {
+          setCompanyStep(p => p + 1);
+      }
+  };
   const prevCompanyStep = () => setCompanyStep(p => p - 1);
   const nextInvestorStep = async () => { if (await investorForm.trigger()) setInvestorStep(p => p + 1); };
   const prevInvestorStep = () => setInvestorStep(p => p - 1);
@@ -274,7 +291,7 @@ const SignUp = ({ setCurrentView, userType, setUserType }) => {
                 )}
                 <div className="flex justify-between">
                     {companyStep > 1 && <Button type="button" onClick={prevCompanyStep} variant="outline" className="text-white border-gray-600 hover:bg-gray-700">Back</Button>}
-                    {companyStep < 5 && <Button type="button" onClick={nextCompanyStep} disabled={!companyForm.formState.isValid} className="ml-auto">Next</Button>}
+                    {companyStep < 5 && <Button type="button" onClick={nextCompanyStep} className="ml-auto">Next</Button>}
                     {companyStep === 5 && <Button type="submit" disabled={loading || !companyForm.formState.isValid || !companyAgreed} className="ml-auto w-full">{loading ? 'Submitting...' : 'Submit & Verify Email'}</Button>}
                 </div>
             </div>
