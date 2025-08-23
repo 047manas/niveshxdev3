@@ -36,10 +36,7 @@ const companyStep1Schema = z.object({
     .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
     .regex(/[0-9]/, "Password must contain at least one number")
     .regex(/[^a-zA-Z0-9]/, "Password must contain at least one special character"),
-  confirmPassword: z.string()
-}).refine(data => data.password === data.confirmPassword, {
-  message: "Passwords do not match",
-  path: ["confirmPassword"],
+  confirmPassword: z.string(),
 });
 const companyStep2Schema = z.object({
   companyName: z.string().min(1, "Company name is required"),
@@ -61,22 +58,6 @@ const companyStep3Schema = z.object({
     .min(1, "Location is required")
     .transform(val => val.split(',').map(s => s.trim()).filter(s => s.length > 0))
     .refine(arr => arr.length > 0, { message: "Please list at least one location." }),
-}).refine(data => {
-    if (data.industry === 'Other') {
-        return data.otherIndustry && data.otherIndustry.length > 0;
-    }
-    return true;
-}, {
-    message: "Please specify the industry",
-    path: ["otherIndustry"],
-}).refine(data => {
-    if (data.primarySector === 'Other') {
-        return data.otherPrimarySector && data.otherPrimarySector.length > 0;
-    }
-    return true;
-}, {
-    message: "Please specify the sector",
-    path: ["otherPrimarySector"],
 });
 const companyStep4Schema = z.object({
   hasFunding: z.enum(["yes", "no"]),
@@ -84,30 +65,6 @@ const companyStep4Schema = z.object({
   fundingCurrency: z.enum(["INR", "USD"]).optional(),
   fundingRounds: z.number().optional(),
   latestFundingRound: z.string().optional(),
-}).superRefine((data, ctx) => {
-    if (data.hasFunding === 'yes') {
-        if (!data.totalFundingRaised) {
-            ctx.addIssue({
-                code: z.ZodIssueCode.custom,
-                message: "Total funding raised is required.",
-                path: ["totalFundingRaised"],
-            });
-        }
-        if (!data.fundingRounds) {
-            ctx.addIssue({
-                code: z.ZodIssueCode.custom,
-                message: "Number of funding rounds is required.",
-                path: ["fundingRounds"],
-            });
-        }
-        if (!data.latestFundingRound) {
-            ctx.addIssue({
-                code: z.ZodIssueCode.custom,
-                message: "Please select the latest funding round.",
-                path: ["latestFundingRound"],
-            });
-        }
-    }
 });
 const companyStep5Schema = z.object({
   companyEmail: z.string().email("Invalid email address"),
@@ -119,7 +76,42 @@ const allCompanyStepsSchema = companyStep1Schema
     .merge(companyStep2Schema)
     .merge(companyStep3Schema)
     .merge(companyStep4Schema)
-    .merge(companyStep5Schema);
+    .merge(companyStep5Schema)
+    .refine(data => data.password === data.confirmPassword, {
+        message: "Passwords do not match",
+        path: ["confirmPassword"],
+    })
+    .refine(data => {
+        if (data.industry === 'Other') {
+            return data.otherIndustry && data.otherIndustry.length > 0;
+        }
+        return true;
+    }, {
+        message: "Please specify the industry",
+        path: ["otherIndustry"],
+    })
+    .refine(data => {
+        if (data.primarySector === 'Other') {
+            return data.otherPrimarySector && data.otherPrimarySector.length > 0;
+        }
+        return true;
+    }, {
+        message: "Please specify the sector",
+        path: ["otherPrimarySector"],
+    })
+    .superRefine((data, ctx) => {
+        if (data.hasFunding === 'yes') {
+            if (!data.totalFundingRaised) {
+                ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Total funding raised is required.", path: ["totalFundingRaised"] });
+            }
+            if (!data.fundingRounds) {
+                ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Number of funding rounds is required.", path: ["fundingRounds"] });
+            }
+            if (!data.latestFundingRound) {
+                ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Please select the latest funding round.", path: ["latestFundingRound"] });
+            }
+        }
+    });
 
 
 // --- SCHEMAS FOR INVESTOR FORM ---
