@@ -11,7 +11,8 @@ const generateOtp = () => {
 export async function POST(req: NextRequest) {
   try {
     const { userType, ...formData } = await req.json();
-    const { email, password } = formData;
+    const { password } = formData;
+    const email = formData.email || formData.workEmail;
 
     if (!email || !password || !userType) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
