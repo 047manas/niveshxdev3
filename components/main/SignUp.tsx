@@ -51,7 +51,10 @@ const companyStep3Schema = z.object({
   businessModel: z.string().min(1, "Business model is required"),
   companyStage: z.string().min(1, "Company stage is required"),
   teamSize: z.number().min(1, "Team size must be at least 1"),
-  locations: z.string().min(1, "Location is required"),
+  locations: z.string()
+    .min(1, "Location is required")
+    .transform(val => val.split(',').map(s => s.trim()).filter(s => s.length > 0))
+    .refine(arr => arr.length > 0, { message: "Please list at least one location." }),
 }).refine(data => {
     if (data.industry === 'Other') {
         return data.otherIndustry && data.otherIndustry.length > 0;
@@ -126,7 +129,10 @@ const investorStep2Schema = z.object({
     investorType: z.enum(["UHNI/HNI", "Family Office", "VC", "Private Equity"]),
     investmentType: z.array(z.string()).min(1, "Please select at least one investment type"),
     chequeSize: z.string().min(1, "Please select a cheque size"),
-    interestedSectors: z.string().min(1, "Please list interested sectors"),
+    interestedSectors: z.string()
+        .min(1, "Please list interested sectors")
+        .transform(val => val.split(',').map(s => s.trim()).filter(s => s.length > 0))
+        .refine(arr => arr.length > 0, { message: "Please list at least one valid sector." }),
 });
 const allInvestorStepSchemas = [investorStep1Schema, investorStep2Schema];
 
@@ -838,6 +844,7 @@ const InvestorStep2 = ({ control, errors, setValue }) => {
             <div className="space-y-2 md:col-span-2">
                 <Label>What sectors / startups are you interested in?</Label>
                 <Textarea {...control.register("interestedSectors")} placeholder="e.g., FinTech, HealthTech, SaaS" className="bg-gray-700 border-gray-600" />
+                <p className="text-xs text-gray-400">Separate multiple sectors with commas.</p>
                 {errors.interestedSectors && <p className="text-red-500 text-xs">{errors.interestedSectors.message}</p>}
             </div>
         </div>
