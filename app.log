@@ -7,10 +7,4 @@
    - Network:      http://192.168.0.2:3000
 
  ✓ Starting...
- ✓ Ready in 1704ms
----
-INFO: Production email credentials not found. Using Ethereal for development.
-INFO: View test emails at: https://ethereal.email/messages
-Ethereal User: dsxrheuqcgfdqjw6@ethereal.email
-Ethereal Pass: AY9sP5aYmRfbqhr4MT
----
+ ✓ Ready in 546ms
