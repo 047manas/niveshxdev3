@@ -44,12 +44,30 @@ const companyStep2Schema = z.object({
   companyCulture: z.string().optional(),
 });
 const companyStep3Schema = z.object({
-  industry: z.array(z.string()).min(1, "Please select at least one industry"),
+  industry: z.string().min(1, "Please select an industry"),
+  otherIndustry: z.string().optional(),
   primarySector: z.string().min(1, "Primary sector is required"),
+  otherPrimarySector: z.string().optional(),
   businessModel: z.string().min(1, "Business model is required"),
   companyStage: z.string().min(1, "Company stage is required"),
   teamSize: z.number().min(1, "Team size must be at least 1"),
   locations: z.string().min(1, "Location is required"),
+}).refine(data => {
+    if (data.industry === 'Other') {
+        return data.otherIndustry && data.otherIndustry.length > 0;
+    }
+    return true;
+}, {
+    message: "Please specify the industry",
+    path: ["otherIndustry"],
+}).refine(data => {
+    if (data.primarySector === 'Other') {
+        return data.otherPrimarySector && data.otherPrimarySector.length > 0;
+    }
+    return true;
+}, {
+    message: "Please specify the sector",
+    path: ["otherPrimarySector"],
 });
 const companyStep4Schema = z.object({
   hasFunding: z.enum(["yes", "no"]),
@@ -118,8 +136,10 @@ const SignUp = ({ setCurrentView, userType, setUserType }) => {
       oneLiner: '',
       aboutCompany: '',
       companyCulture: '',
-      industry: [],
+      industry: undefined,
+      otherIndustry: '',
       primarySector: undefined,
+      otherPrimarySector: '',
       businessModel: undefined,
       companyStage: undefined,
       teamSize: undefined,
@@ -165,10 +185,21 @@ const SignUp = ({ setCurrentView, userType, setUserType }) => {
     setLoading(true);
     setError('');
     try {
+      const finalData = { ...data };
+      if (finalData.industry === 'Other' && finalData.otherIndustry) {
+          finalData.industry = finalData.otherIndustry;
+      }
+      delete finalData.otherIndustry;
+
+      if (finalData.primarySector === 'Other' && finalData.otherPrimarySector) {
+        finalData.primarySector = finalData.otherPrimarySector;
+      }
+      delete finalData.otherPrimarySector;
+
       const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userType: type, ...data }),
+        body: JSON.stringify({ userType: type, ...finalData }),
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || 'Something went wrong');
@@ -193,7 +224,7 @@ const SignUp = ({ setCurrentView, userType, setUserType }) => {
         <form onSubmit={companyForm.handleSubmit(onCompanySubmit)} className="space-y-4">
             {companyStep === 1 && <CompanyStep1 control={companyForm.control} register={companyForm.register} errors={companyForm.formState.errors} />}
             {companyStep === 2 && <CompanyStep2 control={companyForm.control} register={companyForm.register} errors={companyForm.formState.errors} />}
-            {companyStep === 3 && <CompanyStep3 control={companyForm.control} errors={companyForm.formState.errors} />}
+            {companyStep === 3 && <CompanyStep3 control={companyForm.control} register={companyForm.register} errors={companyForm.formState.errors} />}
             {companyStep === 4 && <CompanyStep4 control={companyForm.control} register={companyForm.register} errors={companyForm.formState.errors} />}
             {companyStep === 5 && <CompanyStep5 control={companyForm.control} register={companyForm.register} errors={companyForm.formState.errors} />}
             {error && <p className="text-sm text-red-500">{error}</p>}
@@ -419,7 +450,7 @@ const CompanyStep3 = ({ control, errors, register }) => {
                     <Input id="otherIndustry" {...register("otherIndustry")} className="bg-gray-700 border-gray-600" />
                     {errors.otherIndustry && <p className="text-red-500 text-xs">{errors.otherIndustry.message}</p>}
                 </div>
-            ) : <div />}
+            ) : <div></div>}
 
             <div className="space-y-2">
                 <Label>Company Sector</Label>
@@ -449,7 +480,7 @@ const CompanyStep3 = ({ control, errors, register }) => {
                     <Input id="otherPrimarySector" {...register("otherPrimarySector")} className="bg-gray-700 border-gray-600" />
                     {errors.otherPrimarySector && <p className="text-red-500 text-xs">{errors.otherPrimarySector.message}</p>}
                 </div>
-            ) : <div />}
+            ) : <div></div>}
 
             <div className="space-y-2">
                 <Label>Company’s Primary Business Model</Label>
