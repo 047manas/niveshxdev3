@@ -15,8 +15,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { Building2, User } from 'lucide-react';
 
-declare function triggerOtpVerification(email: string): void;
-
 const companyStep1Fields = ["firstName", "lastName", "designation", "linkedinProfile", "email", "password", "confirmPassword"];
 const companyStep2Fields = ["companyName", "companyWebsite", "companyLinkedin", "oneLiner", "aboutCompany", "companyCulture"];
 const companyStep3Fields = ["industry", "otherIndustry", "primarySector", "otherPrimarySector", "businessModel", "companyStage", "teamSize", "locations"];
@@ -72,13 +70,13 @@ const companyStep5Schema = z.object({
   companyPhoneNumber: z.string().min(1, "Phone number is required"),
 });
 
-const allCompanyStepsSchema = companyStep1Schema
-    .merge(companyStep2Schema)
-    .merge(companyStep3Schema)
-    .merge(companyStep4Schema)
-    .merge(companyStep5Schema)
-    .refine(data => data.password === data.confirmPassword, {
-        message: "Passwords do not match",
+const allCompanyStepsSchema = companyStep1Schema.extend({
+    ...companyStep2Schema.shape,
+    ...companyStep3Schema.shape,
+    ...companyStep4Schema.shape,
+    ...companyStep5Schema.shape,
+}).refine(data => data.password === data.confirmPassword, {
+    message: "Passwords do not match",
         path: ["confirmPassword"],
     })
     .refine(data => {
@@ -138,13 +136,13 @@ const investorStep2Schema = z.object({
         .refine(arr => arr.length > 0, { message: "Please list at least one valid sector." }),
 });
 
-const allInvestorStepsSchema = investorStep1Schema.merge(investorStep2Schema);
+const allInvestorStepsSchema = investorStep1Schema.extend(investorStep2Schema.shape);
 
 const investorStep1Fields = ["firstName", "lastName", "email", "phoneCountryCode", "phoneNumber", "linkedinId", "password", "confirmPassword"];
 const investorStep2Fields = ["investorType", "investmentType", "chequeSize", "interestedSectors"];
 
 
-const SignUp = ({ setCurrentView, userType, setUserType }) => {
+const SignUp = ({ setCurrentView, userType, setUserType, onRegistrationSuccess }) => {
   const [companyStep, setCompanyStep] = useState(1);
   const [investorStep, setInvestorStep] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -249,7 +247,7 @@ const SignUp = ({ setCurrentView, userType, setUserType }) => {
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || 'Something went wrong');
-      triggerOtpVerification(data.email);
+      onRegistrationSuccess(data.email);
     } catch (err) {
       setError(err.message);
     } finally {
