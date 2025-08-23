@@ -22,7 +22,7 @@ const companyStep1Schema = z.object({
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
   designation: z.enum(["Co-founder", "CEO", "CTO", "HR", "Other"]),
-  linkedinProfile: z.string().url("Please enter a valid LinkedIn URL"),
+  linkedinProfile: z.string().url("Please enter a valid LinkedIn URL").or(z.literal('')),
   workEmail: z.string().email("Invalid email address"),
   password: z.string()
     .min(8, "Password must be at least 8 characters")
@@ -115,7 +115,7 @@ const investorStep1Schema = z.object({
     email: z.string().email("Invalid email address"),
     phoneCountryCode: z.string(),
     phoneNumber: z.string().min(1, "Phone number is required"),
-    linkedinId: z.string().url("Please enter a valid LinkedIn URL"),
+    linkedinId: z.string().url("Please enter a valid LinkedIn URL").or(z.literal('')),
     password: z.string().min(8, "Password must be at least 8 characters"),
     confirmPassword: z.string(),
 }).refine(data => data.password === data.confirmPassword, {

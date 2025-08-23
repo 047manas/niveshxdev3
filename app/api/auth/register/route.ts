@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
         oneLiner,
         about: aboutCompany,
         culture: companyCulture,
-        industry,
+        industry: [industry],
         primarySector,
         businessModel,
         stage: companyStage,
