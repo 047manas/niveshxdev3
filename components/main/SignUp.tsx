@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useForm, useWatch, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -70,48 +70,6 @@ const companyStep5Schema = z.object({
   companyPhoneNumber: z.string().min(1, "Phone number is required"),
 });
 
-const allCompanyStepsSchema = companyStep1Schema.extend({
-    ...companyStep2Schema.shape,
-    ...companyStep3Schema.shape,
-    ...companyStep4Schema.shape,
-    ...companyStep5Schema.shape,
-}).refine(data => data.password === data.confirmPassword, {
-    message: "Passwords do not match",
-        path: ["confirmPassword"],
-    })
-    .refine(data => {
-        if (data.industry === 'Other') {
-            return data.otherIndustry && data.otherIndustry.length > 0;
-        }
-        return true;
-    }, {
-        message: "Please specify the industry",
-        path: ["otherIndustry"],
-    })
-    .refine(data => {
-        if (data.primarySector === 'Other') {
-            return data.otherPrimarySector && data.otherPrimarySector.length > 0;
-        }
-        return true;
-    }, {
-        message: "Please specify the sector",
-        path: ["otherPrimarySector"],
-    })
-    .superRefine((data, ctx) => {
-        if (data.hasFunding === 'yes') {
-            if (!data.totalFundingRaised) {
-                ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Total funding raised is required.", path: ["totalFundingRaised"] });
-            }
-            if (!data.fundingRounds) {
-                ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Number of funding rounds is required.", path: ["fundingRounds"] });
-            }
-            if (!data.latestFundingRound) {
-                ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Please select the latest funding round.", path: ["latestFundingRound"] });
-            }
-        }
-    });
-
-
 // --- SCHEMAS FOR INVESTOR FORM ---
 const investorStep1Schema = z.object({
     firstName: z.string().min(1, "First name is required"),
@@ -136,8 +94,6 @@ const investorStep2Schema = z.object({
         .refine(arr => arr.length > 0, { message: "Please list at least one valid sector." }),
 });
 
-const allInvestorStepsSchema = investorStep1Schema.extend(investorStep2Schema.shape);
-
 const investorStep1Fields = ["firstName", "lastName", "email", "phoneCountryCode", "phoneNumber", "linkedinId", "password", "confirmPassword"];
 const investorStep2Fields = ["investorType", "investmentType", "chequeSize", "interestedSectors"];
 
@@ -149,6 +105,53 @@ const SignUp = ({ setCurrentView, userType, setUserType, onRegistrationSuccess }
   const [error, setError] = useState('');
   const [companyAgreed, setCompanyAgreed] = useState(false);
   const [investorAgreed, setInvestorAgreed] = useState(false);
+
+  const allCompanyStepsSchema = useMemo(() => {
+    return companyStep1Schema
+        .merge(companyStep2Schema)
+        .merge(companyStep3Schema)
+        .merge(companyStep4Schema)
+        .merge(companyStep5Schema)
+        .refine(data => data.password === data.confirmPassword, {
+            message: "Passwords do not match",
+            path: ["confirmPassword"],
+        })
+        .refine(data => {
+            if (data.industry === 'Other') {
+                return data.otherIndustry && data.otherIndustry.length > 0;
+            }
+            return true;
+        }, {
+            message: "Please specify the industry",
+            path: ["otherIndustry"],
+        })
+        .refine(data => {
+            if (data.primarySector === 'Other') {
+                return data.otherPrimarySector && data.otherPrimarySector.length > 0;
+            }
+            return true;
+        }, {
+            message: "Please specify the sector",
+            path: ["otherPrimarySector"],
+        })
+        .superRefine((data, ctx) => {
+            if (data.hasFunding === 'yes') {
+                if (!data.totalFundingRaised) {
+                    ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Total funding raised is required.", path: ["totalFundingRaised"] });
+                }
+                if (!data.fundingRounds) {
+                    ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Number of funding rounds is required.", path: ["fundingRounds"] });
+                }
+                if (!data.latestFundingRound) {
+                    ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Please select the latest funding round.", path: ["latestFundingRound"] });
+                }
+            }
+        });
+    }, []);
+
+    const allInvestorStepsSchema = useMemo(() => {
+        return investorStep1Schema.merge(investorStep2Schema);
+    }, []);
 
   // --- COMPANY FORM HOOK ---
   const companyForm = useForm({
@@ -215,6 +218,7 @@ const SignUp = ({ setCurrentView, userType, setUserType, onRegistrationSuccess }
       }
   };
   const prevCompanyStep = () => setCompanyStep(p => p - 1);
+
   const nextInvestorStep = async () => {
       const fields = investorStep === 1 ? investorStep1Fields : investorStep2Fields;
       const isValid = await investorForm.trigger(fields);
@@ -307,7 +311,7 @@ const SignUp = ({ setCurrentView, userType, setUserType, onRegistrationSuccess }
         </div>
         <form onSubmit={investorForm.handleSubmit(onInvestorSubmit)} className="space-y-4">
             {investorStep === 1 && <InvestorStep1 control={investorForm.control} register={investorForm.register} errors={investorForm.formState.errors} />}
-            {investorStep === 2 && <InvestorStep2 control={investorForm.control} errors={investorForm.formState.errors} />}
+            {investorStep === 2 && <InvestorStep2 control={investorForm.control} errors={investorForm.formState.errors} setValue={investorForm.setValue} />}
             {error && <p className="text-sm text-red-500">{error}</p>}
             <div className="flex justify-between pt-4 flex-col space-y-4">
                 {investorStep === 2 && (
