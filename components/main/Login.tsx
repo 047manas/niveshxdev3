@@ -1,4 +1,7 @@
-import React, { useState, useContext } from 'react';
+import React, { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -6,24 +9,24 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 
+const loginSchema = z.object({
+  email: z.string().email({ message: "Please enter a valid email address." }),
+  password: z.string().min(1, { message: "Password is required." }),
+});
+
 const Login = ({ setCurrentView }) => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(''); // For server-side errors
   const { login } = useAuth();
   const router = useRouter();
 
-  const onLogin = async (e) => {
-    e.preventDefault();
+  const { register, handleSubmit, formState: { errors } } = useForm({
+    resolver: zodResolver(loginSchema),
+    mode: 'onChange',
+  });
+
+  const onLogin = async (data) => {
     setError('');
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      setError('Please enter a valid email address.');
-      return;
-    }
-
     setLoading(true);
     try {
       const response = await fetch('/api/auth/login', {
@@ -31,26 +34,21 @@ const Login = ({ setCurrentView }) => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify(data),
       });
 
-      const data = await response.json();
+      const responseData = await response.json();
 
       if (!response.ok) {
-        if (data.error === 'NOT_VERIFIED') {
-          // Save email for OTP verification page and redirect
-          window.localStorage.setItem('emailForVerification', email);
+        if (responseData.error === 'NOT_VERIFIED') {
+          window.localStorage.setItem('emailForVerification', data.email);
           setCurrentView('verify-otp');
-          // No need to set error message here, the view will change
           return;
         }
-        throw new Error(data.error || 'Login failed');
+        throw new Error(responseData.error || 'Login failed');
       }
 
-      // The login logic (storing token, user data) will be handled by AuthContext
-      await login(data.token);
-
-      // Redirect to auth-redirect on successful login
+      await login(responseData.token);
       router.push('/auth-redirect');
 
     } catch (err) {
@@ -68,18 +66,17 @@ const Login = ({ setCurrentView }) => {
           <p className="text-sub-heading">Welcome back!</p>
         </CardHeader>
         <CardContent>
-          <form className="space-y-4" onSubmit={onLogin}>
+          <form className="space-y-4" onSubmit={handleSubmit(onLogin)}>
             <div className="space-y-2">
               <Label htmlFor="email" className="text-input-label">Email</Label>
               <Input
                 id="email"
                 type="email"
                 placeholder="Enter your email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                {...register("email")}
                 className="bg-background border-border text-foreground focus:ring-ring placeholder:text-input-label"
               />
+              {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
             </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
@@ -96,11 +93,10 @@ const Login = ({ setCurrentView }) => {
                 id="password"
                 type="password"
                 placeholder="••••••••"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                {...register("password")}
                 className="bg-background border-border text-foreground focus:ring-ring placeholder:text-input-label"
               />
+              {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>}
             </div>
             {error && <p className="text-sm text-red-500">{error}</p>}
             <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" disabled={loading}>
