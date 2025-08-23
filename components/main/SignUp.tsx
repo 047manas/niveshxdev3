@@ -17,12 +17,18 @@ import { Building2, User } from 'lucide-react';
 
 declare function triggerOtpVerification(email: string): void;
 
+const companyStep1Fields = ["firstName", "lastName", "designation", "linkedinProfile", "workEmail", "password", "confirmPassword"];
+const companyStep2Fields = ["companyName", "companyWebsite", "companyLinkedin", "oneLiner", "aboutCompany", "companyCulture"];
+const companyStep3Fields = ["industry", "otherIndustry", "primarySector", "otherPrimarySector", "businessModel", "companyStage", "teamSize", "locations"];
+const companyStep4Fields = ["hasFunding", "totalFundingRaised", "fundingCurrency", "fundingRounds", "latestFundingRound"];
+const companyStep5Fields = ["companyEmail", "companyPhoneCountryCode", "companyPhoneNumber"];
+
 // --- SCHEMAS FOR COMPANY FORM ---
 const companyStep1Schema = z.object({
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
   designation: z.enum(["Co-founder", "CEO", "CTO", "HR", "Other"]),
-  linkedinProfile: z.string().url("Please enter a valid LinkedIn URL"),
+  linkedinProfile: z.string().url("Please enter a valid LinkedIn URL").or(z.literal('')),
   workEmail: z.string().email("Invalid email address"),
   password: z.string()
     .min(8, "Password must be at least 8 characters")
@@ -30,10 +36,7 @@ const companyStep1Schema = z.object({
     .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
     .regex(/[0-9]/, "Password must contain at least one number")
     .regex(/[^a-zA-Z0-9]/, "Password must contain at least one special character"),
-  confirmPassword: z.string()
-}).refine(data => data.password === data.confirmPassword, {
-  message: "Passwords do not match",
-  path: ["confirmPassword"],
+  confirmPassword: z.string(),
 });
 const companyStep2Schema = z.object({
   companyName: z.string().min(1, "Company name is required"),
@@ -51,23 +54,10 @@ const companyStep3Schema = z.object({
   businessModel: z.string().min(1, "Business model is required"),
   companyStage: z.string().min(1, "Company stage is required"),
   teamSize: z.number().min(1, "Team size must be at least 1"),
-  locations: z.string().min(1, "Location is required"),
-}).refine(data => {
-    if (data.industry === 'Other') {
-        return data.otherIndustry && data.otherIndustry.length > 0;
-    }
-    return true;
-}, {
-    message: "Please specify the industry",
-    path: ["otherIndustry"],
-}).refine(data => {
-    if (data.primarySector === 'Other') {
-        return data.otherPrimarySector && data.otherPrimarySector.length > 0;
-    }
-    return true;
-}, {
-    message: "Please specify the sector",
-    path: ["otherPrimarySector"],
+  locations: z.string()
+    .min(1, "Location is required")
+    .transform(val => val.split(',').map(s => s.trim()).filter(s => s.length > 0))
+    .refine(arr => arr.length > 0, { message: "Please list at least one location." }),
 });
 const companyStep4Schema = z.object({
   hasFunding: z.enum(["yes", "no"]),
@@ -75,16 +65,53 @@ const companyStep4Schema = z.object({
   fundingCurrency: z.enum(["INR", "USD"]).optional(),
   fundingRounds: z.number().optional(),
   latestFundingRound: z.string().optional(),
-}).refine(data => {
-    if (data.hasFunding === 'yes') return data.totalFundingRaised !== undefined && data.fundingRounds !== undefined && data.latestFundingRound !== undefined;
-    return true;
-}, { message: "Please fill all funding details", path: ["totalFundingRaised"] });
+});
 const companyStep5Schema = z.object({
   companyEmail: z.string().email("Invalid email address"),
   companyPhoneCountryCode: z.string(),
   companyPhoneNumber: z.string().min(1, "Phone number is required"),
 });
-const allCompanyStepSchemas = [companyStep1Schema, companyStep2Schema, companyStep3Schema, companyStep4Schema, companyStep5Schema];
+
+const allCompanyStepsSchema = companyStep1Schema
+    .merge(companyStep2Schema)
+    .merge(companyStep3Schema)
+    .merge(companyStep4Schema)
+    .merge(companyStep5Schema)
+    .refine(data => data.password === data.confirmPassword, {
+        message: "Passwords do not match",
+        path: ["confirmPassword"],
+    })
+    .refine(data => {
+        if (data.industry === 'Other') {
+            return data.otherIndustry && data.otherIndustry.length > 0;
+        }
+        return true;
+    }, {
+        message: "Please specify the industry",
+        path: ["otherIndustry"],
+    })
+    .refine(data => {
+        if (data.primarySector === 'Other') {
+            return data.otherPrimarySector && data.otherPrimarySector.length > 0;
+        }
+        return true;
+    }, {
+        message: "Please specify the sector",
+        path: ["otherPrimarySector"],
+    })
+    .superRefine((data, ctx) => {
+        if (data.hasFunding === 'yes') {
+            if (!data.totalFundingRaised) {
+                ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Total funding raised is required.", path: ["totalFundingRaised"] });
+            }
+            if (!data.fundingRounds) {
+                ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Number of funding rounds is required.", path: ["fundingRounds"] });
+            }
+            if (!data.latestFundingRound) {
+                ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Please select the latest funding round.", path: ["latestFundingRound"] });
+            }
+        }
+    });
 
 
 // --- SCHEMAS FOR INVESTOR FORM ---
@@ -94,7 +121,7 @@ const investorStep1Schema = z.object({
     email: z.string().email("Invalid email address"),
     phoneCountryCode: z.string(),
     phoneNumber: z.string().min(1, "Phone number is required"),
-    linkedinId: z.string().url("Please enter a valid LinkedIn URL"),
+    linkedinId: z.string().url("Please enter a valid LinkedIn URL").or(z.literal('')),
     password: z.string().min(8, "Password must be at least 8 characters"),
     confirmPassword: z.string(),
 }).refine(data => data.password === data.confirmPassword, {
@@ -105,7 +132,10 @@ const investorStep2Schema = z.object({
     investorType: z.enum(["UHNI/HNI", "Family Office", "VC", "Private Equity"]),
     investmentType: z.array(z.string()).min(1, "Please select at least one investment type"),
     chequeSize: z.string().min(1, "Please select a cheque size"),
-    interestedSectors: z.string().min(1, "Please list interested sectors"),
+    interestedSectors: z.string()
+        .min(1, "Please list interested sectors")
+        .transform(val => val.split(',').map(s => s.trim()).filter(s => s.length > 0))
+        .refine(arr => arr.length > 0, { message: "Please list at least one valid sector." }),
 });
 const allInvestorStepSchemas = [investorStep1Schema, investorStep2Schema];
 
@@ -120,7 +150,7 @@ const SignUp = ({ setCurrentView, userType, setUserType }) => {
 
   // --- COMPANY FORM HOOK ---
   const companyForm = useForm({
-    resolver: zodResolver(allCompanyStepSchemas[companyStep - 1]),
+    resolver: zodResolver(allCompanyStepsSchema),
     mode: 'onChange',
     defaultValues: {
       firstName: '',
@@ -175,7 +205,13 @@ const SignUp = ({ setCurrentView, userType, setUserType }) => {
   });
 
   // --- NAVIGATION LOGIC ---
-  const nextCompanyStep = async () => { if (await companyForm.trigger()) setCompanyStep(p => p + 1); };
+  const stepFields = [companyStep1Fields, companyStep2Fields, companyStep3Fields, companyStep4Fields, companyStep5Fields];
+  const nextCompanyStep = async () => {
+      const isValid = await companyForm.trigger(stepFields[companyStep - 1]);
+      if (isValid) {
+          setCompanyStep(p => p + 1);
+      }
+  };
   const prevCompanyStep = () => setCompanyStep(p => p - 1);
   const nextInvestorStep = async () => { if (await investorForm.trigger()) setInvestorStep(p => p + 1); };
   const prevInvestorStep = () => setInvestorStep(p => p - 1);
@@ -247,7 +283,7 @@ const SignUp = ({ setCurrentView, userType, setUserType }) => {
                 )}
                 <div className="flex justify-between">
                     {companyStep > 1 && <Button type="button" onClick={prevCompanyStep} variant="outline" className="text-white border-gray-600 hover:bg-gray-700">Back</Button>}
-                    {companyStep < 5 && <Button type="button" onClick={nextCompanyStep} disabled={!companyForm.formState.isValid} className="ml-auto">Next</Button>}
+                    {companyStep < 5 && <Button type="button" onClick={nextCompanyStep} className="ml-auto">Next</Button>}
                     {companyStep === 5 && <Button type="submit" disabled={loading || !companyForm.formState.isValid || !companyAgreed} className="ml-auto w-full">{loading ? 'Submitting...' : 'Submit & Verify Email'}</Button>}
                 </div>
             </div>
@@ -526,7 +562,17 @@ const CompanyStep3 = ({ control, errors, register }) => {
                     name="teamSize"
                     control={control}
                     render={({ field }) => (
-                        <Input id="teamSize" type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value, 10))} className="bg-gray-700 border-gray-600" />
+                        <Input
+                            id="teamSize"
+                            type="number"
+                            {...field}
+                            value={field.value ?? ''}
+                            onChange={e => {
+                                const value = e.target.value;
+                                field.onChange(value === '' ? undefined : parseInt(value, 10));
+                            }}
+                            className="bg-gray-700 border-gray-600"
+                        />
                     )}
                 />
                 {errors.teamSize && <p className="text-red-500 text-xs">{errors.teamSize.message}</p>}
@@ -588,7 +634,17 @@ const CompanyStep4 = ({ control, register, errors }) => {
                                 name="totalFundingRaised"
                                 control={control}
                                 render={({ field }) => (
-                                    <Input id="totalFundingRaised" type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value, 10))} className="sm:col-span-3 bg-gray-700 border-gray-600" />
+                                    <Input
+                                        id="totalFundingRaised"
+                                        type="number"
+                                        {...field}
+                                        value={field.value ?? ''}
+                                        onChange={e => {
+                                            const value = e.target.value;
+                                            field.onChange(value === '' ? undefined : parseInt(value, 10));
+                                        }}
+                                        className="sm:col-span-3 bg-gray-700 border-gray-600"
+                                    />
                                 )}
                             />
                         </div>
@@ -600,7 +656,17 @@ const CompanyStep4 = ({ control, register, errors }) => {
                             name="fundingRounds"
                             control={control}
                             render={({ field }) => (
-                                <Input id="fundingRounds" type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value, 10))} className="bg-gray-700 border-gray-600" />
+                                <Input
+                                    id="fundingRounds"
+                                    type="number"
+                                    {...field}
+                                    value={field.value ?? ''}
+                                    onChange={e => {
+                                        const value = e.target.value;
+                                        field.onChange(value === '' ? undefined : parseInt(value, 10));
+                                    }}
+                                    className="bg-gray-700 border-gray-600"
+                                />
                             )}
                         />
                         {errors.fundingRounds && <p className="text-red-500 text-xs">{errors.fundingRounds.message}</p>}
@@ -787,6 +853,7 @@ const InvestorStep2 = ({ control, errors, setValue }) => {
             <div className="space-y-2 md:col-span-2">
                 <Label>What sectors / startups are you interested in?</Label>
                 <Textarea {...control.register("interestedSectors")} placeholder="e.g., FinTech, HealthTech, SaaS" className="bg-gray-700 border-gray-600" />
+                <p className="text-xs text-gray-400">Separate multiple sectors with commas.</p>
                 {errors.interestedSectors && <p className="text-red-500 text-xs">{errors.interestedSectors.message}</p>}
             </div>
         </div>

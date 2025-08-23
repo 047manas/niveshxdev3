@@ -60,7 +60,7 @@ When a user's `userType` is "Company", their data is stored across two additiona
 -   `businessModel`: (String) The company's primary business model (e.g., "B2B").
 -   `stage`: (String) The current funding stage (e.g., "Pre-Seed", "Seed").
 -   `teamSize`: (Number) The number of employees in the company.
--   `locations`: (String) Comma-separated list of company locations.
+-   `locations`: (Array of Strings) A list of company locations.
 -   `contactEmail`: (String) The official contact email for the company.
 -   `contactPhone`: (Map) The official contact phone for the company.
     -   `countryCode`: (String) e.g., "+91"
@@ -89,7 +89,7 @@ When a user's `userType` is "Company", their data is stored across two additiona
   "businessModel": "B2B",
   "stage": "Seed",
   "teamSize": 25,
-  "locations": "Mumbai, Bangalore",
+  "locations": ["Mumbai", "Bangalore"],
   "contactEmail": "contact@innovatech.com",
   "contactPhone": { "countryCode": "+91", "number": "1234567890" },
   "funding": {
@@ -141,7 +141,7 @@ When a user's `userType` is "Company", their data is stored across two additiona
 -   `investmentType`: (Array of Strings) The type of investments they make (e.g., ["Equity investments", "Debt financing"]).
 -   `linkedinProfile`: (String) The URL to their LinkedIn profile.
 -   `chequeSize`: (String) The range of their typical investment size (e.g., "25L-1Cr").
--   `interestedSectors`: (String or Array) The industries they are interested in.
+-   `interestedSectors`: (Array of Strings) The industries they are interested in.
 -   `isVerified`: (Boolean) A flag to mark if their accredited status has been verified, defaulting to `false`.
 -   `createdAt`: (Timestamp) The timestamp when the investor profile was created.
 
