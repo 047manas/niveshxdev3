@@ -280,10 +280,10 @@ export default function HomePage() {
             <span className="text-primary">x</span>
           </div>
           <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4 text-sm text-gray-400">
-            <Link href="/terms" target="_blank" className="hover:text-white transition-colors">
+            <Link href="/terms-and-conditions.html" target="_blank" className="hover:text-white transition-colors">
               Terms & Conditions
             </Link>
-            <Link href="/privacy" target="_blank" className="hover:text-white transition-colors">
+            <Link href="/privacy-policy.html" target="_blank" className="hover:text-white transition-colors">
               Privacy Policy
             </Link>
           </div>
