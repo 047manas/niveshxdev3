@@ -88,10 +88,10 @@ export async function POST(req: NextRequest) {
         },
         funding: {
           hasRaised: hasFunding === 'yes',
-          totalRaised: totalFundingRaised,
-          currency: fundingCurrency,
-          rounds: fundingRounds,
-          latestRound: latestFundingRound,
+          totalRaised: hasFunding === 'yes' ? totalFundingRaised : 0,
+          currency: hasFunding === 'yes' ? fundingCurrency : null,
+          rounds: hasFunding === 'yes' ? fundingRounds : 0,
+          latestRound: hasFunding === 'yes' ? latestFundingRound : null,
         },
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
       };
