@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { useForm, useWatch, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -96,12 +97,41 @@ const SignUp = ({ setCurrentView, userType, setUserType }) => {
   const [investorStep, setInvestorStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [companyAgreed, setCompanyAgreed] = useState(false);
+  const [investorAgreed, setInvestorAgreed] = useState(false);
 
   // --- COMPANY FORM HOOK ---
   const companyForm = useForm({
     resolver: zodResolver(allCompanyStepSchemas[companyStep - 1]),
     mode: 'onChange',
-    defaultValues: { /* ... company default values ... */ }
+    defaultValues: {
+      firstName: '',
+      lastName: '',
+      designation: undefined,
+      linkedinProfile: '',
+      workEmail: '',
+      password: '',
+      confirmPassword: '',
+      companyName: '',
+      companyWebsite: '',
+      companyLinkedin: '',
+      oneLiner: '',
+      aboutCompany: '',
+      companyCulture: '',
+      industry: [],
+      primarySector: undefined,
+      businessModel: undefined,
+      companyStage: undefined,
+      teamSize: undefined,
+      locations: '',
+      hasFunding: undefined,
+      totalFundingRaised: undefined,
+      fundingCurrency: 'INR',
+      latestFundingRound: undefined,
+      companyEmail: '',
+      companyPhoneCountryCode: '+91',
+      companyPhoneNumber: '',
+    }
   });
 
   // --- INVESTOR FORM HOOK ---
@@ -167,10 +197,28 @@ const SignUp = ({ setCurrentView, userType, setUserType }) => {
             {companyStep === 4 && <CompanyStep4 control={companyForm.control} register={companyForm.register} errors={companyForm.formState.errors} />}
             {companyStep === 5 && <CompanyStep5 control={companyForm.control} register={companyForm.register} errors={companyForm.formState.errors} />}
             {error && <p className="text-sm text-red-500">{error}</p>}
-            <div className="flex justify-between pt-4">
-                {companyStep > 1 && <Button type="button" onClick={prevCompanyStep} variant="outline" className="text-white border-gray-600 hover:bg-gray-700">Back</Button>}
-                {companyStep < 5 && <Button type="button" onClick={nextCompanyStep} disabled={!companyForm.formState.isValid} className="ml-auto">Next</Button>}
-                {companyStep === 5 && <Button type="submit" disabled={loading || !companyForm.formState.isValid} className="ml-auto w-full">{loading ? 'Submitting...' : 'Submit & Verify Email'}</Button>}
+            <div className="flex justify-between pt-4 flex-col space-y-4">
+                {companyStep === 5 && (
+                    <div className="flex items-center space-x-2">
+                        <Checkbox id="company-terms" onCheckedChange={setCompanyAgreed} />
+                        <Label htmlFor="company-terms" className="text-sm font-normal text-gray-400">
+                            I have read and agree to the{' '}
+                            <Link href="/terms-and-conditions.html" target="_blank" className="underline hover:text-primary">
+                                Terms and Conditions
+                            </Link>{' '}
+                            and{' '}
+                            <Link href="/privacy-policy.html" target="_blank" className="underline hover:text-primary">
+                                Privacy Policy
+                            </Link>
+                            .
+                        </Label>
+                    </div>
+                )}
+                <div className="flex justify-between">
+                    {companyStep > 1 && <Button type="button" onClick={prevCompanyStep} variant="outline" className="text-white border-gray-600 hover:bg-gray-700">Back</Button>}
+                    {companyStep < 5 && <Button type="button" onClick={nextCompanyStep} disabled={!companyForm.formState.isValid} className="ml-auto">Next</Button>}
+                    {companyStep === 5 && <Button type="submit" disabled={loading || !companyForm.formState.isValid || !companyAgreed} className="ml-auto w-full">{loading ? 'Submitting...' : 'Submit & Verify Email'}</Button>}
+                </div>
             </div>
         </form>
     </div>
@@ -186,10 +234,28 @@ const SignUp = ({ setCurrentView, userType, setUserType }) => {
             {investorStep === 1 && <InvestorStep1 control={investorForm.control} register={investorForm.register} errors={investorForm.formState.errors} />}
             {investorStep === 2 && <InvestorStep2 control={investorForm.control} errors={investorForm.formState.errors} />}
             {error && <p className="text-sm text-red-500">{error}</p>}
-            <div className="flex justify-between pt-4">
-                {investorStep > 1 && <Button type="button" onClick={prevInvestorStep} variant="outline" className="text-white border-gray-600 hover:bg-gray-700">Back</Button>}
-                {investorStep < 2 && <Button type="button" onClick={nextInvestorStep} disabled={!investorForm.formState.isValid} className="ml-auto">Next</Button>}
-                {investorStep === 2 && <Button type="submit" disabled={loading || !investorForm.formState.isValid} className="ml-auto w-full">{loading ? 'Submitting...' : 'Submit & Verify Email'}</Button>}
+            <div className="flex justify-between pt-4 flex-col space-y-4">
+                {investorStep === 2 && (
+                    <div className="flex items-center space-x-2">
+                        <Checkbox id="investor-terms" onCheckedChange={setInvestorAgreed} />
+                        <Label htmlFor="investor-terms" className="text-sm font-normal text-gray-400">
+                            I have read and agree to the{' '}
+                            <Link href="/terms-and-conditions.html" target="_blank" className="underline hover:text-primary">
+                                Terms and Conditions
+                            </Link>{' '}
+                            and{' '}
+                            <Link href="/privacy-policy.html" target="_blank" className="underline hover:text-primary">
+                                Privacy Policy
+                            </Link>
+                            .
+                        </Label>
+                    </div>
+                )}
+                <div className="flex justify-between">
+                    {investorStep > 1 && <Button type="button" onClick={prevInvestorStep} variant="outline" className="text-white border-gray-600 hover:bg-gray-700">Back</Button>}
+                    {investorStep < 2 && <Button type="button" onClick={nextInvestorStep} disabled={!investorForm.formState.isValid} className="ml-auto">Next</Button>}
+                    {investorStep === 2 && <Button type="submit" disabled={loading || !investorForm.formState.isValid || !investorAgreed} className="ml-auto w-full">{loading ? 'Submitting...' : 'Submit & Verify Email'}</Button>}
+                </div>
             </div>
         </form>
     </div>
@@ -339,9 +405,10 @@ const CompanyStep3 = ({ control, errors }) => {
                                         id={industry}
                                         checked={field.value?.includes(industry)}
                                         onCheckedChange={(checked) => {
+                                            const currentValues = field.value || [];
                                             const newValue = checked
-                                                ? [...field.value, industry]
-                                                : field.value.filter((item) => item !== industry);
+                                                ? [...currentValues, industry]
+                                                : currentValues.filter((item) => item !== industry);
                                             field.onChange(newValue);
                                         }}
                                     />
@@ -609,7 +676,8 @@ const InvestorStep2 = ({ control, errors }) => {
                         {investmentTypes.map(type => (
                             <div key={type} className="flex items-center space-x-2">
                                 <Checkbox id={type} checked={field.value?.includes(type)} onCheckedChange={checked => {
-                                    const newValue = checked ? [...field.value, type] : field.value.filter(item => item !== type);
+                                    const currentValues = field.value || [];
+                                    const newValue = checked ? [...currentValues, type] : currentValues.filter(item => item !== type);
                                     field.onChange(newValue);
                                 }} />
                                 <Label htmlFor={type} className="font-normal">{type}</Label>
