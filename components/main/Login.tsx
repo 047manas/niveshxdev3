@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -9,16 +9,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 
-const loginSchema = z.object({
-  email: z.string().email({ message: "Please enter a valid email address." }),
-  password: z.string().min(1, { message: "Password is required." }),
-});
-
 const Login = ({ setCurrentView }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(''); // For server-side errors
   const { login } = useAuth();
   const router = useRouter();
+
+  const loginSchema = useMemo(() => z.object({
+    email: z.string().email({ message: "Please enter a valid email address." }),
+    password: z.string().min(1, { message: "Password is required." }),
+  }), []);
 
   const { register, handleSubmit, formState: { errors } } = useForm({
     resolver: zodResolver(loginSchema),
