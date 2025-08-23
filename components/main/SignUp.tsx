@@ -95,7 +95,12 @@ const investorStep1Schema = z.object({
     phoneCountryCode: z.string(),
     phoneNumber: z.string().min(1, "Phone number is required"),
     linkedinId: z.string().url("Please enter a valid LinkedIn URL"),
-    password: z.string().min(8, "Password must be at least 8 characters"),
+    password: z.string()
+        .min(8, "Password must be at least 8 characters")
+        .regex(/[a-z]/, "Password must contain at least one lowercase letter")
+        .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
+        .regex(/[0-9]/, "Password must contain at least one number")
+        .regex(/[^a-zA-Z0-9]/, "Password must contain at least one special character"),
     confirmPassword: z.string(),
 }).refine(data => data.password === data.confirmPassword, {
     message: "Passwords do not match",
@@ -263,7 +268,7 @@ const SignUp = ({ setCurrentView, userType, setUserType }) => {
         </div>
         <form onSubmit={investorForm.handleSubmit(onInvestorSubmit)} className="space-y-4">
             {investorStep === 1 && <InvestorStep1 control={investorForm.control} register={investorForm.register} errors={investorForm.formState.errors} />}
-            {investorStep === 2 && <InvestorStep2 control={investorForm.control} errors={investorForm.formState.errors} />}
+            {investorStep === 2 && <InvestorStep2 control={investorForm.control} errors={investorForm.formState.errors} setValue={investorForm.setValue} />}
             {error && <p className="text-sm text-red-500">{error}</p>}
             <div className="flex justify-between pt-4 flex-col space-y-4">
                 {investorStep === 2 && (
@@ -687,15 +692,32 @@ const InvestorStep1 = ({ control, register, errors }) => (
         </div>
         <div><Label>LinkedIn Id</Label><Input {...register("linkedinId")} placeholder="https://linkedin.com/in/..." className="bg-gray-700 border-gray-600" />{errors.linkedinId && <p className="text-red-500 text-xs">{errors.linkedinId.message}</p>}</div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div><Label>Create Password</Label><Input type="password" {...register("password")} className="bg-gray-700 border-gray-600" />{errors.password && <p className="text-red-500 text-xs">{errors.password.message}</p>}</div>
+            <div className="space-y-2">
+                <Label>Create Password</Label>
+                <Input type="password" {...register("password")} className="bg-gray-700 border-gray-600" />
+                <p className="text-xs text-gray-400">
+                    Password must be at least 8 characters long and include one uppercase letter, one lowercase letter, one number, and one special character.
+                </p>
+                {errors.password && <p className="text-red-500 text-xs">{errors.password.message}</p>}
+            </div>
             <div><Label>Confirm Password</Label><Input type="password" {...register("confirmPassword")} className="bg-gray-700 border-gray-600" />{errors.confirmPassword && <p className="text-red-500 text-xs">{errors.confirmPassword.message}</p>}</div>
         </div>
     </div>
 );
 
-const InvestorStep2 = ({ control, errors }) => {
+const InvestorStep2 = ({ control, errors, setValue }) => {
     const investmentTypes = ["Equity investments", "Debt financing"];
     const chequeSizes = ["₹ 1-5 L", "₹ 5-25 L", "₹ 25-1 Cr", "₹ 1 Cr+", "₹ 10 Cr+", "₹ 100 Cr+"];
+    const watchedInvestmentTypes = useWatch({ control, name: 'investmentType' }) || [];
+
+    const handleBothChange = (checked) => {
+        if (checked) {
+            setValue('investmentType', investmentTypes, { shouldValidate: true });
+        } else {
+            setValue('investmentType', [], { shouldValidate: true });
+        }
+    };
+
     return (
         <div className="space-y-4">
             <div>
@@ -716,7 +738,7 @@ const InvestorStep2 = ({ control, errors }) => {
             <div>
                 <Label>Investment Type</Label>
                 <Controller name="investmentType" control={control} render={({ field }) => (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
                         {investmentTypes.map(type => (
                             <div key={type} className="flex items-center space-x-2">
                                 <Checkbox id={type} checked={field.value?.includes(type)} onCheckedChange={checked => {
@@ -727,6 +749,14 @@ const InvestorStep2 = ({ control, errors }) => {
                                 <Label htmlFor={type} className="font-normal">{type}</Label>
                             </div>
                         ))}
+                        <div className="flex items-center space-x-2">
+                            <Checkbox
+                                id="both"
+                                checked={watchedInvestmentTypes.length === investmentTypes.length}
+                                onCheckedChange={handleBothChange}
+                            />
+                            <Label htmlFor="both" className="font-normal">Both</Label>
+                        </div>
                     </div>
                 )} />
                 {errors.investmentType && <p className="text-red-500 text-xs">{errors.investmentType.message}</p>}
