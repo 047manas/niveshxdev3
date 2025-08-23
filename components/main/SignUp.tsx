@@ -44,30 +44,12 @@ const companyStep2Schema = z.object({
   companyCulture: z.string().optional(),
 });
 const companyStep3Schema = z.object({
-  industry: z.string().min(1, "Please select an industry"),
-  otherIndustry: z.string().optional(),
+  industry: z.array(z.string()).min(1, "Please select at least one industry"),
   primarySector: z.string().min(1, "Primary sector is required"),
-  otherPrimarySector: z.string().optional(),
   businessModel: z.string().min(1, "Business model is required"),
   companyStage: z.string().min(1, "Company stage is required"),
   teamSize: z.number().min(1, "Team size must be at least 1"),
   locations: z.string().min(1, "Location is required"),
-}).refine(data => {
-    if (data.industry === 'Other') {
-        return data.otherIndustry && data.otherIndustry.length > 0;
-    }
-    return true;
-}, {
-    message: "Please specify the industry",
-    path: ["otherIndustry"],
-}).refine(data => {
-    if (data.primarySector === 'Other') {
-        return data.otherPrimarySector && data.otherPrimarySector.length > 0;
-    }
-    return true;
-}, {
-    message: "Please specify the sector",
-    path: ["otherPrimarySector"],
 });
 const companyStep4Schema = z.object({
   hasFunding: z.enum(["yes", "no"]),
@@ -95,12 +77,7 @@ const investorStep1Schema = z.object({
     phoneCountryCode: z.string(),
     phoneNumber: z.string().min(1, "Phone number is required"),
     linkedinId: z.string().url("Please enter a valid LinkedIn URL"),
-    password: z.string()
-        .min(8, "Password must be at least 8 characters")
-        .regex(/[a-z]/, "Password must contain at least one lowercase letter")
-        .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
-        .regex(/[0-9]/, "Password must contain at least one number")
-        .regex(/[^a-zA-Z0-9]/, "Password must contain at least one special character"),
+    password: z.string().min(8, "Password must be at least 8 characters"),
     confirmPassword: z.string(),
 }).refine(data => data.password === data.confirmPassword, {
     message: "Passwords do not match",
@@ -141,10 +118,8 @@ const SignUp = ({ setCurrentView, userType, setUserType }) => {
       oneLiner: '',
       aboutCompany: '',
       companyCulture: '',
-      industry: undefined,
-      otherIndustry: '',
+      industry: [],
       primarySector: undefined,
-      otherPrimarySector: '',
       businessModel: undefined,
       companyStage: undefined,
       teamSize: undefined,
@@ -190,21 +165,10 @@ const SignUp = ({ setCurrentView, userType, setUserType }) => {
     setLoading(true);
     setError('');
     try {
-      const finalData = { ...data };
-      if (finalData.industry === 'Other' && finalData.otherIndustry) {
-          finalData.industry = finalData.otherIndustry;
-      }
-      delete finalData.otherIndustry;
-
-      if (finalData.primarySector === 'Other' && finalData.otherPrimarySector) {
-        finalData.primarySector = finalData.otherPrimarySector;
-      }
-      delete finalData.otherPrimarySector;
-
       const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userType: type, ...finalData }),
+        body: JSON.stringify({ userType: type, ...data }),
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || 'Something went wrong');
@@ -229,7 +193,7 @@ const SignUp = ({ setCurrentView, userType, setUserType }) => {
         <form onSubmit={companyForm.handleSubmit(onCompanySubmit)} className="space-y-4">
             {companyStep === 1 && <CompanyStep1 control={companyForm.control} register={companyForm.register} errors={companyForm.formState.errors} />}
             {companyStep === 2 && <CompanyStep2 control={companyForm.control} register={companyForm.register} errors={companyForm.formState.errors} />}
-            {companyStep === 3 && <CompanyStep3 control={companyForm.control} register={companyForm.register} errors={companyForm.formState.errors} />}
+            {companyStep === 3 && <CompanyStep3 control={companyForm.control} errors={companyForm.formState.errors} />}
             {companyStep === 4 && <CompanyStep4 control={companyForm.control} register={companyForm.register} errors={companyForm.formState.errors} />}
             {companyStep === 5 && <CompanyStep5 control={companyForm.control} register={companyForm.register} errors={companyForm.formState.errors} />}
             {error && <p className="text-sm text-red-500">{error}</p>}
@@ -268,7 +232,7 @@ const SignUp = ({ setCurrentView, userType, setUserType }) => {
         </div>
         <form onSubmit={investorForm.handleSubmit(onInvestorSubmit)} className="space-y-4">
             {investorStep === 1 && <InvestorStep1 control={investorForm.control} register={investorForm.register} errors={investorForm.formState.errors} />}
-            {investorStep === 2 && <InvestorStep2 control={investorForm.control} errors={investorForm.formState.errors} setValue={investorForm.setValue} />}
+            {investorStep === 2 && <InvestorStep2 control={investorForm.control} errors={investorForm.formState.errors} />}
             {error && <p className="text-sm text-red-500">{error}</p>}
             <div className="flex justify-between pt-4 flex-col space-y-4">
                 {investorStep === 2 && (
@@ -325,27 +289,25 @@ const SignUp = ({ setCurrentView, userType, setUserType }) => {
 
 // --- COMPANY STEP COMPONENTS ---
 const CompanyStep1 = ({ control, register, errors }) => (
-    <div className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-                <Label htmlFor="firstName">First Name</Label>
-                <Input id="firstName" {...register("firstName")} className="bg-gray-700 border-gray-600" />
-                {errors.firstName && <p className="text-red-500 text-xs">{errors.firstName.message}</p>}
-            </div>
-            <div className="space-y-2">
-                <Label htmlFor="lastName">Last Name</Label>
-                <Input id="lastName" {...register("lastName")} className="bg-gray-700 border-gray-600" />
-                {errors.lastName && <p className="text-red-500 text-xs">{errors.lastName.message}</p>}
-            </div>
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+        <div className="space-y-2">
+            <Label htmlFor="firstName">First Name</Label>
+            <Input id="firstName" {...register("firstName")} className="bg-gray-700 border-gray-600" />
+            {errors.firstName && <p className="text-red-500 text-xs">{errors.firstName.message}</p>}
         </div>
         <div className="space-y-2">
+            <Label htmlFor="lastName">Last Name</Label>
+            <Input id="lastName" {...register("lastName")} className="bg-gray-700 border-gray-600" />
+            {errors.lastName && <p className="text-red-500 text-xs">{errors.lastName.message}</p>}
+        </div>
+        <div className="space-y-2 md:col-span-2">
             <Label htmlFor="designation">Your Designation in the Organisation</Label>
             <Controller
                 name="designation"
                 control={control}
                 render={({ field }) => (
                     <Select onValueChange={field.onChange} value={field.value}>
-    <SelectTrigger data-testid="designation-select" className="bg-gray-700 border-gray-600"><SelectValue placeholder="Select..." /></SelectTrigger>
+                        <SelectTrigger data-testid="designation-select" className="bg-gray-700 border-gray-600"><SelectValue placeholder="Select..." /></SelectTrigger>
                         <SelectContent className="bg-gray-800 text-white border-gray-700">
                             <SelectItem value="Co-founder">Co-founder</SelectItem>
                             <SelectItem value="CEO">CEO</SelectItem>
@@ -358,30 +320,28 @@ const CompanyStep1 = ({ control, register, errors }) => (
             />
             {errors.designation && <p className="text-red-500 text-xs">{errors.designation.message}</p>}
         </div>
-        <div className="space-y-2">
+        <div className="space-y-2 md:col-span-2">
             <Label htmlFor="linkedinProfile">Personal LinkedIn Profile</Label>
             <Input id="linkedinProfile" {...register("linkedinProfile")} placeholder="https://linkedin.com/in/..." className="bg-gray-700 border-gray-600" />
             {errors.linkedinProfile && <p className="text-red-500 text-xs">{errors.linkedinProfile.message}</p>}
         </div>
-        <div className="space-y-2">
-            <Label htmlFor="workEmail">Company&apos;s Work Email</Label>
+        <div className="space-y-2 md:col-span-2">
+            <Label htmlFor="workEmail">Company's Work Email</Label>
             <Input id="workEmail" type="email" {...register("workEmail")} className="bg-gray-700 border-gray-600" />
             {errors.workEmail && <p className="text-red-500 text-xs">{errors.workEmail.message}</p>}
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-                <Label htmlFor="password">Create Password</Label>
-                <Input id="password" type="password" {...register("password")} className="bg-gray-700 border-gray-600" />
-                <p className="text-xs text-gray-400">
-                    Password must be at least 8 characters long and include at least one uppercase letter, one lowercase letter, one number, and one special character.
-                </p>
-                {errors.password && <p className="text-red-500 text-xs">{errors.password.message}</p>}
-            </div>
-            <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirm Password</Label>
-                <Input id="confirmPassword" type="password" {...register("confirmPassword")} className="bg-gray-700 border-gray-600" />
-                {errors.confirmPassword && <p className="text-red-500 text-xs">{errors.confirmPassword.message}</p>}
-            </div>
+        <div className="space-y-2">
+            <Label htmlFor="password">Create Password</Label>
+            <Input id="password" type="password" {...register("password")} className="bg-gray-700 border-gray-600" />
+            <p className="text-xs text-gray-400">
+                Password must be at least 8 characters long and include at least one uppercase letter, one lowercase letter, one number, and one special character.
+            </p>
+            {errors.password && <p className="text-red-500 text-xs">{errors.password.message}</p>}
+        </div>
+        <div className="space-y-2">
+            <Label htmlFor="confirmPassword">Confirm Password</Label>
+            <Input id="confirmPassword" type="password" {...register("confirmPassword")} className="bg-gray-700 border-gray-600" />
+            {errors.confirmPassword && <p className="text-red-500 text-xs">{errors.confirmPassword.message}</p>}
         </div>
     </div>
 );
@@ -390,8 +350,8 @@ const CompanyStep2 = ({ control, register, errors }) => {
     const oneLiner = useWatch({ control, name: 'oneLiner' });
     const aboutCompany = useWatch({ control, name: 'aboutCompany' });
     return (
-        <div className="space-y-4">
-            <div className="space-y-2">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+            <div className="space-y-2 md:col-span-2">
                 <Label htmlFor="companyName">Company Name</Label>
                 <Input id="companyName" {...register("companyName")} className="bg-gray-700 border-gray-600" />
                 {errors.companyName && <p className="text-red-500 text-xs">{errors.companyName.message}</p>}
@@ -406,19 +366,19 @@ const CompanyStep2 = ({ control, register, errors }) => {
                 <Input id="companyLinkedin" {...register("companyLinkedin")} placeholder="https://linkedin.com/company/..." className="bg-gray-700 border-gray-600" />
                 {errors.companyLinkedin && <p className="text-red-500 text-xs">{errors.companyLinkedin.message}</p>}
             </div>
-            <div className="space-y-2">
+            <div className="space-y-2 md:col-span-2">
                 <Label htmlFor="oneLiner">One-Liner Pitch</Label>
                 <Input id="oneLiner" {...register("oneLiner")} className="bg-gray-700 border-gray-600" />
                 <p className="text-xs text-gray-400 text-right">{oneLiner?.length || 0}/150</p>
                 {errors.oneLiner && <p className="text-red-500 text-xs">{errors.oneLiner.message}</p>}
             </div>
-            <div className="space-y-2">
+            <div className="space-y-2 md:col-span-2">
                 <Label htmlFor="aboutCompany">About Company</Label>
                 <Textarea id="aboutCompany" {...register("aboutCompany")} className="bg-gray-700 border-gray-600" />
                 <p className="text-xs text-gray-400 text-right">{aboutCompany?.length || 0}/1000</p>
                 {errors.aboutCompany && <p className="text-red-500 text-xs">{errors.aboutCompany.message}</p>}
             </div>
-            <div className="space-y-2">
+            <div className="space-y-2 md:col-span-2">
                 <Label htmlFor="companyCulture">Company Culture (Optional)</Label>
                 <Textarea id="companyCulture" {...register("companyCulture")} className="bg-gray-700 border-gray-600" />
                 {errors.companyCulture && <p className="text-red-500 text-xs">{errors.companyCulture.message}</p>}
@@ -433,7 +393,7 @@ const CompanyStep3 = ({ control, errors, register }) => {
     const primarySectorValue = useWatch({ control, name: 'primarySector' });
 
     return (
-        <div className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
             <div className="space-y-2">
                 <Label>Industry</Label>
                 <Controller
@@ -453,13 +413,14 @@ const CompanyStep3 = ({ control, errors, register }) => {
                 {errors.industry && <p className="text-red-500 text-xs">{errors.industry.message}</p>}
             </div>
 
-            {industryValue === 'Other' && (
+            {industryValue === 'Other' ? (
                 <div className="space-y-2">
                     <Label htmlFor="otherIndustry">Please specify your industry</Label>
                     <Input id="otherIndustry" {...register("otherIndustry")} className="bg-gray-700 border-gray-600" />
                     {errors.otherIndustry && <p className="text-red-500 text-xs">{errors.otherIndustry.message}</p>}
                 </div>
-            )}
+            ) : <div />}
+
             <div className="space-y-2">
                 <Label>Company Sector</Label>
                 <Controller
@@ -482,14 +443,15 @@ const CompanyStep3 = ({ control, errors, register }) => {
                 {errors.primarySector && <p className="text-red-500 text-xs">{errors.primarySector.message}</p>}
             </div>
 
-            {primarySectorValue === 'Other' && (
+            {primarySectorValue === 'Other' ? (
                 <div className="space-y-2">
                     <Label htmlFor="otherPrimarySector">Please specify your sector</Label>
                     <Input id="otherPrimarySector" {...register("otherPrimarySector")} className="bg-gray-700 border-gray-600" />
                     {errors.otherPrimarySector && <p className="text-red-500 text-xs">{errors.otherPrimarySector.message}</p>}
                 </div>
-            )}
-             <div className="space-y-2">
+            ) : <div />}
+
+            <div className="space-y-2">
                 <Label>Company’s Primary Business Model</Label>
                 <Controller
                     name="businessModel"
@@ -527,7 +489,7 @@ const CompanyStep3 = ({ control, errors, register }) => {
                 />
                 {errors.companyStage && <p className="text-red-500 text-xs">{errors.companyStage.message}</p>}
             </div>
-             <div className="space-y-2">
+            <div className="space-y-2">
                 <Label htmlFor="teamSize">Company Team Size</Label>
                 <Controller
                     name="teamSize"
@@ -565,17 +527,17 @@ const CompanyStep4 = ({ control, register, errors }) => {
                     name="hasFunding"
                     control={control}
                     render={({ field }) => (
-                        <RadioGroup onValueChange={field.onChange} value={field.value} className="flex space-x-4">
-                            <div className="flex items-center space-x-2"><RadioGroupItem value="yes" id="yes" /><Label htmlFor="yes">Yes</Label></div>
-                            <div className="flex items-center space-x-2"><RadioGroupItem value="no" id="no" /><Label htmlFor="no">No</Label></div>
+                        <RadioGroup onValueChange={field.onChange} value={field.value} className="flex space-x-4 pt-2">
+                            <div className="flex items-center space-x-2"><RadioGroupItem value="yes" id="yes" /><Label htmlFor="yes" className="font-normal">Yes</Label></div>
+                            <div className="flex items-center space-x-2"><RadioGroupItem value="no" id="no" /><Label htmlFor="no" className="font-normal">No</Label></div>
                         </RadioGroup>
                     )}
                 />
             </div>
 
             {hasFunding === 'yes' && (
-                <div className="space-y-4 pt-4 border-t border-gray-700">
-                    <div className="space-y-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 pt-4 border-t border-gray-700">
+                    <div className="space-y-2 md:col-span-2">
                         <Label htmlFor="totalFundingRaised">Total Funding Raised</Label>
                         <div className="grid grid-cols-1 sm:grid-cols-4 gap-2">
                              <Controller
@@ -639,14 +601,14 @@ const CompanyStep4 = ({ control, register, errors }) => {
 };
 
 const CompanyStep5 = ({ control, register, errors }) => (
-    <div className="space-y-4">
-        <div className="space-y-2">
-            <Label htmlFor="companyEmail">Company&apos;s Work Email</Label>
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+        <div className="space-y-2 md:col-span-2">
+            <Label htmlFor="companyEmail">Company's Work Email</Label>
             <Input id="companyEmail" type="email" {...register("companyEmail")} className="bg-gray-700 border-gray-600" />
             {errors.companyEmail && <p className="text-red-500 text-xs">{errors.companyEmail.message}</p>}
         </div>
-        <div className="space-y-2">
-            <Label htmlFor="companyPhoneNumber">Company&apos;s Phone Number</Label>
+        <div className="space-y-2 md:col-span-2">
+            <Label htmlFor="companyPhoneNumber">Company's Phone Number</Label>
             <div className="grid grid-cols-1 sm:grid-cols-4 gap-2">
                 <Controller
                     name="companyPhoneCountryCode"
@@ -671,13 +633,23 @@ const CompanyStep5 = ({ control, register, errors }) => (
 
 // --- INVESTOR STEP COMPONENTS ---
 const InvestorStep1 = ({ control, register, errors }) => (
-    <div className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div><Label>First Name</Label><Input {...register("firstName")} className="bg-gray-700 border-gray-600" />{errors.firstName && <p className="text-red-500 text-xs">{errors.firstName.message}</p>}</div>
-            <div><Label>Last Name</Label><Input {...register("lastName")} className="bg-gray-700 border-gray-600" />{errors.lastName && <p className="text-red-500 text-xs">{errors.lastName.message}</p>}</div>
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+        <div className="space-y-2">
+            <Label>First Name</Label>
+            <Input {...register("firstName")} className="bg-gray-700 border-gray-600" />
+            {errors.firstName && <p className="text-red-500 text-xs">{errors.firstName.message}</p>}
         </div>
-        <div><Label>Email</Label><Input type="email" {...register("email")} className="bg-gray-700 border-gray-600" />{errors.email && <p className="text-red-500 text-xs">{errors.email.message}</p>}</div>
-        <div>
+        <div className="space-y-2">
+            <Label>Last Name</Label>
+            <Input {...register("lastName")} className="bg-gray-700 border-gray-600" />
+            {errors.lastName && <p className="text-red-500 text-xs">{errors.lastName.message}</p>}
+        </div>
+        <div className="space-y-2 md:col-span-2">
+            <Label>Email</Label>
+            <Input type="email" {...register("email")} className="bg-gray-700 border-gray-600" />
+            {errors.email && <p className="text-red-500 text-xs">{errors.email.message}</p>}
+        </div>
+        <div className="space-y-2 md:col-span-2">
             <Label>Phone Number</Label>
             <div className="grid grid-cols-1 sm:grid-cols-4 gap-2">
                 <Controller name="phoneCountryCode" control={control} render={({ field }) => (
@@ -690,17 +662,23 @@ const InvestorStep1 = ({ control, register, errors }) => (
             </div>
             {errors.phoneNumber && <p className="text-red-500 text-xs">{errors.phoneNumber.message}</p>}
         </div>
-        <div><Label>LinkedIn Id</Label><Input {...register("linkedinId")} placeholder="https://linkedin.com/in/..." className="bg-gray-700 border-gray-600" />{errors.linkedinId && <p className="text-red-500 text-xs">{errors.linkedinId.message}</p>}</div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-                <Label>Create Password</Label>
-                <Input type="password" {...register("password")} className="bg-gray-700 border-gray-600" />
-                <p className="text-xs text-gray-400">
-                    Password must be at least 8 characters long and include one uppercase letter, one lowercase letter, one number, and one special character.
-                </p>
-                {errors.password && <p className="text-red-500 text-xs">{errors.password.message}</p>}
-            </div>
-            <div><Label>Confirm Password</Label><Input type="password" {...register("confirmPassword")} className="bg-gray-700 border-gray-600" />{errors.confirmPassword && <p className="text-red-500 text-xs">{errors.confirmPassword.message}</p>}</div>
+        <div className="space-y-2 md:col-span-2">
+            <Label>LinkedIn Id</Label>
+            <Input {...register("linkedinId")} placeholder="https://linkedin.com/in/..." className="bg-gray-700 border-gray-600" />
+            {errors.linkedinId && <p className="text-red-500 text-xs">{errors.linkedinId.message}</p>}
+        </div>
+        <div className="space-y-2">
+            <Label>Create Password</Label>
+            <Input type="password" {...register("password")} className="bg-gray-700 border-gray-600" />
+            <p className="text-xs text-gray-400">
+                Password must be at least 8 characters long and include one uppercase letter, one lowercase letter, one number, and one special character.
+            </p>
+            {errors.password && <p className="text-red-500 text-xs">{errors.password.message}</p>}
+        </div>
+        <div className="space-y-2">
+            <Label>Confirm Password</Label>
+            <Input type="password" {...register("confirmPassword")} className="bg-gray-700 border-gray-600" />
+            {errors.confirmPassword && <p className="text-red-500 text-xs">{errors.confirmPassword.message}</p>}
         </div>
     </div>
 );
@@ -719,8 +697,8 @@ const InvestorStep2 = ({ control, errors, setValue }) => {
     };
 
     return (
-        <div className="space-y-4">
-            <div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+            <div className="space-y-2 md:col-span-2">
                 <Label>Investor Type</Label>
                 <Controller name="investorType" control={control} render={({ field }) => (
                     <Select onValueChange={field.onChange} value={field.value}>
@@ -735,7 +713,7 @@ const InvestorStep2 = ({ control, errors, setValue }) => {
                 )} />
                 {errors.investorType && <p className="text-red-500 text-xs">{errors.investorType.message}</p>}
             </div>
-            <div>
+            <div className="space-y-2 md:col-span-2">
                 <Label>Investment Type</Label>
                 <Controller name="investmentType" control={control} render={({ field }) => (
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
@@ -761,7 +739,7 @@ const InvestorStep2 = ({ control, errors, setValue }) => {
                 )} />
                 {errors.investmentType && <p className="text-red-500 text-xs">{errors.investmentType.message}</p>}
             </div>
-            <div>
+            <div className="space-y-2 md:col-span-2">
                 <Label>What Cheque Size are you comfortable with?</Label>
                 <Controller name="chequeSize" control={control} render={({ field }) => (
                     <RadioGroup onValueChange={field.onChange} value={field.value} className="grid grid-cols-2 md:grid-cols-3 gap-2 pt-2">
@@ -775,7 +753,7 @@ const InvestorStep2 = ({ control, errors, setValue }) => {
                 )} />
                 {errors.chequeSize && <p className="text-red-500 text-xs">{errors.chequeSize.message}</p>}
             </div>
-            <div>
+            <div className="space-y-2 md:col-span-2">
                 <Label>What sectors / startups are you interested in?</Label>
                 <Textarea {...control.register("interestedSectors")} placeholder="e.g., FinTech, HealthTech, SaaS" className="bg-gray-700 border-gray-600" />
                 {errors.interestedSectors && <p className="text-red-500 text-xs">{errors.interestedSectors.message}</p>}
