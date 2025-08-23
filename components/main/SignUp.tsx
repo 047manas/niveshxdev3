@@ -17,7 +17,7 @@ import { Building2, User } from 'lucide-react';
 
 declare function triggerOtpVerification(email: string): void;
 
-const companyStep1Fields = ["firstName", "lastName", "designation", "linkedinProfile", "workEmail", "password", "confirmPassword"];
+const companyStep1Fields = ["firstName", "lastName", "designation", "linkedinProfile", "email", "password", "confirmPassword"];
 const companyStep2Fields = ["companyName", "companyWebsite", "companyLinkedin", "oneLiner", "aboutCompany", "companyCulture"];
 const companyStep3Fields = ["industry", "otherIndustry", "primarySector", "otherPrimarySector", "businessModel", "companyStage", "teamSize", "locations"];
 const companyStep4Fields = ["hasFunding", "totalFundingRaised", "fundingCurrency", "fundingRounds", "latestFundingRound"];
@@ -29,7 +29,7 @@ const companyStep1Schema = z.object({
   lastName: z.string().min(1, "Last name is required"),
   designation: z.enum(["Co-founder", "CEO", "CTO", "HR", "Other"]),
   linkedinProfile: z.string().url("Please enter a valid LinkedIn URL").or(z.literal('')),
-  workEmail: z.string().email("Invalid email address"),
+  email: z.string().email("Invalid email address"),
   password: z.string()
     .min(8, "Password must be at least 8 characters")
     .regex(/[a-z]/, "Password must contain at least one lowercase letter")
@@ -137,7 +137,11 @@ const investorStep2Schema = z.object({
         .transform(val => val.split(',').map(s => s.trim()).filter(s => s.length > 0))
         .refine(arr => arr.length > 0, { message: "Please list at least one valid sector." }),
 });
-const allInvestorStepSchemas = [investorStep1Schema, investorStep2Schema];
+
+const allInvestorStepsSchema = investorStep1Schema.merge(investorStep2Schema);
+
+const investorStep1Fields = ["firstName", "lastName", "email", "phoneCountryCode", "phoneNumber", "linkedinId", "password", "confirmPassword"];
+const investorStep2Fields = ["investorType", "investmentType", "chequeSize", "interestedSectors"];
 
 
 const SignUp = ({ setCurrentView, userType, setUserType }) => {
@@ -157,7 +161,7 @@ const SignUp = ({ setCurrentView, userType, setUserType }) => {
       lastName: '',
       designation: undefined,
       linkedinProfile: '',
-      workEmail: '',
+      email: '',
       password: '',
       confirmPassword: '',
       companyName: '',
@@ -186,7 +190,7 @@ const SignUp = ({ setCurrentView, userType, setUserType }) => {
 
   // --- INVESTOR FORM HOOK ---
   const investorForm = useForm({
-      resolver: zodResolver(allInvestorStepSchemas[investorStep - 1]),
+      resolver: zodResolver(allInvestorStepsSchema),
       mode: 'onChange',
       defaultValues: {
           firstName: '',
@@ -213,7 +217,13 @@ const SignUp = ({ setCurrentView, userType, setUserType }) => {
       }
   };
   const prevCompanyStep = () => setCompanyStep(p => p - 1);
-  const nextInvestorStep = async () => { if (await investorForm.trigger()) setInvestorStep(p => p + 1); };
+  const nextInvestorStep = async () => {
+      const fields = investorStep === 1 ? investorStep1Fields : investorStep2Fields;
+      const isValid = await investorForm.trigger(fields);
+      if (isValid) {
+          setInvestorStep(p => p + 1);
+      }
+  };
   const prevInvestorStep = () => setInvestorStep(p => p - 1);
 
   // --- SUBMISSION LOGIC ---
@@ -239,7 +249,7 @@ const SignUp = ({ setCurrentView, userType, setUserType }) => {
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || 'Something went wrong');
-      triggerOtpVerification(data.email || data.workEmail);
+      triggerOtpVerification(data.email);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -320,7 +330,7 @@ const SignUp = ({ setCurrentView, userType, setUserType }) => {
                 )}
                 <div className="flex justify-between">
                     {investorStep > 1 && <Button type="button" onClick={prevInvestorStep} variant="outline" className="text-white border-gray-600 hover:bg-gray-700">Back</Button>}
-                    {investorStep < 2 && <Button type="button" onClick={nextInvestorStep} disabled={!investorForm.formState.isValid} className="ml-auto">Next</Button>}
+                    {investorStep < 2 && <Button type="button" onClick={nextInvestorStep} className="ml-auto">Next</Button>}
                     {investorStep === 2 && <Button type="submit" disabled={loading || !investorForm.formState.isValid || !investorAgreed} className="ml-auto w-full">{loading ? 'Submitting...' : 'Submit & Verify Email'}</Button>}
                 </div>
             </div>
@@ -393,9 +403,9 @@ const CompanyStep1 = ({ control, register, errors }) => (
             {errors.linkedinProfile && <p className="text-red-500 text-xs">{errors.linkedinProfile.message}</p>}
         </div>
         <div className="space-y-2 md:col-span-2">
-            <Label htmlFor="workEmail">Company's Work Email</Label>
-            <Input id="workEmail" type="email" {...register("workEmail")} className="bg-gray-700 border-gray-600" />
-            {errors.workEmail && <p className="text-red-500 text-xs">{errors.workEmail.message}</p>}
+            <Label htmlFor="email">Company's Work Email</Label>
+            <Input id="email" type="email" {...register("email")} className="bg-gray-700 border-gray-600" />
+            {errors.email && <p className="text-red-500 text-xs">{errors.email.message}</p>}
         </div>
         <div className="space-y-2">
             <Label htmlFor="password">Create Password</Label>
