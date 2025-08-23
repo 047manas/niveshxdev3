@@ -75,10 +75,31 @@ const companyStep4Schema = z.object({
   fundingCurrency: z.enum(["INR", "USD"]).optional(),
   fundingRounds: z.number().optional(),
   latestFundingRound: z.string().optional(),
-}).refine(data => {
-    if (data.hasFunding === 'yes') return data.totalFundingRaised !== undefined && data.fundingRounds !== undefined && data.latestFundingRound !== undefined;
-    return true;
-}, { message: "Please fill all funding details", path: ["totalFundingRaised"] });
+}).superRefine((data, ctx) => {
+    if (data.hasFunding === 'yes') {
+        if (!data.totalFundingRaised) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: "Total funding raised is required.",
+                path: ["totalFundingRaised"],
+            });
+        }
+        if (!data.fundingRounds) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: "Number of funding rounds is required.",
+                path: ["fundingRounds"],
+            });
+        }
+        if (!data.latestFundingRound) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: "Please select the latest funding round.",
+                path: ["latestFundingRound"],
+            });
+        }
+    }
+});
 const companyStep5Schema = z.object({
   companyEmail: z.string().email("Invalid email address"),
   companyPhoneCountryCode: z.string(),
@@ -526,7 +547,17 @@ const CompanyStep3 = ({ control, errors, register }) => {
                     name="teamSize"
                     control={control}
                     render={({ field }) => (
-                        <Input id="teamSize" type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value, 10))} className="bg-gray-700 border-gray-600" />
+                        <Input
+                            id="teamSize"
+                            type="number"
+                            {...field}
+                            value={field.value ?? ''}
+                            onChange={e => {
+                                const value = e.target.value;
+                                field.onChange(value === '' ? undefined : parseInt(value, 10));
+                            }}
+                            className="bg-gray-700 border-gray-600"
+                        />
                     )}
                 />
                 {errors.teamSize && <p className="text-red-500 text-xs">{errors.teamSize.message}</p>}
@@ -588,7 +619,17 @@ const CompanyStep4 = ({ control, register, errors }) => {
                                 name="totalFundingRaised"
                                 control={control}
                                 render={({ field }) => (
-                                    <Input id="totalFundingRaised" type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value, 10))} className="sm:col-span-3 bg-gray-700 border-gray-600" />
+                                    <Input
+                                        id="totalFundingRaised"
+                                        type="number"
+                                        {...field}
+                                        value={field.value ?? ''}
+                                        onChange={e => {
+                                            const value = e.target.value;
+                                            field.onChange(value === '' ? undefined : parseInt(value, 10));
+                                        }}
+                                        className="sm:col-span-3 bg-gray-700 border-gray-600"
+                                    />
                                 )}
                             />
                         </div>
@@ -600,7 +641,17 @@ const CompanyStep4 = ({ control, register, errors }) => {
                             name="fundingRounds"
                             control={control}
                             render={({ field }) => (
-                                <Input id="fundingRounds" type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value, 10))} className="bg-gray-700 border-gray-600" />
+                                <Input
+                                    id="fundingRounds"
+                                    type="number"
+                                    {...field}
+                                    value={field.value ?? ''}
+                                    onChange={e => {
+                                        const value = e.target.value;
+                                        field.onChange(value === '' ? undefined : parseInt(value, 10));
+                                    }}
+                                    className="bg-gray-700 border-gray-600"
+                                />
                             )}
                         />
                         {errors.fundingRounds && <p className="text-red-500 text-xs">{errors.fundingRounds.message}</p>}
