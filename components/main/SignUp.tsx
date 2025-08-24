@@ -380,7 +380,7 @@ const SignUp = ({ setCurrentView, userType, setUserType }) => {
         </div>
         <form onSubmit={investorForm.handleSubmit(onInvestorSubmit)} className="space-y-4">
             {investorStep === 1 && <InvestorStep1 control={investorForm.control} register={investorForm.register} errors={investorForm.formState.errors} />}
-            {investorStep === 2 && <InvestorStep2 control={investorForm.control} errors={investorForm.formState.errors} />}
+            {investorStep === 2 && <InvestorStep2 control={investorForm.control} errors={investorForm.formState.errors} setValue={investorForm.setValue} />}
 
             <div className="flex justify-between pt-4 flex-col space-y-4">
                 {investorStep === 2 && (

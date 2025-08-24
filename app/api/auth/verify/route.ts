@@ -82,12 +82,15 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'User email not verified.' }, { status: 400 });
       }
 
-      // Check if company verification is needed and perform it
       const companiesCollection = firestore.collection('companies');
-      const companyQuery = await companiesCollection.where('contactEmail', '==', userData.companyEmail).get();
-      const companyExists = !companyQuery.empty;
+      let companyQuery;
+      if (userData.userType === 'company') {
+        companyQuery = await companiesCollection.where('contactEmail', '==', userData.companyEmail).get();
+      }
+      let companyExists = companyQuery && !companyQuery.empty;
+      let companyId: string | undefined = companyExists ? companyQuery.docs[0].id : undefined;
 
-      if (!companyExists) {
+      if (userData.userType === 'company' && !companyExists) {
         const { companyOtp } = body;
         if (!companyOtp) {
           return NextResponse.json({ error: 'Missing required field: companyOtp' }, { status: 400 });
@@ -105,56 +108,49 @@ export async function POST(req: NextRequest) {
 
       const authUser = await admin.auth().createUser({
         email: userData.email,
-        password: userData.password, // The frontend should not send the password again, use the stored hash
-        displayName: userData.fullName,
+        password: userData.password,
+        displayName: `${userData.firstName} ${userData.lastName}`,
       });
 
       const usersCollection = firestore.collection('users');
       const newUserRef = usersCollection.doc(authUser.uid);
 
       if (userType === 'company') {
-        const { companyName, companyWebsite, companyLinkedin, oneLiner, aboutCompany, companyCulture, industry, primarySector, businessModel, companyStage, teamSize, locations, hasFunding, totalFundingRaised, fundingCurrency, fundingRounds, latestFundingRound, companyEmail, companyPhoneCountryCode, companyPhoneNumber, firstName, lastName, designation, linkedinProfile } = userData;
+        const {
+            firstName, lastName, designation,
+            companyName, companyWebsite, companyLinkedin, oneLiner, aboutCompany, companyCulture,
+            industry, primarySector, businessModel, companyStage, teamSize, locations,
+            hasFunding, totalFundingRaised, fundingCurrency, fundingRounds, latestFundingRound,
+            companyEmail, companyPhoneCountryCode, companyPhoneNumber
+        } = userData;
 
+        // 1. Create the main user document
         await newUserRef.set({
-          email: userData.email,
-          userType,
-          firstName,
-          lastName,
-          fullName: userData.fullName,
-          designation,
-          linkedinProfile,
-          isVerified: true,
-          profileComplete: true,
-          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            email: userData.email,
+            userType,
+            firstName,
+            lastName,
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
         });
 
+        // 2. Create company and team member documents
         if (!companyExists) {
-            const fundingData: {
-              hasRaised: boolean;
-              totalRaised?: number;
-              currency?: string;
-              rounds?: number;
-              latestRound?: string;
-            } = {
-              hasRaised: hasFunding === 'yes',
-            };
-
+            const fundingData: any = { hasRaised: hasFunding === 'yes' };
             if (fundingData.hasRaised) {
-              fundingData.totalRaised = totalFundingRaised;
-              fundingData.currency = fundingCurrency;
-              fundingData.rounds = fundingRounds;
-              fundingData.latestRound = latestFundingRound;
+                fundingData.totalRaised = totalFundingRaised;
+                fundingData.currency = fundingCurrency;
+                fundingData.rounds = fundingRounds;
+                fundingData.latestRound = latestFundingRound;
             }
 
             const companyData = {
-                userId: authUser.uid,
                 name: companyName,
                 website: companyWebsite,
                 linkedin: companyLinkedin,
                 oneLiner,
                 about: aboutCompany,
                 culture: companyCulture,
-                industry: [industry],
+                industry: [industry], // Assuming industry is a string, schema wants an array
                 primarySector,
                 businessModel,
                 stage: companyStage,
@@ -162,30 +158,58 @@ export async function POST(req: NextRequest) {
                 locations,
                 contactEmail: companyEmail,
                 contactPhone: {
-                  countryCode: companyPhoneCountryCode,
-                  number: companyPhoneNumber,
+                    countryCode: companyPhoneCountryCode,
+                    number: companyPhoneNumber,
                 },
                 funding: fundingData,
-                isVerified: true,
+                userId: authUser.uid, // Link to the creating user
                 createdAt: admin.firestore.FieldValue.serverTimestamp(),
             };
-            await firestore.collection('companies').add(companyData);
+            const newCompanyRef = await firestore.collection('companies').add(companyData);
+            companyId = newCompanyRef.id;
         }
-      } else { // Investor
-        const { firstName, lastName, phoneCountryCode, phoneNumber, linkedinId, investorType, investmentType, chequeSize, interestedSectors } = userData;
 
+        // 3. Map designation to role
+        let role = 'Other'; // Default role
+        switch (designation) {
+            case 'Co-founder':
+                role = 'Founder';
+                break;
+            case 'CEO':
+            case 'CTO':
+                role = 'CXO';
+                break;
+            case 'HR':
+                role = 'HR';
+                break;
+        }
+
+        // 4. Create team member link
+        if (companyId) {
+            await firestore.collection('teamMembers').add({
+                userId: authUser.uid,
+                companyId: companyId,
+                role: role,
+            });
+        }
+
+      } else { // Investor
+        const {
+            firstName, lastName, phoneCountryCode, phoneNumber, linkedinId,
+            investorType, investmentType, chequeSize, interestedSectors
+        } = userData;
+
+        // 1. Create the main user document
         await newUserRef.set({
             email: userData.email,
             userType,
             firstName,
             lastName,
-            fullName: userData.fullName,
             phone: { countryCode: phoneCountryCode, number: phoneNumber },
-            isVerified: true,
-            profileComplete: true,
             createdAt: admin.firestore.FieldValue.serverTimestamp(),
         });
 
+        // 2. Create the investor profile
         const investorData = {
             userId: authUser.uid,
             investorType,
@@ -193,7 +217,7 @@ export async function POST(req: NextRequest) {
             linkedinProfile: linkedinId,
             chequeSize,
             interestedSectors,
-            isVerified: true,
+            isVerified: false, // Default to false as per schema
             createdAt: admin.firestore.FieldValue.serverTimestamp(),
         };
         await firestore.collection('investors').add(investorData);
