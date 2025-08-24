@@ -41,6 +41,7 @@ function getRoleFromDesignation(designation: string): string {
 
 /**
  * Finalizes the user and company creation process in a single transaction.
+ * This function is idempotent: it checks if an auth user already exists before creating one.
  */
 async function finalizeUserAndCompanyLink(
     pendingUserRef: admin.firestore.DocumentReference,
@@ -49,12 +50,24 @@ async function finalizeUserAndCompanyLink(
 ) {
     const firestore = admin.firestore();
     const auth = admin.auth();
+    let authUser;
 
-    const authUser = await auth.createUser({
-        email: pendingUserData.email,
-        password: pendingUserData.password,
-        displayName: `${pendingUserData.firstName} ${pendingUserData.lastName}`,
-    });
+    try {
+        // First, check if the user already exists in Firebase Auth.
+        authUser = await auth.getUserByEmail(pendingUserData.email);
+    } catch (error: any) {
+        // If the user is not found, create them.
+        if (error.code === 'auth/user-not-found') {
+            authUser = await auth.createUser({
+                email: pendingUserData.email,
+                password: pendingUserData.password,
+                displayName: `${pendingUserData.firstName} ${pendingUserData.lastName}`,
+            });
+        } else {
+            // For any other auth errors, re-throw the error.
+            throw error;
+        }
+    }
 
     const userDocRef = firestore.collection('users').doc(authUser.uid);
     const employeeDocRef = firestore.collection('companies').doc(companyId).collection('employees').doc(authUser.uid);
