@@ -129,6 +129,23 @@ export async function POST(req: NextRequest) {
         });
 
         if (!companyExists) {
+            const fundingData: {
+              hasRaised: boolean;
+              totalRaised?: number;
+              currency?: string;
+              rounds?: number;
+              latestRound?: string;
+            } = {
+              hasRaised: hasFunding === 'yes',
+            };
+
+            if (fundingData.hasRaised) {
+              fundingData.totalRaised = totalFundingRaised;
+              fundingData.currency = fundingCurrency;
+              fundingData.rounds = fundingRounds;
+              fundingData.latestRound = latestFundingRound;
+            }
+
             const companyData = {
                 userId: authUser.uid,
                 name: companyName,
@@ -148,13 +165,7 @@ export async function POST(req: NextRequest) {
                   countryCode: companyPhoneCountryCode,
                   number: companyPhoneNumber,
                 },
-                funding: {
-                  hasRaised: hasFunding === 'yes',
-                  totalRaised: totalFundingRaised,
-                  currency: fundingCurrency,
-                  rounds: fundingRounds,
-                  latestRound: latestFundingRound,
-                },
+                funding: fundingData,
                 isVerified: true,
                 createdAt: admin.firestore.FieldValue.serverTimestamp(),
             };
