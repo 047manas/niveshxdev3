@@ -78,7 +78,13 @@ const companyContactSchema = z.object({
 
 // --- Step Components ---
 const UserAccountStep = ({ onFormSubmit, isLoading }) => {
-    const { register, handleSubmit, control, formState: { errors } } = useForm({ resolver: zodResolver(userAccountSchema), mode: 'onChange' });
+    const { register, handleSubmit, control, formState: { errors } } = useForm({
+        resolver: zodResolver(userAccountSchema),
+        mode: 'onChange',
+        defaultValues: {
+            phone: { countryCode: "+91" }
+        }
+    });
     return (
         <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-4">
             <h3 className="text-lg font-semibold mb-4 text-center">Step 1: Create Your Account</h3>
