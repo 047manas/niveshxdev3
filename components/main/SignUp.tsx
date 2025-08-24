@@ -17,11 +17,11 @@ import { Building2, User } from 'lucide-react';
 
 declare function triggerOtpVerification(email: string): void;
 
-const companyStep1Fields = ["firstName", "lastName", "designation", "linkedinProfile", "workEmail", "password", "confirmPassword"];
+const companyStep1Fields = ["firstName", "lastName", "designation", "linkedinProfile", "email", "companyEmail", "password", "confirmPassword"];
 const companyStep2Fields = ["companyName", "companyWebsite", "companyLinkedin", "oneLiner", "aboutCompany", "companyCulture"];
 const companyStep3Fields = ["industry", "otherIndustry", "primarySector", "otherPrimarySector", "businessModel", "companyStage", "teamSize", "locations"];
 const companyStep4Fields = ["hasFunding", "totalFundingRaised", "fundingCurrency", "fundingRounds", "latestFundingRound"];
-const companyStep5Fields = ["companyEmail", "companyPhoneCountryCode", "companyPhoneNumber"];
+const companyStep5Fields = ["companyPhoneCountryCode", "companyPhoneNumber"];
 
 // --- SCHEMAS FOR COMPANY FORM ---
 const companyStep1Schema = z.object({
@@ -29,7 +29,8 @@ const companyStep1Schema = z.object({
   lastName: z.string().min(1, "Last name is required"),
   designation: z.enum(["Co-founder", "CEO", "CTO", "HR", "Other"]),
   linkedinProfile: z.string().url("Please enter a valid LinkedIn URL").or(z.literal('')),
-  workEmail: z.string().email("Invalid email address"),
+  email: z.string().email("Invalid email address"),
+  companyEmail: z.string().email("Invalid company email address"),
   password: z.string()
     .min(8, "Password must be at least 8 characters")
     .regex(/[a-z]/, "Password must contain at least one lowercase letter")
@@ -67,7 +68,6 @@ const companyStep4Schema = z.object({
   latestFundingRound: z.string().optional(),
 });
 const companyStep5Schema = z.object({
-  companyEmail: z.string().email("Invalid email address"),
   companyPhoneCountryCode: z.string(),
   companyPhoneNumber: z.string().min(1, "Phone number is required"),
 });
@@ -148,6 +148,9 @@ const SignUp = ({ setCurrentView, userType, setUserType }) => {
   const [companyAgreed, setCompanyAgreed] = useState(false);
   const [investorAgreed, setInvestorAgreed] = useState(false);
 
+  const [flowStep, setFlowStep] = useState('details'); // details, verifyUser, verifyCompany, success
+  const [formData, setFormData] = useState(null);
+
   // --- COMPANY FORM HOOK ---
   const companyForm = useForm({
     resolver: zodResolver(allCompanyStepsSchema),
@@ -157,7 +160,7 @@ const SignUp = ({ setCurrentView, userType, setUserType }) => {
       lastName: '',
       designation: undefined,
       linkedinProfile: '',
-      workEmail: '',
+      email: '',
       password: '',
       confirmPassword: '',
       companyName: '',
@@ -216,8 +219,10 @@ const SignUp = ({ setCurrentView, userType, setUserType }) => {
   const nextInvestorStep = async () => { if (await investorForm.trigger()) setInvestorStep(p => p + 1); };
   const prevInvestorStep = () => setInvestorStep(p => p - 1);
 
+  const [otp, setOtp] = useState('');
+
   // --- SUBMISSION LOGIC ---
-  const onRegister = async (data, type) => {
+  const handleDetailsSubmit = async (data, type) => {
     setLoading(true);
     setError('');
     try {
@@ -235,11 +240,15 @@ const SignUp = ({ setCurrentView, userType, setUserType }) => {
       const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userType: type, ...finalData }),
+        body: JSON.stringify({ userType: type, ...finalData, fullName: `${finalData.firstName} ${finalData.lastName}` }),
       });
+
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || 'Something went wrong');
-      triggerOtpVerification(data.email || data.workEmail);
+
+      setFormData({ ...finalData, userType: type });
+      setFlowStep('verifyUser');
+
     } catch (err) {
       setError(err.message);
     } finally {
@@ -247,8 +256,80 @@ const SignUp = ({ setCurrentView, userType, setUserType }) => {
     }
   };
 
-  const onCompanySubmit = (data) => onRegister(data, 'company');
-  const onInvestorSubmit = (data) => onRegister(data, 'investor');
+  const registerUser = async (companyOtp = null) => {
+    setLoading(true);
+    setError('');
+    try {
+        const payload = {
+            email: formData.email,
+            step: 'register',
+            companyOtp: companyOtp,
+        };
+        const response = await fetch('/api/auth/verify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Something went wrong');
+        setFlowStep('success');
+    } catch (err) {
+        setError(err.message);
+    } finally {
+        setLoading(false);
+    }
+  };
+
+  const handleSendCompanyOtp = async () => {
+      setLoading(true);
+      setError('');
+      try {
+          const response = await fetch('/api/auth/verify', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email: formData.email, step: 'sendCompanyOtp' }),
+          });
+          const result = await response.json();
+          if (!response.ok) throw new Error(result.error || 'Something went wrong');
+          setFlowStep('verifyCompany');
+      } catch (err) {
+          setError(err.message);
+      } finally {
+          setLoading(false);
+      }
+  };
+
+  const handleUserOtpSubmit = async () => {
+      setLoading(true);
+      setError('');
+      try {
+          const response = await fetch('/api/auth/verify', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email: formData.email, step: 'verifyUserOtp', userOtp: otp }),
+          });
+          const result = await response.json();
+          if (!response.ok) throw new Error(result.error || 'Something went wrong');
+
+          setOtp(''); // Clear OTP input
+          if (result.companyExists) {
+              await registerUser();
+          } else {
+              await handleSendCompanyOtp();
+          }
+      } catch (err) {
+          setError(err.message);
+      } finally {
+          setLoading(false);
+      }
+  };
+
+  const handleCompanyOtpSubmit = async () => {
+      await registerUser(otp);
+  };
+
+  const onCompanySubmit = (data) => handleDetailsSubmit(data, 'company');
+  const onInvestorSubmit = (data) => handleDetailsSubmit(data, 'investor');
 
   // --- RENDER FUNCTIONS ---
   const renderCompanyForm = () => (
@@ -263,7 +344,7 @@ const SignUp = ({ setCurrentView, userType, setUserType }) => {
             {companyStep === 3 && <CompanyStep3 control={companyForm.control} register={companyForm.register} errors={companyForm.formState.errors} />}
             {companyStep === 4 && <CompanyStep4 control={companyForm.control} register={companyForm.register} errors={companyForm.formState.errors} />}
             {companyStep === 5 && <CompanyStep5 control={companyForm.control} register={companyForm.register} errors={companyForm.formState.errors} />}
-            {error && <p className="text-sm text-red-500">{error}</p>}
+
             <div className="flex justify-between pt-4 flex-col space-y-4">
                 {companyStep === 5 && (
                     <div className="flex items-center space-x-2">
@@ -300,7 +381,7 @@ const SignUp = ({ setCurrentView, userType, setUserType }) => {
         <form onSubmit={investorForm.handleSubmit(onInvestorSubmit)} className="space-y-4">
             {investorStep === 1 && <InvestorStep1 control={investorForm.control} register={investorForm.register} errors={investorForm.formState.errors} />}
             {investorStep === 2 && <InvestorStep2 control={investorForm.control} errors={investorForm.formState.errors} />}
-            {error && <p className="text-sm text-red-500">{error}</p>}
+
             <div className="flex justify-between pt-4 flex-col space-y-4">
                 {investorStep === 2 && (
                     <div className="flex items-center space-x-2">
@@ -328,6 +409,68 @@ const SignUp = ({ setCurrentView, userType, setUserType }) => {
     </div>
   );
 
+  const renderVerificationStep = () => (
+    <div className="space-y-6 text-center">
+        <h3 className="text-2xl font-semibold">Verify Your Email</h3>
+        <p className="text-gray-400">
+            An OTP has been sent to <span className="font-semibold text-primary">{formData?.email}</span>.
+            Please enter it below.
+        </p>
+        <div className="flex justify-center">
+            <Input value={otp} onChange={(e) => setOtp(e.target.value)} className="w-48 text-center bg-gray-700 border-gray-600" maxLength="6" />
+        </div>
+        <Button onClick={handleUserOtpSubmit} disabled={loading || otp.length !== 6}>{loading ? 'Verifying...' : 'Verify Email'}</Button>
+        {error && <p className="text-sm text-red-500">{error}</p>}
+    </div>
+  );
+
+  const renderCompanyVerificationStep = () => (
+      <div className="space-y-6 text-center">
+          <h3 className="text-2xl font-semibold">Verify Your Company's Email</h3>
+          <p className="text-gray-400">
+              Your company is new to our platform. To ensure security, we've sent an OTP to <span className="font-semibold text-primary">{formData?.companyEmail}</span>.
+          </p>
+          <div className="flex justify-center">
+              <Input value={otp} onChange={(e) => setOtp(e.target.value)} className="w-48 text-center bg-gray-700 border-gray-600" maxLength="6" />
+          </div>
+          <Button onClick={handleCompanyOtpSubmit} disabled={loading || otp.length !== 6}>{loading ? 'Verifying...' : 'Verify Company & Register'}</Button>
+          {error && <p className="text-sm text-red-500">{error}</p>}
+      </div>
+  );
+
+  const renderSuccessStep = () => (
+      <div className="space-y-6 text-center">
+          <h3 className="text-2xl font-semibold text-green-400">Registration Successful!</h3>
+          <p className="text-gray-400">
+              Your account has been created. You can now log in.
+          </p>
+          <Button onClick={() => setCurrentView('login')}>Go to Login</Button>
+      </div>
+  );
+
+  const renderContent = () => {
+      switch (flowStep) {
+          case 'verifyUser':
+              return renderVerificationStep();
+          case 'verifyCompany':
+              return renderCompanyVerificationStep();
+          case 'success':
+              return renderSuccessStep();
+          case 'details':
+          default:
+              return (
+                  <Tabs value={userType} onValueChange={(val) => setUserType(val)} className="w-full">
+                      <TabsList className="grid w-full grid-cols-2 bg-gray-900 border-gray-700">
+                          <TabsTrigger value="company" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><Building2 className="mr-2 h-4 w-4" /> Company</TabsTrigger>
+                          <TabsTrigger value="investor" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><User className="mr-2 h-4 w-4" /> Investor</TabsTrigger>
+                      </TabsList>
+                      <TabsContent value="company" className="mt-6">{renderCompanyForm()}</TabsContent>
+                      <TabsContent value="investor" className="mt-6">{renderInvestorForm()}</TabsContent>
+                  </Tabs>
+              );
+      }
+  };
+
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-900 p-4">
       <Card className="w-full max-w-2xl bg-gray-800 text-white border-gray-700">
@@ -336,18 +479,13 @@ const SignUp = ({ setCurrentView, userType, setUserType }) => {
           <p className="text-gray-400">Join our community of founders and investors.</p>
         </CardHeader>
         <CardContent className="p-4 sm:p-6">
-          <Tabs value={userType} onValueChange={(val) => setUserType(val)} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 bg-gray-900 border-gray-700">
-              <TabsTrigger value="company" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><Building2 className="mr-2 h-4 w-4" /> Company</TabsTrigger>
-              <TabsTrigger value="investor" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><User className="mr-2 h-4 w-4" /> Investor</TabsTrigger>
-            </TabsList>
-            <TabsContent value="company" className="mt-6">{renderCompanyForm()}</TabsContent>
-            <TabsContent value="investor" className="mt-6">{renderInvestorForm()}</TabsContent>
-          </Tabs>
-           <p className="mt-6 text-sm text-center text-gray-400">
-            Already have an account?{' '}
-            <button onClick={() => setCurrentView('login')} className="font-medium text-primary hover:underline">Log in</button>
-          </p>
+          {renderContent()}
+          {flowStep === 'details' && (
+            <p className="mt-6 text-sm text-center text-gray-400">
+                Already have an account?{' '}
+                <button onClick={() => setCurrentView('login')} className="font-medium text-primary hover:underline">Log in</button>
+            </p>
+          )}
         </CardContent>
       </Card>
     </div>
@@ -393,9 +531,14 @@ const CompanyStep1 = ({ control, register, errors }) => (
             {errors.linkedinProfile && <p className="text-red-500 text-xs">{errors.linkedinProfile.message}</p>}
         </div>
         <div className="space-y-2 md:col-span-2">
-            <Label htmlFor="workEmail">Company's Work Email</Label>
-            <Input id="workEmail" type="email" {...register("workEmail")} className="bg-gray-700 border-gray-600" />
-            {errors.workEmail && <p className="text-red-500 text-xs">{errors.workEmail.message}</p>}
+            <Label htmlFor="email">Your Email (for login)</Label>
+            <Input id="email" type="email" {...register("email")} className="bg-gray-700 border-gray-600" />
+            {errors.email && <p className="text-red-500 text-xs">{errors.email.message}</p>}
+        </div>
+        <div className="space-y-2 md:col-span-2">
+            <Label htmlFor="companyEmail">Company's Official Email (for verification)</Label>
+            <Input id="companyEmail" type="email" {...register("companyEmail")} className="bg-gray-700 border-gray-600" />
+            {errors.companyEmail && <p className="text-red-500 text-xs">{errors.companyEmail.message}</p>}
         </div>
         <div className="space-y-2">
             <Label htmlFor="password">Create Password</Label>
@@ -699,11 +842,6 @@ const CompanyStep4 = ({ control, register, errors }) => {
 
 const CompanyStep5 = ({ control, register, errors }) => (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-        <div className="space-y-2 md:col-span-2">
-            <Label htmlFor="companyEmail">Company's Work Email</Label>
-            <Input id="companyEmail" type="email" {...register("companyEmail")} className="bg-gray-700 border-gray-600" />
-            {errors.companyEmail && <p className="text-red-500 text-xs">{errors.companyEmail.message}</p>}
-        </div>
         <div className="space-y-2 md:col-span-2">
             <Label htmlFor="companyPhoneNumber">Company's Phone Number</Label>
             <div className="grid grid-cols-1 sm:grid-cols-4 gap-2">

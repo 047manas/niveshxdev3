@@ -21,8 +21,11 @@ export async function POST(req: NextRequest) {
       interestedSectors,
     } = await req.json();
 
-    if (!investorType || !linkedinProfile || !phoneNumber || !chequeSize || !interestedSectors) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    const requiredFields = { investorType, linkedinProfile, phoneNumber, chequeSize, interestedSectors };
+    for (const [fieldName, fieldValue] of Object.entries(requiredFields)) {
+      if (!fieldValue) {
+        return NextResponse.json({ error: `Missing required field: ${fieldName}` }, { status: 400 });
+      }
     }
 
     const firestore = admin.firestore();
