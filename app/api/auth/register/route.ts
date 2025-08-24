@@ -13,8 +13,11 @@ export async function POST(req: NextRequest) {
     const { userType, ...formData } = await req.json();
     const { email, password } = formData;
 
-    if (!email || !password || !userType) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    const requiredFields = { email, password, userType };
+    for (const [fieldName, fieldValue] of Object.entries(requiredFields)) {
+      if (!fieldValue) {
+        return NextResponse.json({ error: `Missing required field: ${fieldName}` }, { status: 400 });
+      }
     }
 
     const firestore = admin.firestore();
