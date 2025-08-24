@@ -18,8 +18,12 @@ const userAccountSchema = z.object({
   lastName: z.string().min(1, "Last name is required"),
   designation: z.string().min(1, "Please select your designation"),
   linkedinProfile: z.string().url("Please enter a valid LinkedIn URL").or(z.literal('')),
+  phone: z.object({
+    countryCode: z.string().min(1),
+    number: z.string().min(1, "Phone number is required"),
+  }),
   email: z.string().email("Invalid email address"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
+  password: z.string().min(8, "Password must be at least 8 characters, include one uppercase letter, one number, and one special character."),
   confirmPassword: z.string(),
 }).refine(data => data.password === data.confirmPassword, { message: "Passwords do not match", path: ["confirmPassword"] });
 
@@ -84,7 +88,13 @@ const UserAccountStep = ({ onFormSubmit, isLoading }) => {
                 <div className="space-y-2 md:col-span-2"><Label>Your Designation</Label><Controller name="designation" control={control} render={({ field }) => (<Select onValueChange={field.onChange} defaultValue={field.value}><SelectTrigger className="bg-gray-700"><SelectValue placeholder="Select..." /></SelectTrigger><SelectContent className="bg-gray-800 text-white"><SelectItem value="Co-founder">Co-founder</SelectItem><SelectItem value="CEO">CEO</SelectItem><SelectItem value="CTO">CTO</SelectItem><SelectItem value="HR">HR</SelectItem><SelectItem value="Other">Other</SelectItem></SelectContent></Select>)} />{errors.designation && <p className="text-red-500 text-xs">{errors.designation.message}</p>}</div>
                 <div className="space-y-2 md:col-span-2"><Label>Personal LinkedIn Profile</Label><Input {...register("linkedinProfile")} placeholder="https://linkedin.com/in/..." className="bg-gray-700" />{errors.linkedinProfile && <p className="text-red-500 text-xs">{errors.linkedinProfile.message}</p>}</div>
                 <div className="space-y-2 md:col-span-2"><Label>Your Work Email</Label><Input type="email" {...register("email")} className="bg-gray-700" />{errors.email && <p className="text-red-500 text-xs">{errors.email.message}</p>}</div>
-                <div className="space-y-2"><Label>Create Password</Label><Input type="password" {...register("password")} className="bg-gray-700" />{errors.password && <p className="text-red-500 text-xs">{errors.password.message}</p>}</div>
+                <div className="space-y-2 md:col-span-2"><Label>Phone Number</Label><div className="grid grid-cols-1 sm:grid-cols-4 gap-2"><Controller name="phone.countryCode" control={control} render={({ field }) => (<Select onValueChange={field.onChange} defaultValue="+91"><SelectTrigger className="sm:col-span-1 bg-gray-700"><SelectValue /></SelectTrigger><SelectContent className="bg-gray-800 text-white"><SelectItem value="+91">IN (+91)</SelectItem><SelectItem value="+1">US (+1)</SelectItem></SelectContent></Select>)} /><Input type="tel" {...register("phone.number")} className="sm:col-span-3 bg-gray-700" /></div>{errors.phone?.number && <p className="text-red-500 text-xs">{errors.phone.number.message}</p>}</div>
+                <div className="space-y-2">
+                    <Label>Create Password</Label>
+                    <Input type="password" {...register("password")} className="bg-gray-700" />
+                    <p className="text-xs text-gray-400">Must be 8+ characters and include an uppercase letter, a number, and a special character.</p>
+                    {errors.password && <p className="text-red-500 text-xs">{errors.password.message}</p>}
+                </div>
                 <div className="space-y-2"><Label>Confirm Password</Label><Input type="password" {...register("confirmPassword")} className="bg-gray-700" />{errors.confirmPassword && <p className="text-red-500 text-xs">{errors.confirmPassword.message}</p>}</div>
             </div>
             <Button type="submit" disabled={isLoading} className="w-full mt-6">{isLoading ? 'Creating Account...' : 'Create Account & Verify Email'}</Button>
@@ -92,16 +102,52 @@ const UserAccountStep = ({ onFormSubmit, isLoading }) => {
     );
 };
 
-const OtpVerificationStep = ({ onOtpSubmit, isLoading, userEmail }) => {
+const OtpVerificationStep = ({ onOtpSubmit, isLoading, userEmail, onResendOtp }) => {
     const { control, handleSubmit, formState: { errors } } = useForm({ resolver: zodResolver(otpSchema), defaultValues: { otp: "" } });
+    const [cooldown, setCooldown] = useState(0);
+    const [resendStatus, setResendStatus] = useState('');
+
+    useEffect(() => {
+        if (cooldown > 0) {
+            const timer = setInterval(() => {
+                setCooldown(prev => prev - 1);
+            }, 1000);
+            return () => clearInterval(timer);
+        }
+    }, [cooldown]);
+
+    const handleResend = async () => {
+        setCooldown(60);
+        setResendStatus('loading');
+        try {
+            await onResendOtp();
+            setResendStatus('success');
+        } catch (error) {
+            setResendStatus('error');
+            setCooldown(0); // Allow retry immediately on error
+        }
+    };
+
     return (
         <form onSubmit={handleSubmit(onOtpSubmit)}>
-            <div className="space-y-4 text-center"><h3 className="text-lg font-semibold">Step 2: Verify Your Email</h3><p className="text-gray-400">An OTP has been sent to <span className="font-semibold text-primary">{userEmail}</span>.</p>
+            <div className="space-y-4 text-center">
+                <h3 className="text-lg font-semibold">Step 2: Verify Your Email</h3>
+                <p className="text-gray-400">An OTP has been sent to <span className="font-semibold text-primary">{userEmail}</span>.</p>
                 <div className="flex justify-center">
                     <Controller name="otp" control={control} render={({ field }) => (<InputOTP maxLength={6} {...field}><InputOTPGroup>{[...Array(6)].map((_, i) => <InputOTPSlot key={i} index={i} />)}</InputOTPGroup></InputOTP>)} />
                 </div>
                 {errors.otp && <p className="text-red-500 text-xs">{errors.otp.message}</p>}
                 <Button type="submit" disabled={isLoading} className="w-full max-w-xs mx-auto">{isLoading ? 'Verifying...' : 'Verify'}</Button>
+                <div className="mt-4 text-sm">
+                    <p className="text-gray-400">
+                        Didn't receive the code?{' '}
+                        <Button type="button" variant="link" className="p-0 h-auto" disabled={cooldown > 0} onClick={handleResend}>
+                            {cooldown > 0 ? `Resend in ${cooldown}s` : 'Resend OTP'}
+                        </Button>
+                    </p>
+                    {resendStatus === 'success' && <p className="text-green-500">A new OTP has been sent.</p>}
+                    {resendStatus === 'error' && <p className="text-red-500">Failed to resend OTP. Please try again.</p>}
+                </div>
             </div>
         </form>
     );
@@ -277,10 +323,29 @@ const CompanyOnboarding = () => {
         } catch (err) { setError(err.message); } finally { setLoading(false); }
     };
 
+    const handleResendOtp = async () => {
+        // Note: No loading state is set here to keep the main form button enabled.
+        // The resend button has its own internal state.
+        setError('');
+        try {
+            const res = await fetch('/api/auth/resend-otp', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: onboardingData.user.email }),
+            });
+            const result = await res.json();
+            if (!res.ok) throw new Error(result.error || 'Failed to resend OTP.');
+            // The button's internal state will show success.
+        } catch (err) {
+            setError(err.message); // Show error below the form
+            throw err; // Re-throw to be caught by the button's internal state
+        }
+    };
+
     const renderCurrentStep = () => {
         switch (currentStep) {
             case 'userAccount': return <UserAccountStep onFormSubmit={handleUserAccountSubmit} isLoading={loading} />;
-            case 'otpVerification': return <OtpVerificationStep onOtpSubmit={handleOtpSubmit} isLoading={loading} userEmail={onboardingData.user?.email} />;
+            case 'otpVerification': return <OtpVerificationStep onOtpSubmit={handleOtpSubmit} isLoading={loading} userEmail={onboardingData.user?.email} onResendOtp={handleResendOtp} />;
             case 'companyProfile': return <CompanyProfileStep onFormSubmit={handleCompanyProfileSubmit} onBack={() => {}} isLoading={loading} />;
             case 'companyVerifyPrompt': return <CompanyVerifyPromptStep onNext={() => moveStep('companyDetails')} companyName={onboardingData.company?.companyName} />;
             case 'companyDetails': return <CompanyDetailsStep onFormSubmit={handleCompanyDetailsSubmit} onBack={() => moveStep('companyProfile')} isLoading={loading} />;

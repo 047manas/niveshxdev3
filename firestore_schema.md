@@ -13,6 +13,9 @@ This document outlines the Google Firebase Firestore database structure for the 
 -   `password`: (String) The user's hashed password.
 -   `firstName`: (String) The user's first name.
 -   `lastName`: (String) The user's last name.
+-   `phone`: (Map, Optional) An object to store the phone number.
+    -   `countryCode`: (String) e.g., "+91"
+    -   `number`: (String) e.g., "9876543210"
 -   `designation`: (String) The user's stated role (e.g., "Co-founder", "CEO").
 -   `linkedinProfile`: (String) The URL for the user's LinkedIn profile.
 -   `userOtp`: (String) The OTP sent to the user's email for verification.

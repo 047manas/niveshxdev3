@@ -79,6 +79,7 @@ async function finalizeUserAndCompanyLink(
             email: pendingUserData.email,
             firstName: pendingUserData.firstName,
             lastName: pendingUserData.lastName,
+            phone: pendingUserData.phone || null,
             userType: 'Company',
             companyId: companyId,
             createdAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -122,10 +123,13 @@ export async function POST(req: NextRequest) {
                 const companyData = companyDoc.data();
 
                 if (companyData.isVerified) {
-                    const { ref: pendingUserRef, data: pendingUserData } = await getVerifiedPendingUser(email);
-                    await finalizeUserAndCompanyLink(pendingUserRef, pendingUserData, companyDoc.id);
-                    return NextResponse.json({ status: 'LINKED_TO_VERIFIED_COMPANY' });
+                    // If company is already verified, abort this registration and prompt user to login.
+                    // Clean up the pending user document to prevent orphaned data.
+                    const pendingUserRef = firestore.collection('pending_users').doc(email);
+                    await pendingUserRef.delete();
+                    return NextResponse.json({ status: 'COMPANY_ALREADY_VERIFIED' });
                 } else {
+                    // If company exists but is not verified, frontend will skip to company verification.
                     return NextResponse.json({ status: 'COMPANY_EXISTS_UNVERIFIED', companyId: companyDoc.id });
                 }
             } else {

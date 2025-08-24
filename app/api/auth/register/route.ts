@@ -3,25 +3,18 @@ import admin from '@/lib/firebase-admin';
 import bcrypt from 'bcryptjs';
 import { sendOtpEmail } from '@/lib/email';
 
-// Function to generate a 6-digit OTP
 const generateOtp = () => {
   return Math.floor(100000 + Math.random() * 900000).toString();
 };
 
 export async function POST(req: NextRequest) {
   try {
-    const {
-      email,
-      password,
-      firstName,
-      lastName,
-      designation,
-      linkedinProfile
-    } = await req.json();
+    const { userType, ...formData } = await req.json();
+    const { email, password, firstName, lastName } = formData;
 
     // --- Step 1: Validate required fields ---
-    if (!email || !password || !firstName || !lastName || !designation) {
-      return NextResponse.json({ error: 'Missing required fields.' }, { status: 400 });
+    if (!email || !password || !firstName || !lastName || !userType) {
+      return NextResponse.json({ error: 'Missing required fields: email, password, name, or userType.' }, { status: 400 });
     }
 
     const firestore = admin.firestore();
@@ -29,7 +22,6 @@ export async function POST(req: NextRequest) {
     // --- Step 2: Check if user already exists in the main 'users' collection ---
     const usersCollection = firestore.collection('users');
     const userQuery = await usersCollection.where('email', '==', email).get();
-
     if (!userQuery.empty) {
       return NextResponse.json({ error: 'An account with this email already exists.' }, { status: 409 });
     }
@@ -37,11 +29,8 @@ export async function POST(req: NextRequest) {
     // --- Step 3: Check if user exists in the 'pending_users' collection ---
     const pendingUserRef = firestore.collection('pending_users').doc(email);
     const pendingUserDoc = await pendingUserRef.get();
-
     if (pendingUserDoc.exists) {
-        // Optional: Resend OTP if user tries to register again before verifying.
-        // For now, we'll treat it as a conflict to keep it simple.
-        return NextResponse.json({ error: 'A registration process for this email has already started. Please check your email for an OTP.' }, { status: 409 });
+      return NextResponse.json({ error: 'A registration process for this email has already started. Please check your email for an OTP.' }, { status: 409 });
     }
 
     // --- Step 4: Hash password and generate OTP ---
@@ -49,14 +38,11 @@ export async function POST(req: NextRequest) {
     const otp = generateOtp();
     const otpExpires = admin.firestore.Timestamp.fromMillis(Date.now() + 10 * 60 * 1000); // 10 minutes expiry
 
-    // --- Step 5: Store pending user data in 'pending_users' collection ---
+    // --- Step 5: Store all pending user data in 'pending_users' collection ---
     const newPendingUser = {
-      email,
+      ...formData,
+      userType,
       password: hashedPassword,
-      firstName,
-      lastName,
-      designation,
-      linkedinProfile: linkedinProfile || '',
       userOtp: otp,
       userOtpExpires: otpExpires,
       emailVerificationStatus: 'pending',
