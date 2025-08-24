@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import admin from '@/lib/firebase-admin';
-import { getFirestore } from 'firebase-admin/firestore';
 
 /**
  * Retrieves a verified pending user from Firestore.
  * Throws an error if the user is not found or their email is not verified.
  */
 async function getVerifiedPendingUser(email: string) {
-    const firestore = getFirestore();
+    const firestore = admin.firestore();
     const pendingUserRef = firestore.collection('pending_users').doc(email);
     const pendingUserDoc = await pendingUserRef.get();
 
@@ -48,7 +47,7 @@ async function finalizeUserAndCompanyLink(
     pendingUserData: admin.firestore.DocumentData,
     companyId: string
 ) {
-    const firestore = getFirestore();
+    const firestore = admin.firestore();
     const auth = admin.auth();
 
     const authUser = await auth.createUser({
@@ -85,7 +84,7 @@ async function finalizeUserAndCompanyLink(
 
 
 export async function POST(req: NextRequest) {
-    const firestore = getFirestore();
+    const firestore = admin.firestore();
 
     try {
         const body = await req.json();
@@ -130,7 +129,6 @@ export async function POST(req: NextRequest) {
 
             const { ref: pendingUserRef, data: pendingUserData } = await getVerifiedPendingUser(email);
 
-            // Create the new company document first to get an ID
             const newCompanyRef = await firestore.collection('companies').add({
                 ...companyData,
                 isVerified: false,
@@ -138,10 +136,8 @@ export async function POST(req: NextRequest) {
                 createdAt: admin.firestore.FieldValue.serverTimestamp(),
             });
 
-            // Finalize user creation and link to the new company
             const authUser = await finalizeUserAndCompanyLink(pendingUserRef, pendingUserData, newCompanyRef.id);
 
-            // Update the company with the creator's ID
             await newCompanyRef.update({ createdBy: authUser.uid });
 
             return NextResponse.json({ success: true, status: 'COMPANY_CREATED_NEEDS_VERIFICATION', companyId: newCompanyRef.id });
