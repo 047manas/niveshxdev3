@@ -17,27 +17,40 @@ export async function POST(req: NextRequest) {
     }
 
     const firestore = admin.firestore();
+
+    // --- Check #1: Is user in pending_users collection? (User email not verified) ---
+    const pendingUserRef = firestore.collection('pending_users').doc(email);
+    const pendingUserDoc = await pendingUserRef.get();
+    if (pendingUserDoc.exists) {
+        const userData = pendingUserDoc.data()!;
+        if (userData.emailVerificationStatus === 'pending') {
+            const otp = generateOtp();
+            await pendingUserRef.update({ userOtp: otp, userOtpExpires: admin.firestore.Timestamp.fromMillis(Date.now() + 10 * 60 * 1000) });
+            await sendOtpEmail(email, `<p>Here is your new One-Time Password (OTP): <h2>${otp}</h2></p>`, "New Verification Code");
+            // Tell frontend to proceed to user OTP verification
+            return NextResponse.json({ status: 'USER_OTP_RESENT' });
+        }
+    }
+
+    // --- Check #2: Is user in the final users collection? ---
     const usersCollection = firestore.collection('users');
     const userQuery = await usersCollection.where('email', '==', email).get();
-
-    // --- Smart Redirect for Existing Users ---
     if (!userQuery.empty) {
         const userDoc = userQuery.docs[0];
         const userData = userDoc.data();
 
-        if (userData.userType !== 'company') {
-            return NextResponse.json({ error: 'An account with this email already exists.' }, { status: 409 });
-        }
-
+        // Check #2a: Have company details been submitted?
         if (!userData.companyId) {
             return NextResponse.json({ status: 'CONTINUE_PROFILE', userId: userDoc.id });
         }
 
         const companyDoc = await firestore.collection('companies').doc(userData.companyId).get();
         if (!companyDoc.exists) {
+            // Data inconsistency, treat as if profile is incomplete
             return NextResponse.json({ status: 'CONTINUE_PROFILE', userId: userDoc.id });
         }
 
+        // Check #2b: Is the company's contact email verified?
         const companyData = companyDoc.data()!;
         if (companyData.isVerified) {
             return NextResponse.json({ status: 'ONBOARDING_COMPLETE' });
@@ -50,18 +63,7 @@ export async function POST(req: NextRequest) {
         }
     }
 
-    // --- Flow for Pending Users ---
-    const pendingUserRef = firestore.collection('pending_users').doc(email);
-    const pendingUserDoc = await pendingUserRef.get();
-    if (pendingUserDoc.exists) {
-        const otp = generateOtp();
-        await pendingUserRef.update({ userOtp: otp, userOtpExpires: admin.firestore.Timestamp.fromMillis(Date.now() + 10 * 60 * 1000) });
-        const userData = pendingUserDoc.data()!;
-        await sendOtpEmail(email, `<p>Your new OTP is: <h2>${otp}</h2></p>`, "New Verification Code");
-        return NextResponse.json({ success: true, message: 'A new OTP has been sent.' });
-    }
-
-    // --- Flow for New Users ---
+    // --- Flow for a completely new user ---
     const hashedPassword = await bcrypt.hash(password, 10);
     const otp = generateOtp();
     const newPendingUser = {
@@ -76,7 +78,7 @@ export async function POST(req: NextRequest) {
     await pendingUserRef.set(newPendingUser);
     await sendOtpEmail(email, `<p>Your OTP is: <h2>${otp}</h2></p>`, "Your Verification Code");
 
-    return NextResponse.json({ success: true, message: 'OTP sent to your email.' });
+    return NextResponse.json({ status: 'NEW_USER' });
 
   } catch (error) {
     console.error('Registration error:', error);

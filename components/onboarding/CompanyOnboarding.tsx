@@ -297,7 +297,48 @@ const CompanyOnboarding = () => {
 
     const moveStep = (nextStep) => { if (steps.includes(nextStep)) setCurrentStep(nextStep); };
 
-    const handleUserAccountSubmit = async (data) => { setLoading(true); setError(''); try { const res = await fetch('/api/auth/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...data, userType: 'company' }) }); if (!res.ok) { const result = await res.json(); throw new Error(result.error || 'Failed to create account.'); } setOnboardingData({ user: data }); moveStep('otpVerification'); } catch (err) { setError(err.message); } finally { setLoading(false); } };
+    const handleUserAccountSubmit = async (data) => {
+        setLoading(true);
+        setError('');
+        try {
+            const res = await fetch('/api/auth/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ...data, userType: 'company' })
+            });
+            const result = await res.json();
+            if (!res.ok) {
+                throw new Error(result.error || 'An error occurred.');
+            }
+
+            setOnboardingData({ user: data, companyId: result.companyId });
+
+            switch (result.status) {
+                case 'NEW_USER':
+                case 'USER_OTP_RESENT':
+                    moveStep('otpVerification');
+                    break;
+                case 'CONTINUE_PROFILE':
+                    moveStep('companyProfile');
+                    break;
+                case 'VERIFY_COMPANY':
+                    // We need to store the company email from the response to show it on the verification screen
+                    setOnboardingData(prev => ({ ...prev, company: { ...prev.company, contactEmail: result.companyEmail } }));
+                    moveStep('companyOtpVerification');
+                    break;
+                case 'ONBOARDING_COMPLETE':
+                    setSuccessMessage("Your account is already fully set up. You can log in.");
+                    moveStep('success');
+                    break;
+                default:
+                    setError("An unexpected error occurred. Please try again.");
+            }
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
     const handleOtpSubmit = async (data) => { setLoading(true); setError(''); try { const res = await fetch('/api/auth/verify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: onboardingData.user.email, userOtp: data.otp }) }); if (!res.ok) { const result = await res.json(); throw new Error(result.error || 'Failed to verify OTP.'); } moveStep('companyProfile'); } catch (err) { setError(err.message); } finally { setLoading(false); } };
     const handleCompanyProfileSubmit = async (data) => { setLoading(true); setError(''); const updatedData = { ...onboardingData, company: data }; setOnboardingData(updatedData); try { const res = await fetch('/api/company/onboard', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ step: 'checkCompany', email: updatedData.user.email, companyWebsite: data.companyWebsite }) }); const result = await res.json(); if (!res.ok) throw new Error(result.error || 'Failed to check company.'); switch(result.status) { case 'COMPANY_ALREADY_VERIFIED': setSuccessMessage("This company is already verified. Please log in or contact support."); moveStep('success'); break; case 'COMPANY_EXISTS_UNVERIFIED': setOnboardingData(d => ({ ...d, companyId: result.companyId })); moveStep('companyVerifyPrompt'); break; case 'COMPANY_DOES_NOT_EXIST': moveStep('companyDetails'); break; default: throw new Error('Received an unexpected response from the server.'); } } catch (err) { setError(err.message); } finally { setLoading(false); } };
     const handleCompanyDetailsSubmit = async (data) => { let finalIndustry = data.industry.includes("Other") ? [data.otherIndustry] : data.industry; const details = { ...data, industry: finalIndustry }; delete details.otherIndustry; setOnboardingData(prev => ({ ...prev, company: { ...prev.company, ...details } })); moveStep('fundingHistory'); };
