@@ -30,7 +30,26 @@ export async function POST(req: NextRequest) {
     const pendingUserRef = firestore.collection('pending_users').doc(email);
     const pendingUserDoc = await pendingUserRef.get();
     if (pendingUserDoc.exists) {
-      return NextResponse.json({ error: 'A registration process for this email has already started. Please check your email for an OTP.' }, { status: 409 });
+        // If pending user exists, resend OTP instead of throwing an error.
+        const otp = generateOtp();
+        const otpExpires = admin.firestore.Timestamp.fromMillis(Date.now() + 10 * 60 * 1000);
+
+        await pendingUserRef.update({
+            userOtp: otp,
+            userOtpExpires: otpExpires,
+        });
+
+        const userData = pendingUserDoc.data()!;
+        const emailSubject = "Your New NiveshX Verification Code";
+        const emailBody = `
+            <p>Hello ${userData.firstName},</p>
+            <p>You tried to register again, but an existing registration was found for this email. Here is a new One-Time Password (OTP):</p>
+            <h2 style="text-align:center; font-size: 24px; letter-spacing: 4px;">${otp}</h2>
+            <p>This code will expire in 10 minutes.</p>
+        `;
+        await sendOtpEmail(email, emailBody, emailSubject);
+
+        return NextResponse.json({ success: true, message: 'A new OTP has been sent to your email. Please verify to continue.' });
     }
 
     // --- Step 4: Hash password and generate OTP ---
