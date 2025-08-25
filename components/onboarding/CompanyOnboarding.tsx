@@ -269,7 +269,7 @@ const CompanyOnboarding = () => {
     const handleUserAccountSubmit = async (data) => {
         setLoading(true); setError('');
         try {
-            const res = await fetch('/api/auth/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+            const res = await fetch('/api/auth/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...data, userType: 'company' }) });
             if (!res.ok) { const result = await res.json(); throw new Error(result.error || 'Failed to create account.'); }
             setOnboardingData({ user: data });
             moveStep('otpVerification');
