@@ -12,80 +12,74 @@ export async function POST(req: NextRequest) {
     const { userType, ...formData } = await req.json();
     const { email, password, firstName, lastName } = formData;
 
-    // --- Step 1: Validate required fields ---
     if (!email || !password || !firstName || !lastName || !userType) {
-      return NextResponse.json({ error: 'Missing required fields: email, password, name, or userType.' }, { status: 400 });
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
     const firestore = admin.firestore();
-
-    // --- Step 2: Check if user already exists in the main 'users' collection ---
     const usersCollection = firestore.collection('users');
     const userQuery = await usersCollection.where('email', '==', email).get();
+
+    // --- Smart Redirect for Existing Users ---
     if (!userQuery.empty) {
-      return NextResponse.json({ error: 'An account with this email already exists.' }, { status: 409 });
+        const userDoc = userQuery.docs[0];
+        const userData = userDoc.data();
+
+        if (userData.userType !== 'company') {
+            return NextResponse.json({ error: 'An account with this email already exists.' }, { status: 409 });
+        }
+
+        if (!userData.companyId) {
+            return NextResponse.json({ status: 'CONTINUE_PROFILE', userId: userDoc.id });
+        }
+
+        const companyDoc = await firestore.collection('companies').doc(userData.companyId).get();
+        if (!companyDoc.exists) {
+            return NextResponse.json({ status: 'CONTINUE_PROFILE', userId: userDoc.id });
+        }
+
+        const companyData = companyDoc.data()!;
+        if (companyData.isVerified) {
+            return NextResponse.json({ status: 'ONBOARDING_COMPLETE' });
+        } else {
+            // Resend company OTP and prompt for verification
+            const otp = generateOtp();
+            await companyDoc.ref.update({ companyOtp: otp, companyOtpExpires: admin.firestore.Timestamp.fromMillis(Date.now() + 10 * 60 * 1000) });
+            await sendOtpEmail(companyData.contactEmail, `<p>Your new company verification OTP is: <h2>${otp}</h2></p>`, "New Company Verification Code");
+            return NextResponse.json({ status: 'VERIFY_COMPANY', companyId: companyDoc.id, companyEmail: companyData.contactEmail });
+        }
     }
 
-    // --- Step 3: Check if user exists in the 'pending_users' collection ---
+    // --- Flow for Pending Users ---
     const pendingUserRef = firestore.collection('pending_users').doc(email);
     const pendingUserDoc = await pendingUserRef.get();
     if (pendingUserDoc.exists) {
-        // If pending user exists, resend OTP instead of throwing an error.
         const otp = generateOtp();
-        const otpExpires = admin.firestore.Timestamp.fromMillis(Date.now() + 10 * 60 * 1000);
-
-        await pendingUserRef.update({
-            userOtp: otp,
-            userOtpExpires: otpExpires,
-        });
-
+        await pendingUserRef.update({ userOtp: otp, userOtpExpires: admin.firestore.Timestamp.fromMillis(Date.now() + 10 * 60 * 1000) });
         const userData = pendingUserDoc.data()!;
-        const emailSubject = "Your New NiveshX Verification Code";
-        const emailBody = `
-            <p>Hello ${userData.firstName},</p>
-            <p>You tried to register again, but an existing registration was found for this email. Here is a new One-Time Password (OTP):</p>
-            <h2 style="text-align:center; font-size: 24px; letter-spacing: 4px;">${otp}</h2>
-            <p>This code will expire in 10 minutes.</p>
-        `;
-        await sendOtpEmail(email, emailBody, emailSubject);
-
-        return NextResponse.json({ success: true, message: 'A new OTP has been sent to your email. Please verify to continue.' });
+        await sendOtpEmail(email, `<p>Your new OTP is: <h2>${otp}</h2></p>`, "New Verification Code");
+        return NextResponse.json({ success: true, message: 'A new OTP has been sent.' });
     }
 
-    // --- Step 4: Hash password and generate OTP ---
+    // --- Flow for New Users ---
     const hashedPassword = await bcrypt.hash(password, 10);
     const otp = generateOtp();
-    const otpExpires = admin.firestore.Timestamp.fromMillis(Date.now() + 10 * 60 * 1000); // 10 minutes expiry
-
-    // --- Step 5: Store all pending user data in 'pending_users' collection ---
     const newPendingUser = {
       ...formData,
       userType,
       password: hashedPassword,
       userOtp: otp,
-      userOtpExpires: otpExpires,
+      userOtpExpires: admin.firestore.Timestamp.fromMillis(Date.now() + 10 * 60 * 1000),
       emailVerificationStatus: 'pending',
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
     };
-
     await pendingUserRef.set(newPendingUser);
+    await sendOtpEmail(email, `<p>Your OTP is: <h2>${otp}</h2></p>`, "Your Verification Code");
 
-    // --- Step 6: Send OTP to user's email ---
-    const emailSubject = "Your NiveshX Verification Code";
-    const emailBody = `
-      <p>Hello ${firstName},</p>
-      <p>Thank you for creating your account. Your One-Time Password (OTP) is:</p>
-      <h2 style="text-align:center; font-size: 24px; letter-spacing: 4px;">${otp}</h2>
-      <p>This code will expire in 10 minutes. Please use it to verify your email address.</p>
-    `;
-    await sendOtpEmail(email, emailBody, emailSubject);
-
-    // --- Step 7: Return success response ---
-    return NextResponse.json({ success: true, message: 'OTP sent to your email. Please verify to continue.' });
+    return NextResponse.json({ success: true, message: 'OTP sent to your email.' });
 
   } catch (error) {
-    console.error('Registration initiation error:', error);
-    const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred.';
-    return NextResponse.json({ error: 'Failed to initiate registration.', details: errorMessage }, { status: 500 });
+    console.error('Registration error:', error);
+    return NextResponse.json({ error: 'An unexpected error occurred.' }, { status: 500 });
   }
 }
