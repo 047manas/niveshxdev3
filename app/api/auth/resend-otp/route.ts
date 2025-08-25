@@ -11,41 +11,44 @@ export async function POST(req: NextRequest) {
     const { email } = await req.json();
 
     if (!email) {
-      return NextResponse.json({ error: 'Email is required' }, { status: 400 });
+      return NextResponse.json({ error: 'Email is required.' }, { status: 400 });
     }
 
     const firestore = admin.firestore();
-    const usersCollection = firestore.collection('users');
-    const userQuery = await usersCollection.where('email', '==', email).limit(1).get();
+    const pendingUserRef = firestore.collection('pending_users').doc(email);
+    const pendingUserDoc = await pendingUserRef.get();
 
-    if (userQuery.empty) {
-      // Don't reveal that the user doesn't exist for security reasons
-      return NextResponse.json({ success: true, message: 'If an account with this email exists, a new OTP has been sent.' });
+    if (!pendingUserDoc.exists) {
+      // For security, don't reveal if the user exists or not.
+      // The frontend will show the same message regardless.
+      return NextResponse.json({ success: true, message: 'If an account with this email is pending verification, a new OTP has been sent.' });
     }
 
-    const userDoc = userQuery.docs[0];
-    const userData = userDoc.data();
+    const userData = pendingUserDoc.data()!;
 
-    if (userData.isVerified) {
-        return NextResponse.json({ error: 'This account is already verified.' }, { status: 400 });
+    // Check if user is already verified
+    if (userData.emailVerificationStatus === 'verified') {
+        return NextResponse.json({ error: 'This account has already been verified.' }, { status: 400 });
     }
 
-    // Generate and send a new OTP
     const otp = generateOtp();
     const otpExpires = admin.firestore.Timestamp.fromMillis(Date.now() + 10 * 60 * 1000); // 10 minutes expiry
 
-    await userDoc.ref.update({ otp, otpExpires });
+    await pendingUserRef.update({
+      userOtp: otp,
+      userOtpExpires: otpExpires,
+    });
 
-    const emailSubject = "Your New Niveshx Verification Code";
+    const emailSubject = "Your New NiveshX Verification Code";
     const emailBody = `
-      <p>Hello ${userData.fullName},</p>
-      <p>You requested a new One-Time Password (OTP). Your new code is:</p>
-      <h2>${otp}</h2>
+      <p>Hello ${userData.firstName},</p>
+      <p>Here is your new One-Time Password (OTP):</p>
+      <h2 style="text-align:center; font-size: 24px; letter-spacing: 4px;">${otp}</h2>
       <p>This code will expire in 10 minutes.</p>
     `;
     await sendOtpEmail(email, emailBody, emailSubject);
 
-    return NextResponse.json({ success: true, message: 'A new OTP has been sent to your email address.' });
+    return NextResponse.json({ success: true, message: 'A new OTP has been sent to your email.' });
 
   } catch (error) {
     console.error('Resend OTP error:', error);

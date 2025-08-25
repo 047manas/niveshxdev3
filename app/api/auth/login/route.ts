@@ -27,6 +27,12 @@ export async function POST(req: NextRequest) {
     const userDoc = userQuery.docs[0];
     const userData = userDoc.data();
 
+    // Add a check to ensure the user and password field exist before comparing
+    if (!userData || typeof userData.password !== 'string' || !userData.password) {
+        // Return a generic error to prevent leaking information
+        return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 });
+    }
+
     const isPasswordValid = await bcrypt.compare(password, userData.password);
 
     if (!isPasswordValid) {

@@ -1,60 +1,89 @@
 # NiveshX Firestore Database Schema
 
-This document outlines the Google Firebase Firestore database structure for the NiveshX platform's Minimum Viable Product (MVP).
+This document outlines the Google Firebase Firestore database structure for the NiveshX platform, designed to support a multi-step, conditional onboarding flow.
 
-## 1. `users` Collection
+## 1. `pending_users` Collection
 
-**Purpose:** This collection is the single source of truth for every person who signs up. It stores common profile and authentication data for all users, regardless of their type.
+**Purpose:** This collection temporarily stores data for users who have started the registration process but have not yet completed all verification steps. Documents in this collection are expected to be short-lived.
 
-**Document ID:** Unique User ID (e.g., `auth.uid`)
+**Document ID:** User's Email Address (e.g., `user@company.com`)
 
 ### Fields
-
 -   `email`: (String) The user's login email.
+-   `password`: (String) The user's hashed password.
 -   `firstName`: (String) The user's first name.
 -   `lastName`: (String) The user's last name.
--   `phone`: (Map) An object to store the phone number.
+-   `phone`: (Map, Optional) An object to store the phone number.
     -   `countryCode`: (String) e.g., "+91"
     -   `number`: (String) e.g., "9876543210"
--   `userType`: (String) Critical field acting as a role. Must be either "Company" or "Investor".
--   `createdAt`: (Timestamp) The timestamp when the user account was created.
+-   `designation`: (String) The user's stated role (e.g., "Co-founder", "CEO").
+-   `linkedinProfile`: (String) The URL for the user's LinkedIn profile.
+-   `userOtp`: (String) The OTP sent to the user's email for verification.
+-   `userOtpExpires`: (Timestamp) The expiry time for the user's OTP.
+-   `emailVerificationStatus`: (String) The status of the user's email verification. Can be `'pending'` or `'verified'`.
+-   `createdAt`: (Timestamp) The timestamp when the pending user entry was created.
 
 ### Sample Document
-
 ```json
 {
   "email": "rohan.sharma@example.com",
+  "password": "hashed_password_string",
   "firstName": "Rohan",
   "lastName": "Sharma",
-  "phone": {
-    "countryCode": "+91",
-    "number": "9876543210"
-  },
-  "userType": "Company",
-  "createdAt": "2024-08-21T10:00:00Z"
+  "designation": "CEO",
+  "linkedinProfile": "https://linkedin.com/in/rohan",
+  "userOtp": "123456",
+  "userOtpExpires": "2024-08-22T10:10:00Z",
+  "emailVerificationStatus": "pending",
+  "createdAt": "2024-08-22T10:00:00Z"
 }
 ```
 
 ---
 
-## 2. Structure for 'Company' Users
+## 2. `users` Collection
 
-When a user's `userType` is "Company", their data is stored across two additional collections: `companies` and `teamMembers`.
+**Purpose:** This is the main collection for all fully registered and verified users. It stores common profile and authentication data.
 
-### a) `companies` Collection
+**Document ID:** Unique User ID from Firebase Auth (e.g., `auth.uid`)
 
-**Purpose:** This collection stores data that belongs specifically to the company entity.
+### Fields
+-   `email`: (String) The user's login email.
+-   `firstName`: (String) The user's first name.
+-   `lastName`: (String) The user's last name.
+-   `phone`: (Map, Optional) An object to store the phone number, primarily for investors.
+    -   `countryCode`: (String) e.g., "+91"
+    -   `number`: (String) e.g., "9876543210"
+-   `userType`: (String) Critical field for role-based access. Must be either `"Company"` or `"Investor"`.
+-   `companyId`: (String, Optional) A reference to the document ID from the `companies` collection. This is mandatory if `userType` is `"Company"`.
+-   `createdAt`: (Timestamp) The timestamp when the user account was finalized.
+
+### Sample Document (Company User)
+```json
+{
+  "email": "rohan.sharma@example.com",
+  "firstName": "Rohan",
+  "lastName": "Sharma",
+  "userType": "Company",
+  "companyId": "company_id_abc",
+  "createdAt": "2024-08-22T10:30:00Z"
+}
+```
+
+---
+
+## 3. `companies` Collection
+
+**Purpose:** This collection stores all data specific to a company entity.
 
 **Document ID:** Unique Company ID (auto-generated)
 
-#### Fields
-
+### Fields
 -   `name`: (String) The legal name of the company.
 -   `website`: (String) The company's official website URL.
 -   `linkedin`: (String, Optional) The company's LinkedIn profile URL.
 -   `oneLiner`: (String) A short, one-liner pitch for the company.
 -   `about`: (String) A detailed description of the company.
--   `culture`: (String, Optional) A description of the company's culture.
 -   `industry`: (Array of Strings) A list of industries the company operates in.
 -   `primarySector`: (String) The primary sector of the company (e.g., "Fintech").
 -   `businessModel`: (String) The company's primary business model (e.g., "B2B").
@@ -63,27 +92,27 @@ When a user's `userType` is "Company", their data is stored across two additiona
 -   `locations`: (Array of Strings) A list of company locations.
 -   `contactEmail`: (String) The official contact email for the company.
 -   `contactPhone`: (Map) The official contact phone for the company.
-    -   `countryCode`: (String) e.g., "+91"
-    -   `number`: (String) e.g., "9876543210"
 -   `funding`: (Map) Information about the company's funding history.
-    -   `hasRaised`: (Boolean) Whether the company has raised external funding.
-    -   `totalRaised`: (Number, Optional) The total amount of funding raised.
-    -   `currency`: (String, Optional) The currency of the funding (e.g., "USD").
-    -   `rounds`: (Number, Optional) The number of funding rounds.
-    -   `latestRound`: (String, Optional) The name of the latest funding round.
--   `userId`: (String) A reference to the creating user's ID in the `users` collection.
+-   `isVerified`: (Boolean) `true` if the company's contact email has been verified, otherwise `false`.
+-   `createdBy`: (String) A reference to the creating user's ID (`auth.uid`) in the `users` collection.
 -   `createdAt`: (Timestamp) The timestamp when the company was registered.
 
-#### Sample Document
+### Subcollections
+-   **`employees` Subcollection:**
+    -   **Purpose:** Links multiple users from the `users` collection to this company.
+    -   **Document ID:** User ID (`auth.uid`) of the employee.
+    -   **Fields:**
+        -   `role`: (String) The user's role at the company (e.g., "Founder", "CXO", "HR", "Other").
+        -   `addedAt`: (Timestamp) When the user was added to the company.
 
+### Sample Document
 ```json
 {
   "name": "Innovatech Solutions Pvt. Ltd.",
   "website": "https://innovatech.com",
   "linkedin": "https://linkedin.com/company/innovatech",
   "oneLiner": "AI-powered solutions for modern businesses.",
-  "about": "We provide cutting-edge AI tools to optimize...",
-  "culture": "A culture of innovation and collaboration.",
+  "about": "We provide cutting-edge AI tools...",
   "industry": ["Technology", "AI"],
   "primarySector": "SaaS",
   "businessModel": "B2B",
@@ -92,69 +121,34 @@ When a user's `userType` is "Company", their data is stored across two additiona
   "locations": ["Mumbai", "Bangalore"],
   "contactEmail": "contact@innovatech.com",
   "contactPhone": { "countryCode": "+91", "number": "1234567890" },
-  "funding": {
-    "hasRaised": true,
-    "totalRaised": 500000,
-    "currency": "USD",
-    "rounds": 2,
-    "latestRound": "Seed"
-  },
-  "userId": "auth_user_id_123",
-  "createdAt": "2024-08-21T10:05:00Z"
+  "funding": { "hasRaised": true, "totalRaised": 500000, "currency": "USD" },
+  "isVerified": false,
+  "createdBy": "auth_user_id_123",
+  "createdAt": "2024-08-22T10:35:00Z"
 }
-```
 
-### b) `teamMembers` Collection
-
-**Purpose:** This is a linking collection that creates a many-to-many relationship between `users` and `companies`.
-
-**Document ID:** Unique Team Member ID (auto-generated)
-
-#### Fields
-
--   `userId`: (String) A reference to the document ID from the `users` collection.
--   `companyId`: (String) A reference to the document ID from the `companies` collection.
--   `role`: (String) The user's role at the company (e.g., "Founder", "CEO").
-
-#### Sample Document
-
-```json
+// Sample document in the 'employees' subcollection at:
+// companies/company_id_abc/employees/auth_user_id_123
 {
-  "userId": "auth_user_id_123",
-  "companyId": "company_id_abc",
-  "role": "Founder"
+  "role": "Founder",
+  "addedAt": "2024-08-22T10:35:00Z"
 }
 ```
 
 ---
 
-## 3. `investors` Collection
+## 4. `investors` Collection
 
-**Purpose:** When a user's `userType` is "Investor", a corresponding profile document is created in this collection to store investor-specific data.
+**Purpose:** When a user's `userType` is "Investor", a corresponding profile document is created here. This schema remains unchanged from the previous version.
 
 **Document ID:** Unique Investor Profile ID (auto-generated)
 
 ### Fields
-
--   `userId`: (String) A reference to the document ID from the `users` collection, linking this profile to a specific user.
--   `investorType`: (String) The type of investor (e.g., "Angel", "VC", "Family Office").
--   `investmentType`: (Array of Strings) The type of investments they make (e.g., ["Equity investments", "Debt financing"]).
+-   `userId`: (String) A reference to the document ID from the `users` collection.
+-   `investorType`: (String) The type of investor (e.g., "Angel", "VC").
+-   `investmentType`: (Array of Strings) e.g., ["Equity investments", "Debt financing"].
 -   `linkedinProfile`: (String) The URL to their LinkedIn profile.
--   `chequeSize`: (String) The range of their typical investment size (e.g., "25L-1Cr").
+-   `chequeSize`: (String) The range of their typical investment size.
 -   `interestedSectors`: (Array of Strings) The industries they are interested in.
--   `isVerified`: (Boolean) A flag to mark if their accredited status has been verified, defaulting to `false`.
+-   `isVerified`: (Boolean) A flag for accredited status, defaulting to `false`.
 -   `createdAt`: (Timestamp) The timestamp when the investor profile was created.
-
-### Sample Document
-
-```json
-{
-  "userId": "auth_user_id_456",
-  "investorType": "Angel",
-  "linkedinProfile": "https://www.linkedin.com/in/investor-jane-doe/",
-  "chequeSize": "25L-1Cr",
-  "interestedSectors": ["FinTech", "SaaS", "HealthTech"],
-  "isVerified": false,
-  "createdAt": "2024-08-21T11:00:00Z"
-}
-```

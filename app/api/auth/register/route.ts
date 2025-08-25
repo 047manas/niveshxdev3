@@ -3,70 +3,85 @@ import admin from '@/lib/firebase-admin';
 import bcrypt from 'bcryptjs';
 import { sendOtpEmail } from '@/lib/email';
 
-// Function to generate a 6-digit OTP
 const generateOtp = () => {
   return Math.floor(100000 + Math.random() * 900000).toString();
 };
 
 export async function POST(req: NextRequest) {
   try {
-    // Step 1: Get form data and validate required fields
     const { userType, ...formData } = await req.json();
-    const { email, password, fullName, companyName, companyEmail } = formData;
+    const { email, password, firstName, lastName } = formData;
 
-    const requiredFields = { fullName, email, companyName, companyEmail, password, userType };
-    for (const [fieldName, fieldValue] of Object.entries(requiredFields)) {
-      if (!fieldValue) {
-        return NextResponse.json({ error: `Missing required field: ${fieldName}` }, { status: 400 });
-      }
+    if (!email || !password || !firstName || !lastName || !userType) {
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
     const firestore = admin.firestore();
 
-    // Step 2: Check if user already exists in the main users collection
-    const usersCollection = firestore.collection('users');
-    const userQuery = await usersCollection.where('email', '==', email).get();
-
-    if (!userQuery.empty) {
-      return NextResponse.json({ error: 'User with this email already exists' }, { status: 409 });
+    // --- Check #1: Is user in pending_users collection? (User email not verified) ---
+    const pendingUserRef = firestore.collection('pending_users').doc(email);
+    const pendingUserDoc = await pendingUserRef.get();
+    if (pendingUserDoc.exists) {
+        const userData = pendingUserDoc.data()!;
+        if (userData.emailVerificationStatus === 'pending') {
+            const otp = generateOtp();
+            await pendingUserRef.update({ userOtp: otp, userOtpExpires: admin.firestore.Timestamp.fromMillis(Date.now() + 10 * 60 * 1000) });
+            await sendOtpEmail(email, `<p>Here is your new One-Time Password (OTP): <h2>${otp}</h2></p>`, "New Verification Code");
+            // Tell frontend to proceed to user OTP verification
+            return NextResponse.json({ status: 'USER_OTP_RESENT' });
+        }
     }
 
-    // Step 3: Hash password and generate OTP
+    // --- Check #2: Is user in the final users collection? ---
+    const usersCollection = firestore.collection('users');
+    const userQuery = await usersCollection.where('email', '==', email).get();
+    if (!userQuery.empty) {
+        const userDoc = userQuery.docs[0];
+        const userData = userDoc.data();
+
+        // Check #2a: Have company details been submitted?
+        if (!userData.companyId) {
+            return NextResponse.json({ status: 'CONTINUE_PROFILE', userId: userDoc.id });
+        }
+
+        const companyDoc = await firestore.collection('companies').doc(userData.companyId).get();
+        if (!companyDoc.exists) {
+            // Data inconsistency, treat as if profile is incomplete
+            return NextResponse.json({ status: 'CONTINUE_PROFILE', userId: userDoc.id });
+        }
+
+        // Check #2b: Is the company's contact email verified?
+        const companyData = companyDoc.data()!;
+        if (companyData.isVerified) {
+            return NextResponse.json({ status: 'ONBOARDING_COMPLETE' });
+        } else {
+            // Resend company OTP and prompt for verification
+            const otp = generateOtp();
+            await companyDoc.ref.update({ companyOtp: otp, companyOtpExpires: admin.firestore.Timestamp.fromMillis(Date.now() + 10 * 60 * 1000) });
+            await sendOtpEmail(companyData.contactEmail, `<p>Your new company verification OTP is: <h2>${otp}</h2></p>`, "New Company Verification Code");
+            return NextResponse.json({ status: 'VERIFY_COMPANY', companyId: companyDoc.id, companyEmail: companyData.contactEmail });
+        }
+    }
+
+    // --- Flow for a completely new user ---
     const hashedPassword = await bcrypt.hash(password, 10);
     const otp = generateOtp();
-    const otpExpires = admin.firestore.Timestamp.fromMillis(Date.now() + 10 * 60 * 1000); // 10 minutes expiry
-
-    // Step 4: Store pending user data in 'pending_users' collection
-    const pendingUsersCollection = firestore.collection('pending_users');
-    const pendingUserDoc = {
+    const newPendingUser = {
       ...formData,
       userType,
       password: hashedPassword,
       userOtp: otp,
-      userOtpExpires: otpExpires,
-      userEmailVerified: false,
-      companyEmailVerified: false,
+      userOtpExpires: admin.firestore.Timestamp.fromMillis(Date.now() + 10 * 60 * 1000),
+      emailVerificationStatus: 'pending',
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
     };
-    // Use email as the document ID for easy retrieval
-    await pendingUsersCollection.doc(email).set(pendingUserDoc);
+    await pendingUserRef.set(newPendingUser);
+    await sendOtpEmail(email, `<p>Your OTP is: <h2>${otp}</h2></p>`, "Your Verification Code");
 
-    // Step 5: Send OTP to user's email
-    const emailSubject = "Your Niveshx Verification Code";
-    const emailBody = `
-      <p>Hello ${fullName},</p>
-      <p>Thank you for starting the registration process. Your One-Time Password (OTP) is:</p>
-      <h2>${otp}</h2>
-      <p>This code will expire in 10 minutes.</p>
-    `;
-    await sendOtpEmail(email, emailBody, emailSubject);
-
-    // Step 6: Return success response
-    return NextResponse.json({ success: true, message: 'OTP sent to your email. Please verify to continue.' });
+    return NextResponse.json({ status: 'NEW_USER' });
 
   } catch (error) {
-    console.error('Registration initiation error:', error);
-    const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred.';
-    return NextResponse.json({ error: 'Failed to initiate registration.', details: errorMessage }, { status: 500 });
+    console.error('Registration error:', error);
+    return NextResponse.json({ error: 'An unexpected error occurred.' }, { status: 500 });
   }
 }
