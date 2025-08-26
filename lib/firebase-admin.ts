@@ -9,14 +9,23 @@ const hasRequiredEnvVars =
 // Initialize the app only if the env vars are present and no app is already initialized.
 if (hasRequiredEnvVars && !admin.apps.length) {
   try {
+    // Clean up the private key
+    let privateKey = process.env.FIREBASE_PRIVATE_KEY!;
+    if (privateKey.startsWith('"')) {
+      privateKey = privateKey.substring(1);
+    }
+    if (privateKey.endsWith('"')) {
+      privateKey = privateKey.slice(0, -1);
+    }
+    privateKey = privateKey.replace(/\\n/g, '\n');
+
     admin.initializeApp({
       credential: admin.credential.cert({
-        projectId: process.env.FIREBASE_PROJECT_ID,
-        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-        // The private key stored in env vars might have its newlines escaped.
-        privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+        projectId: process.env.FIREBASE_PROJECT_ID!,
+        clientEmail: process.env.FIREBASE_CLIENT_EMAIL!,
+        privateKey: privateKey,
       }),
-      databaseURL: `https://${process.env.FIREBASE_PROJECT_ID}.firebaseio.com`,
+      databaseURL: `https://${process.env.FIREBASE_PROJECT_ID!}.firebaseio.com`,
     });
   } catch (error) {
     console.error('Firebase admin initialization error', error);
