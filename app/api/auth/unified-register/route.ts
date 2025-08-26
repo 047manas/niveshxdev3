@@ -9,11 +9,14 @@ const generateOtp = () => {
 
 export async function POST(req: NextRequest) {
     const { userType, ...formData } = await req.json();
-    const { email, password, firstName, lastName } = formData;
+    let { email, password, firstName, lastName } = formData;
 
     if (!userType || !email || !password || !firstName || !lastName) {
         return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
+
+    // Normalize email
+    email = email.trim().toLowerCase();
 
     const auth = admin.auth();
     const firestore = admin.firestore();
@@ -62,7 +65,7 @@ export async function POST(req: NextRequest) {
                 const companyMemberRef = firestore.collection('new_company_members').doc();
 
                 transaction.set(userRef, {
-                    email: formData.email,
+                    email: email,
                     firstName: formData.firstName,
                     lastName: formData.lastName,
                     phone: formData.phone || null,
@@ -100,7 +103,7 @@ export async function POST(req: NextRequest) {
                 const investorProfileRef = firestore.collection('new_investor_profiles').doc(authUser.uid);
 
                 transaction.set(userRef, {
-                    email: formData.email,
+                    email: email,
                     firstName: formData.firstName,
                     lastName: formData.lastName,
                     phone: formData.phone || null,

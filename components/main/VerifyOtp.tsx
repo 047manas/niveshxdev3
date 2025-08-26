@@ -53,7 +53,12 @@ const VerifyOtp = ({ setCurrentView }) => {
       window.localStorage.removeItem('emailForVerification');
       setCurrentView('login');
     } catch (err) {
-      setError(err.message);
+      // Provide a more helpful error message
+      if (err.message.includes('Invalid OTP or email')) {
+        setError("Your verification session has expired. Please go back and try signing up again.");
+      } else {
+        setError(err.message);
+      }
     } finally {
       setLoading(false);
     }
