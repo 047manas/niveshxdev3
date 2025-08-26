@@ -138,7 +138,7 @@ const SignUp = ({ setCurrentView, userType, setUserType }) => {
         const response = await fetch('/api/auth/verify-otp', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email: formData.email, userOtp: data.otp }),
+            body: JSON.stringify({ email: formData.email, otp: data.otp }),
         });
         const result = await response.json();
         if (!response.ok) throw new Error(result.error || 'Failed to verify OTP.');
