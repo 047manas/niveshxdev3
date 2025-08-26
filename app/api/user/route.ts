@@ -10,12 +10,12 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'No token provided' }, { status: 401 });
     }
 
-    const decodedToken: any = jwt.verify(token, process.env.JWT_SECRET || 'your-default-secret');
+    const decodedToken: any = jwt.verify(token, process.env.JWT_SECRET!);
     const userId = decodedToken.userId;
 
 
     const firestore = admin.firestore();
-    const userDoc = await firestore.collection('users').doc(userId).get();
+    const userDoc = await firestore.collection('new_users').doc(userId).get();
 
     if (!userDoc.exists) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });

@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
     const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
 
     const firestore = admin.firestore();
-    const usersCollection = firestore.collection('users');
+    const usersCollection = firestore.collection('new_users');
 
     const userQuery = await usersCollection
       .where('resetPasswordToken', '==', hashedToken)

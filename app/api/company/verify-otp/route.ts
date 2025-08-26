@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import admin from '@/lib/firebase-admin';
+import bcrypt from 'bcryptjs';
 
 export async function POST(req: NextRequest) {
   try {
@@ -10,40 +11,43 @@ export async function POST(req: NextRequest) {
     }
 
     const firestore = admin.firestore();
-    const companyRef = firestore.collection('companies').doc(companyId);
-    const companyDoc = await companyRef.get();
+    const verificationCollection = firestore.collection('pending_verifications');
+    const q = verificationCollection.where('target', '==', companyId).where('type', '==', 'company');
+    const querySnapshot = await q.get();
 
-    if (!companyDoc.exists) {
-      return NextResponse.json({ error: 'Company not found.' }, { status: 404 });
+    if (querySnapshot.empty) {
+      return NextResponse.json({ error: 'Invalid OTP or Company ID.' }, { status: 400 });
     }
 
-    const companyData = companyDoc.data()!;
+    let otpVerified = false;
+    for (const doc of querySnapshot.docs) {
+      const verificationData = doc.data();
+      const isOtpValid = await bcrypt.compare(otp, verificationData.otp);
 
-    if (companyData.isVerified) {
-        return NextResponse.json({ success: true, message: 'Company already verified.' });
+      if (isOtpValid) {
+        const isOtpExpired = verificationData.expiresAt.toMillis() < Date.now();
+        if (isOtpExpired) {
+          await doc.ref.delete();
+          continue;
+        }
+
+        const companyRef = firestore.collection('new_companies').doc(companyId);
+        await companyRef.update({ isVerified: true });
+
+        await doc.ref.delete();
+        otpVerified = true;
+        break;
+      }
     }
 
-    if (companyData.companyOtp !== otp) {
-        return NextResponse.json({ error: 'Invalid OTP.' }, { status: 400 });
+    if (otpVerified) {
+        return NextResponse.json({ success: true, message: 'Company verified successfully.' });
+    } else {
+        return NextResponse.json({ error: 'Invalid or expired OTP.' }, { status: 400 });
     }
-
-    const now = admin.firestore.Timestamp.now();
-    if (now > companyData.companyOtpExpires) {
-      return NextResponse.json({ error: 'OTP has expired.' }, { status: 400 });
-    }
-
-    // OTP is valid, update the company document
-    await companyRef.update({
-      isVerified: true,
-      companyOtp: admin.firestore.FieldValue.delete(),
-      companyOtpExpires: admin.firestore.FieldValue.delete(),
-    });
-
-    return NextResponse.json({ success: true, message: 'Company verified successfully.' });
 
   } catch (error) {
     console.error('Company OTP verification error:', error);
-    const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred.';
-    return NextResponse.json({ error: 'Failed to verify company OTP.', details: errorMessage }, { status: 500 });
+    return NextResponse.json({ error: 'An internal server error occurred.' }, { status: 500 });
   }
 }

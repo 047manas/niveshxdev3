@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import admin from '@/lib/firebase-admin';
 import { sendOtpEmail } from '@/lib/email';
+import bcrypt from 'bcryptjs';
 
 const generateOtp = () => {
   return Math.floor(100000 + Math.random() * 900000).toString();
@@ -15,7 +16,7 @@ export async function POST(req: NextRequest) {
     }
 
     const firestore = admin.firestore();
-    const companyRef = firestore.collection('companies').doc(companyId);
+    const companyRef = firestore.collection('new_companies').doc(companyId);
     const companyDoc = await companyRef.get();
 
     if (!companyDoc.exists) {
@@ -30,11 +31,14 @@ export async function POST(req: NextRequest) {
     }
 
     const otp = generateOtp();
-    const otpExpires = admin.firestore.Timestamp.fromMillis(Date.now() + 10 * 60 * 1000); // 10 minutes expiry
+    const hashedOtp = await bcrypt.hash(otp, 10);
 
-    await companyRef.update({
-      companyOtp: otp,
-      companyOtpExpires: otpExpires,
+    await firestore.collection('pending_verifications').add({
+        type: 'company',
+        target: companyId,
+        otp: hashedOtp,
+        expiresAt: admin.firestore.Timestamp.fromMillis(Date.now() + 15 * 60 * 1000),
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
     });
 
     const emailSubject = `Your Verification Code for ${companyData.name} on NiveshX`;
@@ -42,7 +46,7 @@ export async function POST(req: NextRequest) {
       <p>Hello,</p>
       <p>Please use the following One-Time Password (OTP) to verify your company's email address (${companyEmail}) for NiveshX:</p>
       <h2 style="text-align:center; font-size: 24px; letter-spacing: 4px;">${otp}</h2>
-      <p>This code will expire in 10 minutes.</p>
+      <p>This code will expire in 15 minutes.</p>
     `;
     await sendOtpEmail(companyEmail, emailBody, emailSubject);
 
@@ -50,7 +54,6 @@ export async function POST(req: NextRequest) {
 
   } catch (error) {
     console.error('Send company verification OTP error:', error);
-    const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred.';
-    return NextResponse.json({ error: 'Failed to send company verification OTP.', details: errorMessage }, { status: 500 });
+    return NextResponse.json({ error: 'An internal server error occurred.' }, { status: 500 });
   }
 }
