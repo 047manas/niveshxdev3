@@ -5,11 +5,14 @@ import bcrypt from 'bcryptjs';
 
 export async function POST(req: NextRequest) {
   try {
-    const { email, otp } = await req.json();
+    let { email, otp } = await req.json();
 
     if (!email || !otp) {
       return NextResponse.json({ error: 'Email and OTP are required' }, { status: 400 });
     }
+
+    // Normalize email to ensure consistent lookup
+    email = email.trim().toLowerCase();
 
     const firestore = admin.firestore();
     const verificationCollection = firestore.collection('pending_verifications');
