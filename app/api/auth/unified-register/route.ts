@@ -39,15 +39,7 @@ export async function POST(req: NextRequest) {
 
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        // Step 2: Create Firebase Auth user
-        authUser = await auth.createUser({
-            email,
-            password,
-            displayName: `${firstName} ${lastName}`,
-            disabled: false,
-        });
-
-        // Step 3: Create Firestore documents in a transaction
+        // Step 2: All validation passed, now create the user and documents
         if (userType === 'founder') {
             const { companyName, companyWebsite, contactEmail, role } = formData;
             if (!companyName || !companyWebsite || !contactEmail) {
@@ -58,6 +50,13 @@ export async function POST(req: NextRequest) {
             if(!companyQuery.empty) {
                 return NextResponse.json({ error: 'A company with this website is already registered.' }, { status: 409 });
             }
+
+            authUser = await auth.createUser({
+                email,
+                password,
+                displayName: `${firstName} ${lastName}`,
+                disabled: false,
+            });
 
             await firestore.runTransaction(async (transaction) => {
                 const userRef = firestore.collection('new_users').doc(authUser.uid);
@@ -97,6 +96,13 @@ export async function POST(req: NextRequest) {
             if (!investorType || !investmentType || !chequeSize) {
                 return NextResponse.json({ error: 'Missing required investor fields' }, { status: 400 });
             }
+
+            authUser = await auth.createUser({
+                email,
+                password,
+                displayName: `${firstName} ${lastName}`,
+                disabled: false,
+            });
 
             await firestore.runTransaction(async (transaction) => {
                 const userRef = firestore.collection('new_users').doc(authUser.uid);

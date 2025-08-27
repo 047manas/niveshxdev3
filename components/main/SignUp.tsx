@@ -100,6 +100,35 @@ const SignUp = ({ setCurrentView, userType, setUserType }) => {
   const [error, setError] = useState('');
   const [investorAgreed, setInvestorAgreed] = useState(false);
   const [formData, setFormData] = useState(null);
+  const [emailValidation, setEmailValidation] = useState({ status: 'idle', message: '' });
+
+  const handleEmailBlur = async (e) => {
+    const email = e.target.value;
+
+    const emailSchema = z.string().email("Invalid email address");
+    const validationResult = emailSchema.safeParse(email);
+    if (!validationResult.success) {
+      setEmailValidation({ status: 'invalid', message: 'Please enter a valid email address.' });
+      return;
+    }
+
+    setEmailValidation({ status: 'checking', message: 'Checking email...' });
+    try {
+      const response = await fetch('/api/company/check', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ companyEmail: email }),
+      });
+      const data = await response.json();
+      if (data.exists) {
+        setEmailValidation({ status: 'invalid', message: 'This email is already registered.' });
+      } else {
+        setEmailValidation({ status: 'valid', message: 'This email is available.' });
+      }
+    } catch (error) {
+      setEmailValidation({ status: 'invalid', message: 'Could not verify email. Please try again.' });
+    }
+  };
 
   const investorForm = useForm({
       resolver: zodResolver(allInvestorStepSchemas[investorStep - 1]),
@@ -191,7 +220,7 @@ const SignUp = ({ setCurrentView, userType, setUserType }) => {
                 <div className="space-y-6">
                     <div className="text-center"><p className="text-sm text-gray-400">Step {investorStep} of 2: {["Create Account", "Investment Profile"][investorStep - 1]}</p><Progress value={investorStep * 50} className="mt-2" /></div>
                     <form onSubmit={investorForm.handleSubmit(handleInvestorSubmit)} className="space-y-4">
-                        {investorStep === 1 && <InvestorStep1 control={investorForm.control} register={investorForm.register} errors={investorForm.formState.errors} />}
+                        {investorStep === 1 && <InvestorStep1 control={investorForm.control} register={investorForm.register} errors={investorForm.formState.errors} onEmailBlur={handleEmailBlur} emailValidation={emailValidation} />}
                         {investorStep === 2 && <InvestorStep2 control={investorForm.control} errors={investorForm.formState.errors} setValue={investorForm.setValue} />}
                         <div className="flex justify-between pt-4 flex-col space-y-4">
                             {investorStep === 2 && (<div className="flex items-center space-x-2"><Checkbox id="investor-terms" onCheckedChange={setInvestorAgreed} /><Label htmlFor="investor-terms" className="text-sm font-normal text-gray-400">I have read and agree to the <Link href="/terms-and-conditions.html" target="_blank" className="underline hover:text-primary">Terms and Conditions</Link> and <Link href="/privacy-policy.html" target="_blank" className="underline hover:text-primary">Privacy Policy</Link>.</Label></div>)}
@@ -229,11 +258,18 @@ const SignUp = ({ setCurrentView, userType, setUserType }) => {
 };
 
 // --- INVESTOR STEP COMPONENTS ---
-const InvestorStep1 = ({ control, register, errors }) => (
+const InvestorStep1 = ({ control, register, errors, onEmailBlur, emailValidation }) => (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
         <div className="space-y-2"><Label>First Name</Label><Input {...register("firstName")} className="bg-gray-700" />{errors.firstName && <p className="text-red-500 text-xs">{errors.firstName.message}</p>}</div>
         <div className="space-y-2"><Label>Last Name</Label><Input {...register("lastName")} className="bg-gray-700" />{errors.lastName && <p className="text-red-500 text-xs">{errors.lastName.message}</p>}</div>
-        <div className="space-y-2 md:col-span-2"><Label>Email</Label><Input type="email" {...register("email")} className="bg-gray-700" />{errors.email && <p className="text-red-500 text-xs">{errors.email.message}</p>}</div>
+        <div className="space-y-2 md:col-span-2">
+            <Label>Email</Label>
+            <Input type="email" {...register("email")} onBlur={onEmailBlur} className="bg-gray-700" />
+            {errors.email && <p className="text-red-500 text-xs">{errors.email.message}</p>}
+            {emailValidation.status === 'checking' && <p className="text-xs text-gray-400">{emailValidation.message}</p>}
+            {emailValidation.status === 'valid' && <p className="text-xs text-green-500">{emailValidation.message}</p>}
+            {emailValidation.status === 'invalid' && <p className="text-xs text-red-500">{emailValidation.message}</p>}
+        </div>
         <div className="space-y-2 md:col-span-2"><Label>Phone Number</Label><div className="grid grid-cols-1 sm:grid-cols-4 gap-2"><Controller name="phoneCountryCode" control={control} render={({ field }) => (<Select onValueChange={field.onChange} value={field.value}><SelectTrigger className="sm:col-span-1 bg-gray-700"><SelectValue /></SelectTrigger><SelectContent className="bg-gray-800 text-white"><SelectItem value="+91">IN (+91)</SelectItem><SelectItem value="+1">US (+1)</SelectItem></SelectContent></Select>)} /><Input type="tel" {...register("phoneNumber")} className="sm:col-span-3 bg-gray-700" /></div>{errors.phoneNumber && <p className="text-red-500 text-xs">{errors.phoneNumber.message}</p>}</div>
         <div className="space-y-2 md:col-span-2"><Label>LinkedIn Id</Label><Input {...register("linkedinId")} placeholder="https://linkedin.com/in/..." className="bg-gray-700" />{errors.linkedinId && <p className="text-red-500 text-xs">{errors.linkedinId.message}</p>}</div>
         <div className="space-y-2"><Label>Create Password</Label><Input type="password" {...register("password")} className="bg-gray-700" /></div>

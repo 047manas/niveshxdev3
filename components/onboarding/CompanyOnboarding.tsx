@@ -80,7 +80,7 @@ const companyContactSchema = z.object({
 
 // --- Step Components ---
 
-const UserAccountStep = ({ onFormSubmit, isLoading }) => {
+const UserAccountStep = ({ onFormSubmit, isLoading, onEmailBlur, emailValidation }) => {
     const { register, handleSubmit, control, formState: { errors } } = useForm({
         resolver: zodResolver(userAccountSchema),
         mode: 'onChange',
@@ -96,7 +96,14 @@ const UserAccountStep = ({ onFormSubmit, isLoading }) => {
                 <div className="space-y-2"><Label>Last Name</Label><Input {...register("lastName")} className="bg-gray-700" />{errors.lastName && <p className="text-red-500 text-xs">{errors.lastName.message}</p>}</div>
                 <div className="space-y-2 md:col-span-2"><Label>Your Designation</Label><Controller name="designation" control={control} render={({ field }) => (<Select onValueChange={field.onChange} defaultValue={field.value}><SelectTrigger className="bg-gray-700"><SelectValue placeholder="Select..." /></SelectTrigger><SelectContent className="bg-gray-800 text-white"><SelectItem value="Co-founder">Co-founder</SelectItem><SelectItem value="CEO">CEO</SelectItem><SelectItem value="CTO">CTO</SelectItem><SelectItem value="HR">HR</SelectItem><SelectItem value="Other">Other</SelectItem></SelectContent></Select>)} />{errors.designation && <p className="text-red-500 text-xs">{errors.designation.message}</p>}</div>
                 <div className="space-y-2 md:col-span-2"><Label>Personal LinkedIn Profile</Label><Input {...register("linkedinProfile")} placeholder="https://linkedin.com/in/..." className="bg-gray-700" />{errors.linkedinProfile && <p className="text-red-500 text-xs">{errors.linkedinProfile.message}</p>}</div>
-                <div className="space-y-2 md:col-span-2"><Label>Your Work Email</Label><Input type="email" {...register("email")} className="bg-gray-700" />{errors.email && <p className="text-red-500 text-xs">{errors.email.message}</p>}</div>
+                <div className="space-y-2 md:col-span-2">
+                    <Label>Your Work Email</Label>
+                    <Input type="email" {...register("email")} onBlur={onEmailBlur} className="bg-gray-700" />
+                    {errors.email && <p className="text-red-500 text-xs">{errors.email.message}</p>}
+                    {emailValidation.status === 'checking' && <p className="text-xs text-gray-400">{emailValidation.message}</p>}
+                    {emailValidation.status === 'valid' && <p className="text-xs text-green-500">{emailValidation.message}</p>}
+                    {emailValidation.status === 'invalid' && <p className="text-xs text-red-500">{emailValidation.message}</p>}
+                </div>
                 <div className="space-y-2 md:col-span-2"><Label>Phone Number</Label><div className="grid grid-cols-1 sm:grid-cols-4 gap-2"><Controller name="phone.countryCode" control={control} render={({ field }) => (<Select onValueChange={field.onChange} defaultValue="+91"><SelectTrigger className="sm:col-span-1 bg-gray-700"><SelectValue /></SelectTrigger><SelectContent className="bg-gray-800 text-white"><SelectItem value="+91">IN (+91)</SelectItem><SelectItem value="+1">US (+1)</SelectItem></SelectContent></Select>)} /><Input type="tel" {...register("phone.number")} className="sm:col-span-3 bg-gray-700" /></div>{errors.phone?.number && <p className="text-red-500 text-xs">{errors.phone.number.message}</p>}</div>
                 <div className="space-y-2">
                     <Label>Create Password</Label>
@@ -293,6 +300,34 @@ const CompanyOnboarding = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [onboardingData, setOnboardingData] = useState({});
+    const [emailValidation, setEmailValidation] = useState({ status: 'idle', message: '' });
+
+    const handleEmailBlur = async (e) => {
+        const email = e.target.value;
+        const emailSchema = z.string().email("Invalid email address");
+        const validationResult = emailSchema.safeParse(email);
+        if (!validationResult.success) {
+            setEmailValidation({ status: 'invalid', message: 'Please enter a valid email address.' });
+            return;
+        }
+
+        setEmailValidation({ status: 'checking', message: 'Checking email...' });
+        try {
+            const response = await fetch('/api/company/check', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ companyEmail: email }),
+            });
+            const data = await response.json();
+            if (data.exists) {
+                setEmailValidation({ status: 'invalid', message: 'This email is already registered.' });
+            } else {
+                setEmailValidation({ status: 'valid', message: 'This email is available.' });
+            }
+        } catch (error) {
+            setEmailValidation({ status: 'invalid', message: 'Could not verify email. Please try again.' });
+        }
+    };
     const [successMessage, setSuccessMessage] = useState('');
 
     const moveStep = (nextStep) => { if (steps.includes(nextStep)) setCurrentStep(nextStep); };
@@ -350,7 +385,7 @@ const CompanyOnboarding = () => {
 
     const renderCurrentStep = () => {
         switch (currentStep) {
-            case 'userAccount': return <UserAccountStep onFormSubmit={handleUserAccountSubmit} isLoading={loading} />;
+            case 'userAccount': return <UserAccountStep onFormSubmit={handleUserAccountSubmit} isLoading={loading} onEmailBlur={handleEmailBlur} emailValidation={emailValidation} />;
             case 'otpVerification': return <OtpVerificationStep onOtpSubmit={handleOtpSubmit} isLoading={loading} userEmail={onboardingData.user?.email} onResendOtp={handleResendOtp} />;
             case 'companyProfile': return <CompanyProfileStep onFormSubmit={handleCompanyProfileSubmit} onBack={() => {}} isLoading={loading} />;
             case 'companyVerifyPrompt': return <CompanyVerifyPromptStep onNext={() => moveStep('companyOtpVerification')} companyName={onboardingData.company?.companyName} />;
