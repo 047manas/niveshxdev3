@@ -119,7 +119,7 @@ export async function POST(req: NextRequest) {
             type: 'email',
             target: email,
             otp: hashedOtp,
-            expiresAt: admin.firestore.Timestamp.fromMillis(Date.now() + 15 * 60 * 1000),
+            expiresAt: admin.firestore.Timestamp.fromMillis(Date.now() + 5 * 60 * 1000),
             createdAt: admin.firestore.FieldValue.serverTimestamp(),
         });
 
