@@ -19,11 +19,21 @@ export async function POST(req: NextRequest) {
     const verificationCollection = firestore.collection('pending_verifications');
     const usersCollection = firestore.collection('new_users');
 
-    // Step 1: Find the pending verification document.
-    const querySnapshot = await verificationCollection.where('target', '==', email).get();
+    // Step 1: Find the pending verification document with retry logic for eventual consistency.
+    let querySnapshot = null;
+    for (let i = 0; i < 3; i++) {
+        querySnapshot = await verificationCollection.where('target', '==', email).get();
+        if (!querySnapshot.empty) {
+            console.log(`[Verify OTP] Found pending verification for ${email} on attempt ${i + 1}.`);
+            break;
+        }
+        console.log(`[Verify OTP] Attempt ${i + 1} failed to find verification for ${email}. Retrying in 500ms...`);
+        await new Promise(resolve => setTimeout(resolve, 500));
+    }
 
-    if (querySnapshot.empty) {
-      console.error(`[Verify OTP] FAILED: No pending verification found for ${email}.`);
+
+    if (!querySnapshot || querySnapshot.empty) {
+      console.error(`[Verify OTP] FAILED: No pending verification found for ${email} after 3 attempts.`);
       return NextResponse.json({ error: 'Invalid OTP or verification session has expired.' }, { status: 400 });
     }
 
