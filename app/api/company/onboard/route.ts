@@ -2,24 +2,28 @@ import { NextRequest, NextResponse } from 'next/server';
 import admin from '@/lib/firebase-admin';
 
 /**
- * Retrieves a verified pending user from Firestore.
+ * Retrieves a verified user from Firestore.
  * Throws an error if the user is not found or their email is not verified.
  */
-async function getVerifiedPendingUser(email: string) {
+async function getVerifiedUser(email: string) {
     const firestore = admin.firestore();
-    const pendingUserRef = firestore.collection('pending_users').doc(email);
-    const pendingUserDoc = await pendingUserRef.get();
-
-    if (!pendingUserDoc.exists) {
-        throw new Error('Pending user not found. Please start the registration process again.');
+    const usersCollection = firestore.collection('new_users');
+    
+    // Find user by email
+    const userQuery = await usersCollection.where('email', '==', email).limit(1).get();
+    
+    if (userQuery.empty) {
+        throw new Error('User not found. Please complete the registration process first.');
     }
-
-    const userData = pendingUserDoc.data()!;
-    if (userData.emailVerificationStatus !== 'verified') {
+    
+    const userDoc = userQuery.docs[0];
+    const userData = userDoc.data();
+    
+    if (!userData.isVerified) {
         throw new Error('User email must be verified before proceeding.');
     }
 
-    return { ref: pendingUserRef, data: userData };
+    return { ref: userDoc.ref, data: userData };
 }
 
 /**
@@ -44,8 +48,8 @@ function getRoleFromDesignation(designation: string): string {
  * This function is idempotent: it checks if an auth user already exists before creating one.
  */
 async function finalizeUserAndCompanyLink(
-    pendingUserRef: admin.firestore.DocumentReference,
-    pendingUserData: admin.firestore.DocumentData,
+    userRef: admin.firestore.DocumentReference,
+    userData: admin.firestore.DocumentData,
     companyId: string
 ) {
     const firestore = admin.firestore();
@@ -54,14 +58,14 @@ async function finalizeUserAndCompanyLink(
 
     try {
         // First, check if the user already exists in Firebase Auth.
-        authUser = await auth.getUserByEmail(pendingUserData.email);
+        authUser = await auth.getUserByEmail(userData.email);
     } catch (error: any) {
         // If the user is not found, create them.
         if (error.code === 'auth/user-not-found') {
             authUser = await auth.createUser({
-                email: pendingUserData.email,
-                password: pendingUserData.password,
-                displayName: `${pendingUserData.firstName} ${pendingUserData.lastName}`,
+                email: userData.email,
+                password: userData.password,
+                displayName: `${userData.firstName} ${userData.lastName}`,
             });
         } else {
             // For any other auth errors, re-throw the error.
@@ -71,15 +75,15 @@ async function finalizeUserAndCompanyLink(
 
     const userDocRef = firestore.collection('users').doc(authUser.uid);
     const employeeDocRef = firestore.collection('companies').doc(companyId).collection('employees').doc(authUser.uid);
-    const role = getRoleFromDesignation(pendingUserData.designation);
+    const role = getRoleFromDesignation(userData.designation);
 
     await firestore.runTransaction(async (transaction) => {
         // 1. Create final user document
         transaction.set(userDocRef, {
-            email: pendingUserData.email,
-            firstName: pendingUserData.firstName,
-            lastName: pendingUserData.lastName,
-            phone: pendingUserData.phone || null,
+            email: userData.email,
+            firstName: userData.firstName,
+            lastName: userData.lastName,
+            phone: userData.phone || null,
             userType: 'Company',
             companyId: companyId,
             createdAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -89,8 +93,8 @@ async function finalizeUserAndCompanyLink(
             role: role,
             addedAt: admin.firestore.FieldValue.serverTimestamp(),
         });
-        // 3. Delete the pending user document
-        transaction.delete(pendingUserRef);
+        // 3. Move user from new_users to completed users (delete from new_users)
+        transaction.delete(userRef);
     });
 
     return authUser;
@@ -124,9 +128,12 @@ export async function POST(req: NextRequest) {
 
                 if (companyData.isVerified) {
                     // If company is already verified, abort this registration and prompt user to login.
-                    // Clean up the pending user document to prevent orphaned data.
-                    const pendingUserRef = firestore.collection('pending_users').doc(email);
-                    await pendingUserRef.delete();
+                    // Clean up the new user document to prevent orphaned data.
+                    const usersCollection = firestore.collection('new_users');
+                    const userQuery = await usersCollection.where('email', '==', email).limit(1).get();
+                    if (!userQuery.empty) {
+                        await userQuery.docs[0].ref.delete();
+                    }
                     return NextResponse.json({ status: 'COMPANY_ALREADY_VERIFIED' });
                 } else {
                     // If company exists but is not verified, frontend will skip to company verification.
@@ -144,7 +151,7 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ error: 'Missing companyData' }, { status: 400 });
             }
 
-            const { ref: pendingUserRef, data: pendingUserData } = await getVerifiedPendingUser(email);
+            const { ref: userRef, data: userData } = await getVerifiedUser(email);
 
             const newCompanyRef = await firestore.collection('companies').add({
                 ...companyData,
@@ -153,7 +160,7 @@ export async function POST(req: NextRequest) {
                 createdAt: admin.firestore.FieldValue.serverTimestamp(),
             });
 
-            const authUser = await finalizeUserAndCompanyLink(pendingUserRef, pendingUserData, newCompanyRef.id);
+            const authUser = await finalizeUserAndCompanyLink(userRef, userData, newCompanyRef.id);
 
             await newCompanyRef.update({ createdBy: authUser.uid });
 
