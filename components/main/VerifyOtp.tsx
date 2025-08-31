@@ -3,7 +3,11 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 
-const VerifyOtp = ({ setCurrentView }) => {
+interface VerifyOtpProps {
+  setCurrentView: (view: string) => void;
+}
+
+const VerifyOtp = ({ setCurrentView }: VerifyOtpProps) => {
   const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -22,14 +26,14 @@ const VerifyOtp = ({ setCurrentView }) => {
   }, []);
 
   useEffect(() => {
-    let timer;
+    let timer: NodeJS.Timeout;
     if (resendCooldown > 0) {
       timer = setTimeout(() => setResendCooldown(resendCooldown - 1), 1000);
     }
     return () => clearTimeout(timer);
   }, [resendCooldown]);
 
-  const onVerify = async (e) => {
+  const onVerify = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
@@ -61,8 +65,8 @@ const VerifyOtp = ({ setCurrentView }) => {
         setCurrentView('login');
       }, 2000);
       
-    } catch (err) {
-      setError(err.message);
+    } catch (err: any) {
+      setError(err.message || 'Verification failed');
     } finally {
       setLoading(false);
     }
@@ -88,8 +92,8 @@ const VerifyOtp = ({ setCurrentView }) => {
 
       setSuccess(`A new verification code has been sent to ${email}.`);
       setResendCooldown(60); // Start 60-second cooldown
-    } catch (err) {
-      setError(err.message);
+    } catch (err: any) {
+      setError(err.message || 'Failed to resend OTP');
     } finally {
       setResendLoading(false);
     }

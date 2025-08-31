@@ -8,7 +8,7 @@ const ResetPasswordPage = () => {
   const searchParams = useSearchParams();
   const token = searchParams.get('token');
 
-  return <ResetPasswordComponent token={token} />;
+  return <ResetPasswordComponent token={token || ''} />;
 };
 
 const SuspendedResetPasswordPage = () => (

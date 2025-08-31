@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
 
     const auth = admin.auth();
     const firestore = admin.firestore();
-    let authUser;
+    let authUser: any;
 
     try {
         // Step 1: Validate input and check for existing users/companies

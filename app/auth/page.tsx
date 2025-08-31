@@ -9,7 +9,7 @@ import ForgotPassword from '@/components/main/ForgotPassword';
 
 const AuthFlow = () => {
   const [view, setView] = useState('login');
-  const [userType, setUserType] = useState('company');
+  const [userType, setUserType] = useState<'company' | 'investor'>('company');
   const searchParams = useSearchParams();
 
   useEffect(() => {
@@ -19,7 +19,7 @@ const AuthFlow = () => {
     if (viewParam) {
       setView(viewParam);
     }
-    if (userTypeParam) {
+    if (userTypeParam && (userTypeParam === 'company' || userTypeParam === 'investor')) {
       setUserType(userTypeParam);
     }
   }, [searchParams]);
@@ -46,22 +46,23 @@ const AuthFlow = () => {
     latestValuation: '',
     shareType: [],
     dealSize: '',
+    investmentType: [] as string[], // Added missing property with proper typing
   });
 
-  const handleChange = (input) => (e) => {
+  const handleChange = (input: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [input]: e.target.value });
   };
 
-  const handleSelectChange = (input) => (value) => {
+  const handleSelectChange = (input: string) => (value: any) => {
     setFormData({ ...formData, [input]: value });
   };
 
-  const handleShareTypeChange = (value) => {
+  const handleShareTypeChange = (value: any) => {
     setFormData({ ...formData, shareType: value });
   };
 
-  const handleInvestmentTypeChange = (value) => {
-    let newInvestmentType = [...formData.investmentType];
+  const handleInvestmentTypeChange = (value: string) => {
+    let newInvestmentType = [...(formData.investmentType as string[])];
     const hasEquity = newInvestmentType.includes("Equity investments");
     const hasDebt = newInvestmentType.includes("Debt financing");
 
@@ -87,7 +88,7 @@ const AuthFlow = () => {
       setError('');
   }
 
-  const handleUserTypeChange = (newUserType) => {
+  const handleUserTypeChange = (newUserType: 'company' | 'investor') => {
       setUserType(newUserType);
       resetFormState();
   }
@@ -102,19 +103,6 @@ const AuthFlow = () => {
             setCurrentView={setView}
             userType={userType}
             setUserType={handleUserTypeChange}
-            step={step}
-            setStep={setStep}
-            investorStep={investorStep}
-            setInvestorStep={setInvestorStep}
-            loading={loading}
-            setLoading={setLoading}
-            error={error}
-            setError={setError}
-            formData={formData}
-            setFormData={setFormData}
-            handleChange={handleChange}
-            handleSelectChange={handleSelectChange}
-            handleShareTypeChange={handleShareTypeChange}
           />
         );
       case 'verify-otp':
@@ -122,7 +110,7 @@ const AuthFlow = () => {
       case 'forgot-password':
         return <ForgotPassword setCurrentView={setView} />;
       default:
-        return <SignUp setCurrentView={setView} />;
+        return <SignUp setCurrentView={setView} userType={userType} setUserType={handleUserTypeChange} />;
     }
   };
 

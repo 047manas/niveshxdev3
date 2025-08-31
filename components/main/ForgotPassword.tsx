@@ -4,13 +4,17 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 
-const ForgotPassword = ({ setCurrentView }) => {
+interface ForgotPasswordProps {
+  setCurrentView: (view: string) => void;
+}
+
+const ForgotPassword = ({ setCurrentView }: ForgotPasswordProps) => {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
 
-  const onRequestReset = async (e) => {
+  const onRequestReset = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
@@ -33,8 +37,8 @@ const ForgotPassword = ({ setCurrentView }) => {
 
       setMessage('If an account with that email exists, we have sent a password reset link to it.');
 
-    } catch (err) {
-      setError(err.message);
+    } catch (err: any) {
+      setError(err.message || 'An error occurred');
     } finally {
       setLoading(false);
     }

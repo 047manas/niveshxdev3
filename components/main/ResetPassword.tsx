@@ -25,7 +25,7 @@ const ResetPassword = ({ token }: { token: string }) => {
     );
   }
 
-  const onResetPassword = async (e) => {
+  const onResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
@@ -57,8 +57,8 @@ const ResetPassword = ({ token }: { token: string }) => {
         router.push('/auth');
       }, 3000);
 
-    } catch (err) {
-      setError(err.message);
+    } catch (err: any) {
+      setError(err.message || 'An error occurred');
     } finally {
       setLoading(false);
     }

@@ -104,7 +104,7 @@ const updateDatabaseSchema = async () => {
                     await placeholderRef.delete();
                     console.log(`🗑️  Removed placeholder from ${collectionName}`);
                 }
-            } catch (error) {
+            } catch (error: any) {
                 console.log(`⚠️  Could not remove placeholder from ${collectionName}: ${error.message}`);
             }
         }
