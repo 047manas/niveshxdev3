@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
     }
 
     const firestore = admin.firestore();
-    const usersCollection = firestore.collection('users');
+    const usersCollection = firestore.collection('new_users');
     const userQuery = await usersCollection.where('email', '==', email).limit(1).get();
 
     if (userQuery.empty) {

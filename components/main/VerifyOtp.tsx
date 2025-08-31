@@ -53,7 +53,13 @@ const VerifyOtp = ({ setCurrentView }) => {
       window.localStorage.removeItem('emailForVerification');
       setCurrentView('login');
     } catch (err) {
-      setError(err.message);
+      if (err.message.includes('incorrect or has expired')) {
+        setError('The OTP you entered is incorrect or has expired.');
+      } else if (err.message.includes('session has expired')) {
+        setError("Verification session not found. Please wait a moment and try again, or resend the code.");
+      } else {
+        setError(err.message);
+      }
     } finally {
       setLoading(false);
     }

@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
     }
 
     const firestore = admin.firestore();
-    const companiesCollection = firestore.collection('companies');
+    const companiesCollection = firestore.collection('new_companies');
     const companyQuery = await companiesCollection.where('contactEmail', '==', companyEmail).get();
 
     if (!companyQuery.empty) {
@@ -21,7 +21,6 @@ export async function POST(req: NextRequest) {
 
   } catch (error) {
     console.error('Company check error:', error);
-    const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred.';
-    return NextResponse.json({ error: 'Failed to check company.', details: errorMessage }, { status: 500 });
+    return NextResponse.json({ error: 'An internal server error occurred.' }, { status: 500 });
   }
 }
