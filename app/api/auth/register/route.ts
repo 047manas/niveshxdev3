@@ -24,8 +24,26 @@ export async function POST(req: NextRequest) {
     const existingUserQuery = await usersCollection.where('email', '==', normalizedEmail).limit(1).get();
     
     if (!existingUserQuery.empty) {
-      const userData = existingUserQuery.docs[0].data();
+      const userDoc = existingUserQuery.docs[0];
+      const userData = userDoc.data();
+      
       if (userData.isVerified) {
+        // For company users, check if they've completed onboarding
+        if (userType === 'company') {
+          const usersCollection = firestore.collection('users');
+          const mainUserQuery = await usersCollection.where('email', '==', normalizedEmail).limit(1).get();
+          
+          if (mainUserQuery.empty) {
+            // User is verified but didn't complete company onboarding
+            // Allow them to continue onboarding
+            return NextResponse.json({ 
+              status: 'VERIFIED_INCOMPLETE',
+              message: 'Your email is verified. Please continue with company onboarding.',
+              canContinue: true
+            });
+          }
+        }
+        
         return NextResponse.json({ error: 'An account with this email already exists. Please log in.' }, { status: 409 });
       } else {
         // User exists but not verified, resend OTP
@@ -33,7 +51,7 @@ export async function POST(req: NextRequest) {
         const hashedOtp = await bcrypt.hash(otp, 10);
         
         // Update user with new OTP
-        await existingUserQuery.docs[0].ref.update({
+        await userDoc.ref.update({
           otp: hashedOtp,
           otpExpires: admin.firestore.Timestamp.fromMillis(Date.now() + 15 * 60 * 1000), // 15 minutes
           updatedAt: admin.firestore.FieldValue.serverTimestamp()

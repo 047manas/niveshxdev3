@@ -352,6 +352,10 @@ const CompanyOnboarding = () => {
             // Handle different response statuses
             if (result.status === 'SUCCESS' || result.status === 'OTP_RESENT') {
                 moveStep('otpVerification');
+            } else if (result.status === 'VERIFIED_INCOMPLETE') {
+                // User's email is already verified but company onboarding incomplete
+                // Skip to company profile step
+                moveStep('companyProfile');
             } else {
                 throw new Error('Unexpected response from server.');
             }

@@ -9,6 +9,12 @@ interface UserProfile {
   email: string;
   userType: 'company' | 'investor';
   profileComplete?: boolean;
+  completionStatus?: {
+    emailVerified: boolean;
+    companyProfile?: boolean;
+    companyVerified?: boolean;
+  };
+  nextStep?: string;
   // Add any other fields from your Firestore user document
   [key: string]: any;
 }

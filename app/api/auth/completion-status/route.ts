@@ -22,12 +22,12 @@ export async function GET(req: NextRequest) {
 
     const userData = userDoc.data()!;
     
-    // Check completion status for company users
-    let profileComplete = true;
-    let completionStatus = {
+    // Determine completion status and next step
+    const completionStatus = {
       emailVerified: userData.isVerified || false,
-      companyProfile: false,
-      companyVerified: false
+      profileComplete: false,
+      nextStep: 'dashboard',
+      userType: userData.userType
     };
     
     if (userData.userType === 'company') {
@@ -37,29 +37,40 @@ export async function GET(req: NextRequest) {
       
       if (mainUserQuery.empty) {
         // User hasn't completed company onboarding
-        profileComplete = false;
-        completionStatus.companyProfile = false;
-        completionStatus.companyVerified = false;
+        completionStatus.profileComplete = false;
+        completionStatus.nextStep = 'company-onboarding';
       } else {
-        // User completed onboarding, check company verification status
+        // User completed onboarding
         const mainUserData = mainUserQuery.docs[0].data();
-        completionStatus.companyProfile = true;
+        completionStatus.profileComplete = true;
         
         if (mainUserData.companyId) {
           // Check if company is verified
           const companyDoc = await firestore.collection('companies').doc(mainUserData.companyId).get();
-          completionStatus.companyVerified = companyDoc.exists ? companyDoc.data()?.isVerified || false : false;
+          const isCompanyVerified = companyDoc.exists ? companyDoc.data()?.isVerified || false : false;
+          
+          if (!isCompanyVerified) {
+            completionStatus.nextStep = 'company-verification-pending';
+          } else {
+            completionStatus.nextStep = 'dashboard';
+          }
+        } else {
+          completionStatus.nextStep = 'dashboard';
         }
       }
+    } else if (userData.userType === 'investor') {
+      // For investors, if email is verified, they're complete
+      completionStatus.profileComplete = userData.isVerified;
+      completionStatus.nextStep = userData.isVerified ? 'dashboard' : 'verify-email';
     }
 
     return NextResponse.json({
-      ...userData,
-      profileComplete,
+      success: true,
       completionStatus
     });
+
   } catch (error: any) {
-    console.error('Failed to fetch user data:', error);
+    console.error('Failed to check completion status:', error);
     if (error.name === 'TokenExpiredError') {
       return NextResponse.json({ error: 'Token expired' }, { status: 401 });
     }

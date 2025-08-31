@@ -160,6 +160,10 @@ const SignUp = ({ setCurrentView, userType, setUserType }) => {
       
       if (result.status === 'SUCCESS' || result.status === 'OTP_RESENT') {
         setInvestorFlowStep('verifyOtp');
+      } else if (result.status === 'VERIFIED_INCOMPLETE') {
+        // For investors, this shouldn't happen as they don't have complex onboarding
+        // But handle it gracefully
+        setInvestorFlowStep('success');
       } else {
         throw new Error('Unexpected response from server');
       }
