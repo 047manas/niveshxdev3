@@ -150,9 +150,19 @@ const SignUp = ({ setCurrentView, userType, setUserType }) => {
         body: JSON.stringify({ userType: 'investor', ...allData }),
       });
       const result = await response.json();
-      if (!response.ok) throw new Error(result.error || 'Something went wrong');
-      setFormData(allData);
-      setInvestorFlowStep('verifyOtp');
+      
+      if (!response.ok) {
+        throw new Error(result.error || 'Registration failed');
+      }
+      
+      // Store email for verification
+      setFormData({ ...allData, email: allData.email });
+      
+      if (result.status === 'SUCCESS' || result.status === 'OTP_RESENT') {
+        setInvestorFlowStep('verifyOtp');
+      } else {
+        throw new Error('Unexpected response from server');
+      }
     } catch (err) {
       setError(err.message);
     } finally {
@@ -170,7 +180,11 @@ const SignUp = ({ setCurrentView, userType, setUserType }) => {
             body: JSON.stringify({ email: formData.email, otp: data.otp }),
         });
         const result = await response.json();
-        if (!response.ok) throw new Error(result.error || 'Failed to verify OTP.');
+        
+        if (!response.ok) {
+          throw new Error(result.error || 'Failed to verify OTP.');
+        }
+        
         setInvestorFlowStep('success');
     } catch (err) {
         setError(err.message);
@@ -188,7 +202,12 @@ const SignUp = ({ setCurrentView, userType, setUserType }) => {
             body: JSON.stringify({ email: formData.email }),
         });
         const result = await res.json();
-        if (!res.ok) throw new Error(result.error || 'Failed to resend OTP.');
+        
+        if (!res.ok) {
+          throw new Error(result.error || 'Failed to resend OTP.');
+        }
+        
+        // Success is handled by the OTP component's internal state
     } catch (err) {
         setError(err.message);
         throw err;

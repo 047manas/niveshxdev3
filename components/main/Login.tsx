@@ -40,7 +40,7 @@ const Login = ({ setCurrentView }) => {
       const responseData = await response.json();
 
       if (!response.ok) {
-        if (responseData.error === 'NOT_VERIFIED') {
+        if (responseData.error === 'ACCOUNT_NOT_VERIFIED' || responseData.requiresVerification) {
           window.localStorage.setItem('emailForVerification', data.email);
           setCurrentView('verify-otp');
           return;

@@ -1,99 +1,81 @@
-// In niveshxdev3-feature-platform-hardening-and-refactor/app/api/auth/verify-otp/route.ts
-
 import { NextRequest, NextResponse } from 'next/server';
 import admin from '@/lib/firebase-admin';
 import bcrypt from 'bcryptjs';
 
 export async function POST(req: NextRequest) {
-  const { email: rawEmail, otp } = await req.json();
-
-  if (!rawEmail || !otp) {
-    return NextResponse.json({ error: 'Email and OTP are required' }, { status: 400 });
-  }
-
-  const email = rawEmail.trim().toLowerCase();
-  console.log(`[Verify OTP] Received request for email: ${email}`);
-
   try {
+    const { email: rawEmail, otp } = await req.json();
+
+    if (!rawEmail || !otp) {
+      return NextResponse.json({ error: 'Email and OTP are required' }, { status: 400 });
+    }
+
+    const email = rawEmail.trim().toLowerCase();
+    console.log(`[Verify OTP] Processing verification for email: ${email}`);
+
     const firestore = admin.firestore();
-    const verificationCollection = firestore.collection('pending_verifications');
     const usersCollection = firestore.collection('new_users');
-
-    // Step 1: Find the pending verification document with retry logic for eventual consistency.
-    let querySnapshot = null;
-    for (let i = 0; i < 3; i++) {
-        querySnapshot = await verificationCollection.where('target', '==', email).get();
-        if (!querySnapshot.empty) {
-            console.log(`[Verify OTP] Found pending verification for ${email} on attempt ${i + 1}.`);
-            break;
-        }
-        console.log(`[Verify OTP] Attempt ${i + 1} failed to find verification for ${email}. Retrying in 500ms...`);
-        await new Promise(resolve => setTimeout(resolve, 500));
-    }
-
-
-    if (!querySnapshot || querySnapshot.empty) {
-      console.error(`[Verify OTP] FAILED: No pending verification found for ${email} after 3 attempts.`);
-      return NextResponse.json({ error: 'Invalid OTP or verification session has expired.' }, { status: 400 });
-    }
-
-    console.log(`[Verify OTP] Found ${querySnapshot.docs.length} pending verification(s) for ${email}.`);
-
-    let otpVerified = false;
-    let verificationDocRef = null;
-
-    for (const doc of querySnapshot.docs) {
-      const verificationData = doc.data();
-      const isOtpValid = await bcrypt.compare(otp, verificationData.otp);
-
-      if (isOtpValid) {
-        if (verificationData.expiresAt.toMillis() < Date.now()) {
-          console.log(`[Verify OTP] OTP for ${email} is correct but expired. Deleting expired OTP.`);
-          await doc.ref.delete(); // Clean up expired OTP
-          continue; // Check if other valid OTPs exist
-        }
-
-        console.log(`[Verify OTP] SUCCESS: OTP is valid for ${email}.`);
-        otpVerified = true;
-        verificationDocRef = doc.ref;
-        break; // Exit after finding the first valid OTP
-      }
-    }
-
-    if (!otpVerified) {
-      console.error(`[Verify OTP] FAILED: Invalid or expired OTP provided for ${email}.`);
-      return NextResponse.json({ error: 'The OTP you entered is incorrect or has expired.' }, { status: 400 });
-    }
-
-    // Step 2: Find the corresponding *unverified* user to update.
-    const userQuery = await usersCollection
-      .where('email', '==', email)
-      .where('isVerified', '==', false) // This is critical
-      .limit(1)
-      .get();
-
+    
+    // Find user by email
+    const userQuery = await usersCollection.where('email', '==', email).limit(1).get();
+    
     if (userQuery.empty) {
-        console.error(`[Verify OTP] FAILED: OTP was correct for ${email}, but no matching unverified user was found to update.`);
-        // Clean up the used OTP doc even if the user isn't found, to prevent reuse.
-        if (verificationDocRef) await verificationDocRef.delete();
-        return NextResponse.json({ error: 'Could not find a user to verify. Please try signing up again.' }, { status: 404 });
+      console.error(`[Verify OTP] No user found for email: ${email}`);
+      return NextResponse.json({ error: 'User not found. Please register first.' }, { status: 404 });
     }
-
-    // Step 3: Perform the update and cleanup within a transaction for safety.
+    
     const userDoc = userQuery.docs[0];
-
-    await firestore.runTransaction(async (transaction) => {
-        transaction.update(userDoc.ref, { isVerified: true });
-        if (verificationDocRef) {
-            transaction.delete(verificationDocRef);
-        }
+    const userData = userDoc.data();
+    
+    // Check if user is already verified
+    if (userData.isVerified) {
+      return NextResponse.json({ error: 'Email is already verified. You can log in.' }, { status: 400 });
+    }
+    
+    // Check if OTP exists and is not expired
+    if (!userData.otp || !userData.otpExpires) {
+      console.error(`[Verify OTP] No OTP found for user: ${email}`);
+      return NextResponse.json({ error: 'No verification code found. Please request a new one.' }, { status: 400 });
+    }
+    
+    // Check if OTP is expired
+    if (userData.otpExpires.toMillis() < Date.now()) {
+      console.error(`[Verify OTP] OTP expired for user: ${email}`);
+      // Clean up expired OTP
+      await userDoc.ref.update({
+        otp: admin.firestore.FieldValue.delete(),
+        otpExpires: admin.firestore.FieldValue.delete()
+      });
+      return NextResponse.json({ error: 'Verification code has expired. Please request a new one.' }, { status: 400 });
+    }
+    
+    // Verify OTP
+    const isOtpValid = await bcrypt.compare(otp, userData.otp);
+    
+    if (!isOtpValid) {
+      console.error(`[Verify OTP] Invalid OTP provided for user: ${email}`);
+      return NextResponse.json({ error: 'Invalid verification code. Please check and try again.' }, { status: 400 });
+    }
+    
+    // OTP is valid, verify the user
+    await userDoc.ref.update({
+      isVerified: true,
+      otp: admin.firestore.FieldValue.delete(),
+      otpExpires: admin.firestore.FieldValue.delete(),
+      verifiedAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    });
+    
+    console.log(`[Verify OTP] Successfully verified user: ${email}`);
+    
+    return NextResponse.json({ 
+      success: true, 
+      message: 'Email verified successfully! You can now log in.',
+      userType: userData.userType
     });
 
-    console.log(`[Verify OTP] SUCCESS: User ${email} has been verified and OTP record has been deleted.`);
-    return NextResponse.json({ success: true, message: 'Email verified successfully.' });
-
   } catch (error) {
-    console.error(`[Verify OTP] CRITICAL ERROR for ${email}:`, error);
-    return NextResponse.json({ error: 'An internal server error occurred.' }, { status: 500 });
+    console.error('[Verify OTP] Error:', error);
+    return NextResponse.json({ error: 'Verification failed. Please try again.' }, { status: 500 });
   }
 }

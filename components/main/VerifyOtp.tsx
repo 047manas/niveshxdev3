@@ -36,7 +36,7 @@ const VerifyOtp = ({ setCurrentView }) => {
     setSuccess('');
 
     if (otp.length !== 6) {
-      setError("Please enter a 6-digit OTP.");
+      setError("Please enter a 6-digit verification code.");
       setLoading(false);
       return;
     }
@@ -48,18 +48,21 @@ const VerifyOtp = ({ setCurrentView }) => {
         body: JSON.stringify({ email, otp }),
       });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'OTP verification failed');
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Verification failed');
+      }
 
       window.localStorage.removeItem('emailForVerification');
-      setCurrentView('login');
+      setSuccess('Email verified successfully! Redirecting to login...');
+      
+      // Redirect to login after a short delay
+      setTimeout(() => {
+        setCurrentView('login');
+      }, 2000);
+      
     } catch (err) {
-      if (err.message.includes('incorrect or has expired')) {
-        setError('The OTP you entered is incorrect or has expired.');
-      } else if (err.message.includes('session has expired')) {
-        setError("Verification session not found. Please wait a moment and try again, or resend the code.");
-      } else {
-        setError(err.message);
-      }
+      setError(err.message);
     } finally {
       setLoading(false);
     }
@@ -78,9 +81,12 @@ const VerifyOtp = ({ setCurrentView }) => {
         body: JSON.stringify({ email }),
       });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Failed to resend OTP.');
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to resend verification code.');
+      }
 
-      setSuccess(`A new OTP has been sent to ${email}.`);
+      setSuccess(`A new verification code has been sent to ${email}.`);
       setResendCooldown(60); // Start 60-second cooldown
     } catch (err) {
       setError(err.message);
@@ -95,7 +101,7 @@ const VerifyOtp = ({ setCurrentView }) => {
         <CardHeader className="text-center">
           <CardTitle className="text-3xl font-bold">Verify your email</CardTitle>
           <CardDescription className="text-gray-400">
-            We&apos;ve sent a 6-digit code to {email}. Please enter it below.
+            We've sent a 6-digit verification code to {email}. Please enter it below.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -124,8 +130,8 @@ const VerifyOtp = ({ setCurrentView }) => {
                 {resendLoading
                   ? 'Sending...'
                   : resendCooldown > 0
-                    ? `Resend OTP in ${resendCooldown}s`
-                    : 'Did not receive code? Resend OTP'}
+                    ? `Resend code in ${resendCooldown}s`
+                    : 'Did not receive code? Resend verification code'}
               </Button>
             </div>
 

@@ -17,71 +17,79 @@ export async function POST(req: NextRequest) {
     }
 
     const firestore = admin.firestore();
+    const normalizedEmail = email.trim().toLowerCase();
 
-    // --- Check #1: Is user in pending_users collection? (User email not verified) ---
-    const pendingUserRef = firestore.collection('pending_users').doc(email);
-    const pendingUserDoc = await pendingUserRef.get();
-    if (pendingUserDoc.exists) {
-        const userData = pendingUserDoc.data()!;
-        if (userData.emailVerificationStatus === 'pending') {
-            const otp = generateOtp();
-            await pendingUserRef.update({ userOtp: otp, userOtpExpires: admin.firestore.Timestamp.fromMillis(Date.now() + 10 * 60 * 1000) });
-            await sendOtpEmail(email, `<p>Here is your new One-Time Password (OTP): <h2>${otp}</h2></p>`, "New Verification Code");
-            // Tell frontend to proceed to user OTP verification
-            return NextResponse.json({ status: 'USER_OTP_RESENT' });
-        }
+    // Check if user already exists in main users collection
+    const usersCollection = firestore.collection('new_users');
+    const existingUserQuery = await usersCollection.where('email', '==', normalizedEmail).limit(1).get();
+    
+    if (!existingUserQuery.empty) {
+      const userData = existingUserQuery.docs[0].data();
+      if (userData.isVerified) {
+        return NextResponse.json({ error: 'An account with this email already exists. Please log in.' }, { status: 409 });
+      } else {
+        // User exists but not verified, resend OTP
+        const otp = generateOtp();
+        const hashedOtp = await bcrypt.hash(otp, 10);
+        
+        // Update user with new OTP
+        await existingUserQuery.docs[0].ref.update({
+          otp: hashedOtp,
+          otpExpires: admin.firestore.Timestamp.fromMillis(Date.now() + 15 * 60 * 1000), // 15 minutes
+          updatedAt: admin.firestore.FieldValue.serverTimestamp()
+        });
+        
+        await sendOtpEmail(normalizedEmail, `
+          <p>Hello ${userData.firstName},</p>
+          <p>Your verification code is:</p>
+          <h2 style="text-align:center; font-size: 32px; letter-spacing: 4px; color: #10B981;">${otp}</h2>
+          <p>This code will expire in 15 minutes.</p>
+        `, "Verify Your Email - NiveshX");
+        
+        return NextResponse.json({ 
+          status: 'OTP_RESENT',
+          message: 'A new verification code has been sent to your email.'
+        });
+      }
     }
 
-    // --- Check #2: Is user in the final users collection? ---
-    const usersCollection = firestore.collection('users');
-    const userQuery = await usersCollection.where('email', '==', email).get();
-    if (!userQuery.empty) {
-        const userDoc = userQuery.docs[0];
-        const userData = userDoc.data();
-
-        // Check #2a: Have company details been submitted?
-        if (!userData.companyId) {
-            return NextResponse.json({ status: 'CONTINUE_PROFILE', userId: userDoc.id });
-        }
-
-        const companyDoc = await firestore.collection('companies').doc(userData.companyId).get();
-        if (!companyDoc.exists) {
-            // Data inconsistency, treat as if profile is incomplete
-            return NextResponse.json({ status: 'CONTINUE_PROFILE', userId: userDoc.id });
-        }
-
-        // Check #2b: Is the company's contact email verified?
-        const companyData = companyDoc.data()!;
-        if (companyData.isVerified) {
-            return NextResponse.json({ status: 'ONBOARDING_COMPLETE' });
-        } else {
-            // Resend company OTP and prompt for verification
-            const otp = generateOtp();
-            await companyDoc.ref.update({ companyOtp: otp, companyOtpExpires: admin.firestore.Timestamp.fromMillis(Date.now() + 10 * 60 * 1000) });
-            await sendOtpEmail(companyData.contactEmail, `<p>Your new company verification OTP is: <h2>${otp}</h2></p>`, "New Company Verification Code");
-            return NextResponse.json({ status: 'VERIFY_COMPANY', companyId: companyDoc.id, companyEmail: companyData.contactEmail });
-        }
-    }
-
-    // --- Flow for a completely new user ---
+    // Create new user
     const hashedPassword = await bcrypt.hash(password, 10);
     const otp = generateOtp();
-    const newPendingUser = {
-      ...formData,
-      userType,
+    const hashedOtp = await bcrypt.hash(otp, 10);
+    
+    const newUser = {
+      email: normalizedEmail,
       password: hashedPassword,
-      userOtp: otp,
-      userOtpExpires: admin.firestore.Timestamp.fromMillis(Date.now() + 10 * 60 * 1000),
-      emailVerificationStatus: 'pending',
+      firstName,
+      lastName,
+      userType,
+      isVerified: false,
+      otp: hashedOtp,
+      otpExpires: admin.firestore.Timestamp.fromMillis(Date.now() + 15 * 60 * 1000), // 15 minutes
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      ...formData // Include any additional form data
     };
-    await pendingUserRef.set(newPendingUser);
-    await sendOtpEmail(email, `<p>Your OTP is: <h2>${otp}</h2></p>`, "Your Verification Code");
+    
+    // Add user to collection
+    const userRef = await usersCollection.add(newUser);
+    
+    await sendOtpEmail(normalizedEmail, `
+      <p>Hello ${firstName},</p>
+      <p>Welcome to NiveshX! Your verification code is:</p>
+      <h2 style="text-align:center; font-size: 32px; letter-spacing: 4px; color: #10B981;">${otp}</h2>
+      <p>This code will expire in 15 minutes.</p>
+    `, "Verify Your Email - NiveshX");
 
-    return NextResponse.json({ status: 'NEW_USER' });
+    return NextResponse.json({ 
+      status: 'SUCCESS',
+      message: 'Registration successful. Please check your email for verification code.',
+      userId: userRef.id
+    });
 
   } catch (error) {
     console.error('Registration error:', error);
-    return NextResponse.json({ error: 'An unexpected error occurred.' }, { status: 500 });
+    return NextResponse.json({ error: 'Registration failed. Please try again.' }, { status: 500 });
   }
 }

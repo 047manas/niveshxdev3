@@ -342,31 +342,18 @@ const CompanyOnboarding = () => {
                 body: JSON.stringify({ ...data, userType: 'company' })
             });
             const result = await res.json();
+            
             if (!res.ok) {
-                throw new Error(result.error || 'An error occurred.');
+                throw new Error(result.error || 'Registration failed.');
             }
 
-            setOnboardingData({ user: data, companyId: result.companyId });
+            setOnboardingData({ user: data });
 
-            switch (result.status) {
-                case 'NEW_USER':
-                case 'USER_OTP_RESENT':
-                    moveStep('otpVerification');
-                    break;
-                case 'CONTINUE_PROFILE':
-                    moveStep('companyProfile');
-                    break;
-                case 'VERIFY_COMPANY':
-                    // We need to store the company email from the response to show it on the verification screen
-                    setOnboardingData(prev => ({ ...prev, company: { ...prev.company, contactEmail: result.companyEmail } }));
-                    moveStep('companyOtpVerification');
-                    break;
-                case 'ONBOARDING_COMPLETE':
-                    setSuccessMessage("Your account is already fully set up. You can log in.");
-                    moveStep('success');
-                    break;
-                default:
-                    setError("An unexpected error occurred. Please try again.");
+            // Handle different response statuses
+            if (result.status === 'SUCCESS' || result.status === 'OTP_RESENT') {
+                moveStep('otpVerification');
+            } else {
+                throw new Error('Unexpected response from server.');
             }
         } catch (err) {
             setError(err.message);
@@ -374,14 +361,52 @@ const CompanyOnboarding = () => {
             setLoading(false);
         }
     };
-    const handleOtpSubmit = async (data) => { setLoading(true); setError(''); try { const res = await fetch('/api/auth/verify-otp', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: onboardingData.user.email, otp: data.otp }) }); if (!res.ok) { const result = await res.json(); throw new Error(result.error || 'Failed to verify OTP.'); } moveStep('companyProfile'); } catch (err) { setError(err.message); } finally { setLoading(false); } };
+    const handleOtpSubmit = async (data) => { 
+        setLoading(true); 
+        setError(''); 
+        try { 
+            const res = await fetch('/api/auth/verify-otp', { 
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json' }, 
+                body: JSON.stringify({ email: onboardingData.user.email, otp: data.otp }) 
+            }); 
+            const result = await res.json();
+            
+            if (!res.ok) { 
+                throw new Error(result.error || 'Failed to verify OTP.'); 
+            } 
+            
+            moveStep('companyProfile'); 
+        } catch (err) { 
+            setError(err.message); 
+        } finally { 
+            setLoading(false); 
+        } 
+    };
     const handleCompanyProfileSubmit = async (data) => { setLoading(true); setError(''); const updatedData = { ...onboardingData, company: data }; setOnboardingData(updatedData); try { const res = await fetch('/api/company/onboard', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ step: 'checkCompany', email: updatedData.user.email, companyWebsite: data.companyWebsite }) }); const result = await res.json(); if (!res.ok) throw new Error(result.error || 'Failed to check company.'); switch(result.status) { case 'COMPANY_ALREADY_VERIFIED': setSuccessMessage("This company is already verified. Please log in or contact support."); moveStep('success'); break; case 'COMPANY_EXISTS_UNVERIFIED': setOnboardingData(d => ({ ...d, companyId: result.companyId })); moveStep('companyVerifyPrompt'); break; case 'COMPANY_DOES_NOT_EXIST': moveStep('companyDetails'); break; default: throw new Error('Received an unexpected response from the server.'); } } catch (err) { setError(err.message); } finally { setLoading(false); } };
     const handleCompanyDetailsSubmit = async (data) => { let finalIndustry = data.industry.includes("Other") ? [data.otherIndustry] : data.industry; const details = { ...data, industry: finalIndustry }; delete details.otherIndustry; setOnboardingData(prev => ({ ...prev, company: { ...prev.company, ...details } })); moveStep('fundingHistory'); };
     const handleFundingHistorySubmit = async (data) => { setOnboardingData(prev => ({ ...prev, company: { ...prev.company, funding: data } })); moveStep('companyContact'); };
     const handleCompanyContactSubmit = async (data) => { setLoading(true); setError(''); const finalData = { ...onboardingData, company: { ...onboardingData.company, ...data } }; setOnboardingData(finalData); try { const createRes = await fetch('/api/company/onboard', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ step: 'createCompany', email: finalData.user.email, companyData: finalData.company }) }); const createResult = await createRes.json(); if (!createRes.ok) throw new Error(createResult.error || 'Failed to create company profile.'); const newCompanyId = createResult.companyId; setOnboardingData(d => ({...d, companyId: newCompanyId, company: finalData.company})); const sendOtpRes = await fetch('/api/company/send-verification-otp', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ companyId: newCompanyId }) }); if (!sendOtpRes.ok) { const otpError = await sendOtpRes.json(); throw new Error(otpError.error || "Failed to send company verification OTP."); } moveStep('companyOtpVerification'); } catch (err) { setError(err.message); } finally { setLoading(false); } };
     const handleCompanyOtpSubmit = async (data) => { setLoading(true); setError(''); try { const res = await fetch('/api/company/verify-otp', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ companyId: onboardingData.companyId, otp: data.otp }) }); if (!res.ok) { const result = await res.json(); throw new Error(result.error || 'Failed to verify company OTP.'); } setSuccessMessage("Your company has been successfully verified!"); moveStep('success'); } catch (err) { setError(err.message); } finally { setLoading(false); } };
     const handleCompanyResendOtp = async () => { setError(''); try { const res = await fetch('/api/company/resend-otp', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ companyId: onboardingData.companyId }) }); if (!res.ok) { const result = await res.json(); throw new Error(result.error || 'Failed to resend OTP.'); } } catch (err) { setError(err.message); throw err; } };
-    const handleResendOtp = async () => { setError(''); try { const res = await fetch('/api/auth/resend-otp', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: onboardingData.user.email }), }); if (!res.ok) { const result = await res.json(); throw new Error(result.error || 'Failed to resend OTP.'); } } catch (err) { setError(err.message); throw err; } };
+    const handleResendOtp = async () => { 
+        setError(''); 
+        try { 
+            const res = await fetch('/api/auth/resend-otp', { 
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json' }, 
+                body: JSON.stringify({ email: onboardingData.user.email }), 
+            }); 
+            const result = await res.json();
+            
+            if (!res.ok) { 
+                throw new Error(result.error || 'Failed to resend OTP.'); 
+            } 
+        } catch (err) { 
+            setError(err.message); 
+            throw err; 
+        } 
+    };
 
     const renderCurrentStep = () => {
         switch (currentStep) {

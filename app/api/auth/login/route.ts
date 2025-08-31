@@ -10,69 +10,94 @@ const generateOtp = () => {
 
 export async function POST(req: NextRequest) {
   try {
-    const { email, password } = await req.json();
+    const { email: rawEmail, password } = await req.json();
 
-    if (!email || !password) {
+    if (!rawEmail || !password) {
       return NextResponse.json({ error: 'Email and password are required' }, { status: 400 });
     }
 
+    const email = rawEmail.trim().toLowerCase();
     const firestore = admin.firestore();
     const usersCollection = firestore.collection('new_users');
+    
+    // Find user by email
     const userQuery = await usersCollection.where('email', '==', email).limit(1).get();
 
     if (userQuery.empty) {
-      return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
+      return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 });
     }
 
     const userDoc = userQuery.docs[0];
     const userData = userDoc.data();
 
     if (!userData.password) {
-        return NextResponse.json({ error: 'Invalid credentials, user has no password.' }, { status: 401 });
+      return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 });
     }
 
+    // Verify password
     const isPasswordValid = await bcrypt.compare(password, userData.password);
 
     if (!isPasswordValid) {
-      return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
+      return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 });
     }
 
+    // Check if user is verified
     if (!userData.isVerified) {
-      // User is not verified, create a new verification record and send OTP
+      // Generate and send new OTP
       const otp = generateOtp();
       const hashedOtp = await bcrypt.hash(otp, 10);
-      await firestore.collection('pending_verifications').add({
-          type: 'email',
-          target: email,
-          otp: hashedOtp,
-          expiresAt: admin.firestore.Timestamp.fromMillis(Date.now() + 15 * 60 * 1000),
-          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      
+      await userDoc.ref.update({
+        otp: hashedOtp,
+        otpExpires: admin.firestore.Timestamp.fromMillis(Date.now() + 15 * 60 * 1000),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
       });
 
-      const emailSubject = "Verify Your NiveshX Account";
+      const emailSubject = "Verify Your Email - NiveshX";
       const emailBody = `
         <p>Hello ${userData.firstName},</p>
-        <p>You tried to log in, but your account is not yet verified. Please use the One-Time Password (OTP) below to verify your account:</p>
-        <h2>${otp}</h2>
+        <p>You tried to log in, but your account is not yet verified. Please use this verification code:</p>
+        <h2 style="text-align:center; font-size: 32px; letter-spacing: 4px; color: #10B981;">${otp}</h2>
         <p>This code will expire in 15 minutes.</p>
       `;
       await sendOtpEmail(email, emailBody, emailSubject);
 
-      return NextResponse.json({ error: 'NOT_VERIFIED' }, { status: 401 });
+      return NextResponse.json({ 
+        error: 'ACCOUNT_NOT_VERIFIED',
+        message: 'Your account is not verified. A verification code has been sent to your email.',
+        requiresVerification: true
+      }, { status: 401 });
     }
 
-    // Generate JWT
+    // Generate JWT token
     const token = jwt.sign(
-      { userId: userDoc.id, email: userData.email, userType: userData.userType },
+      { 
+        userId: userDoc.id, 
+        email: userData.email, 
+        userType: userData.userType,
+        firstName: userData.firstName,
+        lastName: userData.lastName
+      },
       process.env.JWT_SECRET!,
-      { expiresIn: '1d' }
+      { expiresIn: '7d' } // 7 days
     );
 
-    return NextResponse.json({ success: true, token });
+    console.log(`[Login] Successful login for user: ${email}`);
+    
+    return NextResponse.json({ 
+      success: true, 
+      token,
+      user: {
+        userId: userDoc.id,
+        email: userData.email,
+        userType: userData.userType,
+        firstName: userData.firstName,
+        lastName: userData.lastName
+      }
+    });
 
   } catch (error) {
     console.error('Login error:', error);
-    const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred.';
-    return NextResponse.json({ error: 'Failed to log in.', details: errorMessage }, { status: 500 });
+    return NextResponse.json({ error: 'Login failed. Please try again.' }, { status: 500 });
   }
 }
