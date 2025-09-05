@@ -118,7 +118,7 @@ const UserAccountStep = ({ onFormSubmit, isLoading, onEmailBlur, emailValidation
     );
 };
 
-const OtpVerificationStep = ({ onOtpSubmit, isLoading, userEmail, onResendOtp }) => {
+const OtpVerificationStep = ({ onOtpSubmit, isLoading, userEmail, onResendOtp, onBack }) => {
     const { control, handleSubmit, formState: { errors } } = useForm({ resolver: zodResolver(otpSchema), defaultValues: { otp: "" } });
     const [cooldown, setCooldown] = useState(0);
     const [resendStatus, setResendStatus] = useState('');
@@ -149,11 +149,21 @@ const OtpVerificationStep = ({ onOtpSubmit, isLoading, userEmail, onResendOtp })
             <div className="space-y-4 text-center">
                 <h3 className="text-lg font-semibold">Step 2: Verify Your Email</h3>
                 <p className="text-gray-400">An OTP has been sent to <span className="font-semibold text-primary">{userEmail}</span>.</p>
+                <p className="text-sm text-gray-500">
+                    Need to change your email or other details? You can go back and correct them.
+                </p>
                 <div className="flex justify-center">
                     <Controller name="otp" control={control} render={({ field }) => (<InputOTP maxLength={6} {...field}><InputOTPGroup>{[...Array(6)].map((_, i) => <InputOTPSlot key={i} index={i} />)}</InputOTPGroup></InputOTP>)} />
                 </div>
                 {errors.otp && <p className="text-red-500 text-xs">{errors.otp.message}</p>}
-                <Button type="submit" disabled={isLoading} className="w-full max-w-xs mx-auto">{isLoading ? 'Verifying...' : 'Verify'}</Button>
+                <div className="flex justify-center gap-4 mt-6">
+                    <Button type="button" variant="outline" onClick={onBack}>
+                        Back to Account Info
+                    </Button>
+                    <Button type="submit" disabled={isLoading} className="px-8">
+                        {isLoading ? 'Verifying...' : 'Verify'}
+                    </Button>
+                </div>
                 <div className="mt-4 text-sm">
                     <p className="text-gray-400">
                         Didn't receive the code?{' '}
@@ -169,7 +179,7 @@ const OtpVerificationStep = ({ onOtpSubmit, isLoading, userEmail, onResendOtp })
     );
 };
 
-const CompanyProfileStep = ({ onFormSubmit, onBack, isLoading }) => {
+const CompanyProfileStep = ({ onFormSubmit, onBack, isLoading, onStartOver }) => {
     const { register, handleSubmit, watch, formState: { errors } } = useForm({ resolver: zodResolver(companyProfileSchema), mode: 'onChange' });
     return (
         <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-4">
@@ -179,7 +189,12 @@ const CompanyProfileStep = ({ onFormSubmit, onBack, isLoading }) => {
              <div className="space-y-2"><Label>Company LinkedIn (Optional)</Label><Input {...register("companyLinkedin")} placeholder="https://linkedin.com/company/..." className="bg-gray-700" />{errors.companyLinkedin && <p className="text-red-500 text-xs">{errors.companyLinkedin.message}</p>}</div>
              <div className="space-y-2"><Label>One-Liner Pitch</Label><Input {...register("oneLiner")} className="bg-gray-700" /><p className="text-xs text-gray-400 text-right">{watch('oneLiner', '').length}/150</p>{errors.oneLiner && <p className="text-red-500 text-xs">{errors.oneLiner.message}</p>}</div>
              <div className="space-y-2"><Label>About Your Company</Label><Textarea {...register("about")} className="bg-gray-700" /><p className="text-xs text-gray-400 text-right">{watch('about', '').length}/1000</p>{errors.about && <p className="text-red-500 text-xs">{errors.about.message}</p>}</div>
-             <div className="flex justify-between mt-6"><Button type="button" variant="outline" onClick={onBack}>Back</Button><Button type="submit" disabled={isLoading}>{isLoading ? 'Checking...' : 'Next'}</Button></div>
+             <div className="flex justify-between items-center mt-6">
+                <Button type="button" variant="ghost" onClick={onStartOver} className="text-gray-400">
+                    Start Over
+                </Button>
+                <Button type="submit" disabled={isLoading}>{isLoading ? 'Checking...' : 'Next'}</Button>
+             </div>
         </form>
     );
 };
@@ -249,10 +264,52 @@ const FundingHistoryStep = ({ onFormSubmit, onBack, isLoading }) => {
 
 const CompanyContactStep = ({ onFormSubmit, onBack, isLoading }) => {
     const { register, handleSubmit, control, formState: { errors } } = useForm({ resolver: zodResolver(companyContactSchema), mode: 'onChange', defaultValues: { contactPhone: { countryCode: "+91" } } });
+    const [emailValidation, setEmailValidation] = useState({ status: 'idle', message: '' });
+
+    const handleCompanyEmailBlur = async (e) => {
+        const email = e.target.value;
+        const emailSchema = z.string().email("Invalid email address");
+        const validationResult = emailSchema.safeParse(email);
+        
+        if (!validationResult.success) {
+            setEmailValidation({ status: 'invalid', message: 'Please enter a valid email address.' });
+            return;
+        }
+
+        setEmailValidation({ status: 'checking', message: 'Checking email...' });
+        try {
+            const response = await fetch('/api/company/check', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ companyEmail: email }),
+            });
+            const data = await response.json();
+            if (data.exists) {
+                setEmailValidation({ status: 'invalid', message: 'This email is already registered.' });
+            } else {
+                setEmailValidation({ status: 'valid', message: 'This email is available.' });
+            }
+        } catch (error) {
+            setEmailValidation({ status: 'invalid', message: 'Could not verify email. Please try again.' });
+        }
+    };
+
     return (
         <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-6">
             <h3 className="text-lg font-semibold mb-4 text-center">Step 6: Company Contact</h3>
-            <div className="space-y-2"><Label>Company's Work Email</Label><Input type="email" {...register("contactEmail")} className="bg-gray-700" />{errors.contactEmail && <p className="text-red-500 text-xs">{errors.contactEmail.message}</p>}</div>
+            <div className="space-y-2">
+                <Label>Company's Work Email</Label>
+                <Input 
+                    type="email" 
+                    {...register("contactEmail")} 
+                    onBlur={handleCompanyEmailBlur}
+                    className="bg-gray-700" 
+                />
+                {errors.contactEmail && <p className="text-red-500 text-xs">{errors.contactEmail.message}</p>}
+                {emailValidation.status === 'checking' && <p className="text-xs text-gray-400">{emailValidation.message}</p>}
+                {emailValidation.status === 'valid' && <p className="text-xs text-green-500">{emailValidation.message}</p>}
+                {emailValidation.status === 'invalid' && <p className="text-xs text-red-500">{emailValidation.message}</p>}
+            </div>
             <div className="space-y-2"><Label>Company's Phone Number</Label><div className="flex items-center gap-2">
                 <Controller name="contactPhone.countryCode" control={control} render={({ field }) => (<Select onValueChange={field.onChange} value={field.value}><SelectTrigger className="bg-gray-700 w-[120px]"><SelectValue /></SelectTrigger><SelectContent className="bg-gray-800 text-white"><SelectItem value="+91">IN (+91)</SelectItem><SelectItem value="+1">US (+1)</SelectItem></SelectContent></Select>)} />
                 <Input type="tel" {...register("contactPhone.number")} className="bg-gray-700" /></div>
@@ -375,6 +432,21 @@ const CompanyOnboarding = () => {
         }
     };
     const handleOtpSubmit = async (data) => { setLoading(true); setError(''); try { const res = await fetch('/api/auth/verify-otp', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: onboardingData.user.email, otp: data.otp }) }); if (!res.ok) { const result = await res.json(); throw new Error(result.error || 'Failed to verify OTP.'); } moveStep('companyProfile'); } catch (err) { setError(err.message); } finally { setLoading(false); } };
+    
+    const handleOtpBackToAccount = () => {
+        // Allow user to go back and correct their account information
+        setCurrentStep('userAccount');
+        setOnboardingData({}); // Clear any stored data so they can re-enter
+        setError(''); // Clear any errors
+    };
+
+    const handleStartOver = () => {
+        // Completely restart the onboarding process
+        setCurrentStep('userAccount');
+        setOnboardingData({});
+        setError('');
+        setEmailValidation({ status: 'idle', message: '' });
+    };
     const handleCompanyProfileSubmit = async (data) => { setLoading(true); setError(''); const updatedData = { ...onboardingData, company: data }; setOnboardingData(updatedData); try { const res = await fetch('/api/company/onboard', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ step: 'checkCompany', email: updatedData.user.email, companyWebsite: data.companyWebsite }) }); const result = await res.json(); if (!res.ok) throw new Error(result.error || 'Failed to check company.'); switch(result.status) { case 'COMPANY_ALREADY_VERIFIED': setSuccessMessage("This company is already verified. Please log in or contact support."); moveStep('success'); break; case 'COMPANY_EXISTS_UNVERIFIED': setOnboardingData(d => ({ ...d, companyId: result.companyId })); moveStep('companyVerifyPrompt'); break; case 'COMPANY_DOES_NOT_EXIST': moveStep('companyDetails'); break; default: throw new Error('Received an unexpected response from the server.'); } } catch (err) { setError(err.message); } finally { setLoading(false); } };
     const handleCompanyDetailsSubmit = async (data) => { let finalIndustry = data.industry.includes("Other") ? [data.otherIndustry] : data.industry; const details = { ...data, industry: finalIndustry }; delete details.otherIndustry; setOnboardingData(prev => ({ ...prev, company: { ...prev.company, ...details } })); moveStep('fundingHistory'); };
     const handleFundingHistorySubmit = async (data) => { setOnboardingData(prev => ({ ...prev, company: { ...prev.company, funding: data } })); moveStep('companyContact'); };
@@ -386,15 +458,15 @@ const CompanyOnboarding = () => {
     const renderCurrentStep = () => {
         switch (currentStep) {
             case 'userAccount': return <UserAccountStep onFormSubmit={handleUserAccountSubmit} isLoading={loading} onEmailBlur={handleEmailBlur} emailValidation={emailValidation} />;
-            case 'otpVerification': return <OtpVerificationStep onOtpSubmit={handleOtpSubmit} isLoading={loading} userEmail={onboardingData.user?.email} onResendOtp={handleResendOtp} />;
-            case 'companyProfile': return <CompanyProfileStep onFormSubmit={handleCompanyProfileSubmit} onBack={() => {}} isLoading={loading} />;
+            case 'otpVerification': return <OtpVerificationStep onOtpSubmit={handleOtpSubmit} isLoading={loading} userEmail={onboardingData.user?.email} onResendOtp={handleResendOtp} onBack={handleOtpBackToAccount} />;
+            case 'companyProfile': return <CompanyProfileStep onFormSubmit={handleCompanyProfileSubmit} onBack={() => {}} isLoading={loading} onStartOver={handleStartOver} />;
             case 'companyVerifyPrompt': return <CompanyVerifyPromptStep onNext={() => moveStep('companyOtpVerification')} companyName={onboardingData.company?.companyName} />;
             case 'companyDetails': return <CompanyDetailsStep onFormSubmit={handleCompanyDetailsSubmit} onBack={() => moveStep('companyProfile')} isLoading={loading} />;
             case 'fundingHistory': return <FundingHistoryStep onFormSubmit={handleFundingHistorySubmit} onBack={() => moveStep('companyDetails')} isLoading={loading} />;
             case 'companyContact': return <CompanyContactStep onFormSubmit={handleCompanyContactSubmit} onBack={() => moveStep('fundingHistory')} isLoading={loading} />;
             case 'companyOtpVerification': return <CompanyOtpVerificationStep onOtpSubmit={handleCompanyOtpSubmit} isLoading={loading} companyEmail={onboardingData.company?.contactEmail} onResendOtp={handleCompanyResendOtp} />;
             case 'success': return <SuccessStep message={successMessage} />;
-            default: return <UserAccountStep onFormSubmit={handleUserAccountSubmit} isLoading={loading} />;
+            default: return <UserAccountStep onFormSubmit={handleUserAccountSubmit} isLoading={loading} onEmailBlur={handleEmailBlur} emailValidation={emailValidation} />;
         }
     };
 

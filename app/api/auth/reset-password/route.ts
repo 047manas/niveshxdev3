@@ -11,17 +11,49 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Token and password are required' }, { status: 400 });
     }
 
+    // Validate password strength
+    if (password.length < 8) {
+      return NextResponse.json({ error: 'Password must be at least 8 characters long' }, { status: 400 });
+    }
+
     // Hash the token to find it in the database
     const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
 
     const firestore = admin.firestore();
-    const usersCollection = firestore.collection('new_users');
-
-    const userQuery = await usersCollection
+    
+    // Check in users collection first
+    let usersCollection = firestore.collection('users');
+    let userQuery = await usersCollection
       .where('resetPasswordToken', '==', hashedToken)
       .where('resetPasswordExpires', '>', admin.firestore.Timestamp.now())
       .limit(1)
       .get();
+
+    // If not found in users, check pending_users
+    if (userQuery.empty) {
+      usersCollection = firestore.collection('pending_users');
+      
+      // For pending_users, we need to check each document since we can't query by resetPasswordToken
+      const allPendingUsers = await usersCollection.get();
+      const matchingDocs = [];
+      
+      for (const doc of allPendingUsers.docs) {
+        const userData = doc.data();
+        if (userData.resetPasswordToken === hashedToken && 
+            userData.resetPasswordExpires && 
+            userData.resetPasswordExpires.toMillis() > Date.now()) {
+          matchingDocs.push(doc);
+          break;
+        }
+      }
+      
+      if (matchingDocs.length > 0) {
+        userQuery = {
+          empty: false,
+          docs: matchingDocs
+        } as any;
+      }
+    }
 
     if (userQuery.empty) {
       return NextResponse.json({ error: 'Invalid or expired password reset token.' }, { status: 400 });
@@ -38,6 +70,8 @@ export async function POST(req: NextRequest) {
       resetPasswordToken: admin.firestore.FieldValue.delete(),
       resetPasswordExpires: admin.firestore.FieldValue.delete(),
     });
+
+    console.log(`Password reset successful for user: ${userDoc.id}`);
 
     return NextResponse.json({ success: true, message: 'Password has been reset successfully.' });
 

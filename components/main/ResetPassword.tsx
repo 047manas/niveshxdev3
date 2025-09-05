@@ -37,6 +37,12 @@ const ResetPassword = ({ token }: { token: string }) => {
       return;
     }
 
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters long.');
+      setLoading(false);
+      return;
+    }
+
     try {
       const response = await fetch('/api/auth/reset-password', {
         method: 'POST',
@@ -52,13 +58,13 @@ const ResetPassword = ({ token }: { token: string }) => {
         throw new Error(data.error || 'Something went wrong');
       }
 
-      setMessage('Your password has been reset successfully. You can now log in with your new password.');
+      setMessage('Your password has been reset successfully. Redirecting to login...');
       setTimeout(() => {
         router.push('/auth');
       }, 3000);
 
     } catch (err) {
-      setError(err.message);
+      setError((err as Error).message || 'An error occurred while resetting your password.');
     } finally {
       setLoading(false);
     }
@@ -86,6 +92,7 @@ const ResetPassword = ({ token }: { token: string }) => {
                 onChange={(e) => setPassword(e.target.value)}
                 className="bg-background border-border text-foreground focus:ring-ring"
               />
+              <p className="text-xs text-gray-500">Must be at least 8 characters long</p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="confirmPassword" className="text-gray-400">Confirm New Password</Label>

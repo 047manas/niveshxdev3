@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ status: 'CONTINUE_PROFILE', userId: userDoc.id });
         }
 
-        const companyDoc = await firestore.collection('companies').doc(userData.companyId).get();
+        const companyDoc = await firestore.collection('new_companies').doc(userData.companyId).get();
         if (!companyDoc.exists) {
             // Data inconsistency, treat as if profile is incomplete
             return NextResponse.json({ status: 'CONTINUE_PROFILE', userId: userDoc.id });

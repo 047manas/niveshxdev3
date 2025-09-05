@@ -2,16 +2,37 @@ import { NextRequest, NextResponse } from 'next/server';
 import admin from '@/lib/firebase-admin';
 
 /**
- * Retrieves a verified pending user from Firestore.
- * Throws an error if the user is not found or their email is not verified.
+ * Retrieves a verified user from Firestore.
+ * First checks the users collection (for already verified users), 
+ * then falls back to pending_users (for users verified but not yet moved).
  */
-async function getVerifiedPendingUser(email: string) {
+async function getVerifiedUser(email: string) {
     const firestore = admin.firestore();
+    console.log(`[Company Onboard] Looking for verified user: ${email}`);
+    
+    // First check if user is already in the users collection (verified and moved)
+    const usersCollection = firestore.collection('users');
+    const userQuery = await usersCollection.where('email', '==', email).limit(1).get();
+    
+    if (!userQuery.empty) {
+        const userDoc = userQuery.docs[0];
+        console.log(`[Company Onboard] Found user in users collection: ${userDoc.id}`);
+        return { 
+            ref: userDoc.ref, 
+            data: userDoc.data(),
+            isAlreadyInUsers: true,
+            authUid: userDoc.id
+        };
+    }
+    
+    console.log(`[Company Onboard] User not found in users collection, checking pending_users`);
+    // Fallback: check pending_users collection (for edge cases)
     const pendingUserRef = firestore.collection('pending_users').doc(email);
     const pendingUserDoc = await pendingUserRef.get();
 
     if (!pendingUserDoc.exists) {
-        throw new Error('Pending user not found. Please start the registration process again.');
+        console.log(`[Company Onboard] User not found in pending_users either`);
+        throw new Error('User not found. Please complete the registration and email verification process first.');
     }
 
     const userData = pendingUserDoc.data()!;
@@ -19,7 +40,13 @@ async function getVerifiedPendingUser(email: string) {
         throw new Error('User email must be verified before proceeding.');
     }
 
-    return { ref: pendingUserRef, data: userData };
+    console.log(`[Company Onboard] Found user in pending_users collection`);
+    return { 
+        ref: pendingUserRef, 
+        data: userData,
+        isAlreadyInUsers: false,
+        authUid: null
+    };
 }
 
 /**
@@ -70,7 +97,7 @@ async function finalizeUserAndCompanyLink(
     }
 
     const userDocRef = firestore.collection('users').doc(authUser.uid);
-    const employeeDocRef = firestore.collection('companies').doc(companyId).collection('employees').doc(authUser.uid);
+    const employeeDocRef = firestore.collection('new_companies').doc(companyId).collection('employees').doc(authUser.uid); // Fixed: Use new_companies
     const role = getRoleFromDesignation(pendingUserData.designation);
 
     await firestore.runTransaction(async (transaction) => {
@@ -115,7 +142,7 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ error: 'Company website is required.' }, { status: 400 });
             }
 
-            const companiesRef = firestore.collection('companies');
+            const companiesRef = firestore.collection('new_companies'); // Fixed: Use new_companies
             const companyQuery = await companiesRef.where('website', '==', companyWebsite).limit(1).get();
 
             if (!companyQuery.empty) {
@@ -144,18 +171,25 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ error: 'Missing companyData' }, { status: 400 });
             }
 
-            const { ref: pendingUserRef, data: pendingUserData } = await getVerifiedPendingUser(email);
+            const { ref: userRef, data: userData, isAlreadyInUsers, authUid } = await getVerifiedUser(email);
 
-            const newCompanyRef = await firestore.collection('companies').add({
+            const newCompanyRef = await firestore.collection('new_companies').add({ // Fixed: Use new_companies
                 ...companyData,
                 isVerified: false,
-                createdBy: null, // Will be updated after auth user is created
+                createdBy: authUid, // Use existing authUid if user is already in users collection
                 createdAt: admin.firestore.FieldValue.serverTimestamp(),
             });
 
-            const authUser = await finalizeUserAndCompanyLink(pendingUserRef, pendingUserData, newCompanyRef.id);
-
-            await newCompanyRef.update({ createdBy: authUser.uid });
+            let finalAuthUser;
+            if (isAlreadyInUsers) {
+                // User is already in users collection, just update their companyId
+                finalAuthUser = { uid: authUid };
+                await userRef.update({ companyId: newCompanyRef.id });
+            } else {
+                // User is still in pending_users, move them to users collection
+                finalAuthUser = await finalizeUserAndCompanyLink(userRef, userData, newCompanyRef.id);
+                await newCompanyRef.update({ createdBy: finalAuthUser.uid });
+            }
 
             return NextResponse.json({ success: true, status: 'COMPANY_CREATED_NEEDS_VERIFICATION', companyId: newCompanyRef.id });
         }

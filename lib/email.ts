@@ -1,6 +1,6 @@
 import nodemailer from 'nodemailer';
 
-let transporter: nodemailer.Transporter;
+let transporter: nodemailer.Transporter | null;
 
 // This function initializes the email transporter.
 // It will use production credentials if they are available as environment variables.
@@ -21,13 +21,30 @@ const initializeEmail = async () => {
         user: process.env.EMAIL_SMTP_USER,
         pass: process.env.EMAIL_SMTP_PASS,
       },
+      // Additional options for Gmail
+      tls: {
+        rejectUnauthorized: false // This helps with some Gmail authentication issues
+      }
     });
-    console.log("Email service configured for production.");
-  } else {
-    // Fallback to Ethereal for development/testing
+    console.log("Email service configured for production with Gmail SMTP.");
+    
+    // Test the connection
+    try {
+      await transporter.verify();
+      console.log("Gmail SMTP connection verified successfully.");
+    } catch (error) {
+      console.error("Gmail SMTP connection failed:", error);
+      console.log("Falling back to Ethereal for development...");
+      // Fall back to Ethereal if Gmail fails
+      transporter = null;
+    }
+  }
+  
+  // If no production credentials or Gmail failed, use Ethereal
+  if (!transporter) {
     const testAccount = await nodemailer.createTestAccount();
     console.log("---");
-    console.log("INFO: Production email credentials not found. Using Ethereal for development.");
+    console.log("INFO: Using Ethereal for development/testing.");
     console.log("INFO: View test emails at: https://ethereal.email/messages");
     console.log(`Ethereal User: ${testAccount.user}`);
     console.log(`Ethereal Pass: ${testAccount.pass}`);
@@ -52,6 +69,11 @@ export const sendOtpEmail = async (to: string, body: string, subject?: string) =
     await initializeEmail();
   }
 
+  // Double-check that transporter is available after initialization
+  if (!transporter) {
+    throw new Error('Failed to initialize email transporter.');
+  }
+
   const mailOptions = {
     from: `"Niveshx" <${process.env.EMAIL_FROM || 'no-reply@niveshx.app'}>`,
     to: to,
@@ -64,7 +86,7 @@ export const sendOtpEmail = async (to: string, body: string, subject?: string) =
     console.log('Message sent: %s', info.messageId);
 
     // Log the Ethereal preview URL if we're in development mode
-    if (info.response.includes('Ethereal')) {
+    if (info.response && info.response.includes('Ethereal')) {
       console.log('Preview URL: %s', nodemailer.getTestMessageUrl(info));
     }
   } catch (error) {

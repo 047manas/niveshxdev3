@@ -17,8 +17,16 @@ export async function POST(req: NextRequest) {
     }
 
     const firestore = admin.firestore();
-    const usersCollection = firestore.collection('new_users');
-    const userQuery = await usersCollection.where('email', '==', email).limit(1).get();
+    
+    // First check the users collection (verified users)
+    let usersCollection = firestore.collection('users');
+    let userQuery = await usersCollection.where('email', '==', email).limit(1).get();
+    
+    // If not found in users, check new_users collection (fallback)
+    if (userQuery.empty) {
+      usersCollection = firestore.collection('new_users');
+      userQuery = await usersCollection.where('email', '==', email).limit(1).get();
+    }
 
     if (userQuery.empty) {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });

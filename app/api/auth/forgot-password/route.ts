@@ -12,8 +12,25 @@ export async function POST(req: NextRequest) {
     }
 
     const firestore = admin.firestore();
-    const usersCollection = firestore.collection('new_users');
-    const userQuery = await usersCollection.where('email', '==', email).limit(1).get();
+    
+    // Check in the users collection first (verified users)
+    let usersCollection = firestore.collection('users');
+    let userQuery = await usersCollection.where('email', '==', email).limit(1).get();
+    
+    // If not found in users, check pending_users (unverified users)
+    if (userQuery.empty) {
+      usersCollection = firestore.collection('pending_users');
+      const pendingUserRef = usersCollection.doc(email);
+      const pendingUserDoc = await pendingUserRef.get();
+      
+      if (pendingUserDoc.exists) {
+        // Convert to same format as query result
+        userQuery = {
+          empty: false,
+          docs: [{ ref: pendingUserRef, data: () => pendingUserDoc.data() }]
+        } as any;
+      }
+    }
 
     if (userQuery.empty) {
       // Don't reveal that the user doesn't exist for security reasons
@@ -36,18 +53,18 @@ export async function POST(req: NextRequest) {
     });
 
     // Send the email
-    const resetUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`;
+    const resetUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3003'}/reset-password?token=${resetToken}`;
 
     // Send the email
     const emailSubject = "Reset Your Password for Niveshx";
     const emailBody = `
       <p>Hello,</p>
       <p>You requested a password reset. Please click the link below to set a new password:</p>
-      <p><a href="${resetUrl}">${resetUrl}</a></p>
+      <p><a href="${resetUrl}" style="color: #007bff; text-decoration: none;">${resetUrl}</a></p>
+      <p>This link will expire in 1 hour.</p>
       <p>If you did not request this, please ignore this email.</p>
     `;
     await sendOtpEmail(email, emailBody, emailSubject);
-
 
     return NextResponse.json({ success: true, message: 'If an account with that email exists, we have sent a password reset link to it.' });
 

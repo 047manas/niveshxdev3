@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
     });
 
-    const emailSubject = `Your Verification Code for ${companyData.name} on NiveshX`;
+    const emailSubject = `Your Verification Code for ${companyData.companyName || companyData.name || 'Your Company'} on NiveshX`;
     const emailBody = `
       <p>Hello,</p>
       <p>Please use the following One-Time Password (OTP) to verify your company's email address (${companyEmail}) for NiveshX:</p>

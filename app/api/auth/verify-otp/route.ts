@@ -16,10 +16,52 @@ export async function POST(req: NextRequest) {
 
   try {
     const firestore = admin.firestore();
+    
+    // Check in pending_users collection (for user registration OTPs)
+    const pendingUserRef = firestore.collection('pending_users').doc(email);
+    const pendingUserDoc = await pendingUserRef.get();
+    
+    if (pendingUserDoc.exists) {
+      const userData = pendingUserDoc.data()!;
+      
+      // Check if OTP matches and hasn't expired
+      if (userData.userOtp === otp) {
+        if (userData.userOtpExpires.toMillis() < Date.now()) {
+          console.log(`[Verify OTP] OTP for ${email} is correct but expired.`);
+          return NextResponse.json({ error: 'The OTP has expired. Please request a new one.' }, { status: 400 });
+        }
+        
+        console.log(`[Verify OTP] SUCCESS: OTP is valid for ${email}.`);
+        
+        // Move user from pending_users to users collection
+        const { userOtp, userOtpExpires, emailVerificationStatus, ...finalUserData } = userData;
+        
+        await firestore.runTransaction(async (transaction) => {
+          // Add to users collection as verified
+          const userRef = firestore.collection('users').doc();
+          transaction.set(userRef, {
+            ...finalUserData,
+            isVerified: true,
+            createdAt: admin.firestore.FieldValue.serverTimestamp()
+          });
+          
+          // Remove from pending_users
+          transaction.delete(pendingUserRef);
+        });
+        
+        console.log(`[Verify OTP] SUCCESS: User ${email} has been verified and moved to users collection.`);
+        return NextResponse.json({ success: true, message: 'Email verified successfully.' });
+      } else {
+        console.error(`[Verify OTP] FAILED: Invalid OTP provided for ${email}.`);
+        return NextResponse.json({ error: 'The OTP you entered is incorrect.' }, { status: 400 });
+      }
+    }
+
+    // Fallback: Check in pending_verifications collection (for other types of OTPs)
     const verificationCollection = firestore.collection('pending_verifications');
     const usersCollection = firestore.collection('new_users');
 
-    // Step 1: Find the pending verification document with retry logic for eventual consistency.
+    // Find the pending verification document with retry logic for eventual consistency.
     let querySnapshot = null;
     for (let i = 0; i < 3; i++) {
         querySnapshot = await verificationCollection.where('target', '==', email).get();
@@ -31,9 +73,8 @@ export async function POST(req: NextRequest) {
         await new Promise(resolve => setTimeout(resolve, 500));
     }
 
-
     if (!querySnapshot || querySnapshot.empty) {
-      console.error(`[Verify OTP] FAILED: No pending verification found for ${email} after 3 attempts.`);
+      console.error(`[Verify OTP] FAILED: No pending verification found for ${email} after checking both collections.`);
       return NextResponse.json({ error: 'Invalid OTP or verification session has expired.' }, { status: 400 });
     }
 
@@ -65,7 +106,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'The OTP you entered is incorrect or has expired.' }, { status: 400 });
     }
 
-    // Step 2: Find the corresponding *unverified* user to update.
+    // Find the corresponding *unverified* user to update.
     const userQuery = await usersCollection
       .where('email', '==', email)
       .where('isVerified', '==', false) // This is critical
@@ -79,7 +120,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Could not find a user to verify. Please try signing up again.' }, { status: 404 });
     }
 
-    // Step 3: Perform the update and cleanup within a transaction for safety.
+    // Perform the update and cleanup within a transaction for safety.
     const userDoc = userQuery.docs[0];
 
     await firestore.runTransaction(async (transaction) => {
