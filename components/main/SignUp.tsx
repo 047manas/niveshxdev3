@@ -1,18 +1,13 @@
 'use client';
 
-import React, { useState, useEffect, ChangeEvent } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useForm, useWatch, Controller, Control, UseFormRegister, FieldErrors, UseFormSetValue, SubmitHandler } from 'react-hook-form';
-import { useSignup } from '@/context/SignupContext';
-import { useOnboarding } from '@/context/OnboardingContext';
 import {
   SignUpProps,
   EmailValidation,
-  InvestorType,
-  InvestmentType,
-  SignUpFormData
 } from '@/types/auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,41 +19,14 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
-import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
+import { OtpStep } from '@/components/onboarding/steps/OtpStep';
 import { sharedStyles } from '@/styles/shared';
 import { Loader2 } from 'lucide-react';
 import { Building2, User } from "lucide-react";
 import CompanyOnboarding from "@/components/onboarding/CompanyOnboarding";
+import * as apiClient from '@/lib/api-client';
+import { SignUpFormData, OtpFormData } from '@/types/forms';
 
-// --- Types ---
-interface InvestorStep1Props {
-  control: Control<SignUpFormData>;
-  register: UseFormRegister<SignUpFormData>;
-  errors: FieldErrors<SignUpFormData>;
-  onEmailBlur: (e: React.FocusEvent<HTMLInputElement>) => void;
-  emailValidation: EmailValidation;
-}
-
-interface InvestorStep2Props {
-  control: Control<SignUpFormData>;
-  errors: FieldErrors<SignUpFormData>;
-  setValue: UseFormSetValue<SignUpFormData>;
-}
-
-interface OtpVerificationStepProps {
-  onOtpSubmit: (data: { otp: string }) => Promise<void>;
-  isLoading: boolean;
-  userEmail: string;
-  onResendOtp: () => Promise<void>;
-}
-
-interface OtpFormData {
-  otp: string;
-}
-
-// --- Constants ---
-const investmentTypes = ['Angel', 'Seed', 'Series A'];
-const chequeSizes = ['25K-50K', '50K-100K', '100K+'];
 
 // --- Form Schemas ---
 const investorStep1Schema = z.object({
@@ -81,10 +49,6 @@ const investorStep2Schema = z.object({
     .refine(arr => arr.length > 0, { message: "Please list at least one valid sector." }),
 });
 
-const otpSchema = z.object({
-  otp: z.string().min(6, "Your OTP must be 6 characters."),
-});
-
 const allInvestorStepSchemas = [investorStep1Schema, investorStep2Schema];
 
 // Helper component for form errors
@@ -94,100 +58,38 @@ const FormError: React.FC<{ error?: { message?: string } | string }> = ({ error 
   return message ? <p className="text-red-500 text-xs">{message}</p> : null;
 };
 
-// OTP Verification Step Component
-const OtpVerificationStep: React.FC<OtpVerificationStepProps> = ({ onOtpSubmit, isLoading, userEmail, onResendOtp }) => {
-  const { register, handleSubmit, control, formState: { errors } } = useForm<OtpFormData>({
-    resolver: zodResolver(otpSchema),
-  });
+// --- Step Components ---
+interface InvestorStep1Props {
+  control: Control<SignUpFormData>;
+  register: UseFormRegister<SignUpFormData>;
+  errors: FieldErrors<SignUpFormData>;
+  onEmailBlur: (e: React.FocusEvent<HTMLInputElement>) => void;
+  emailValidation: EmailValidation;
+}
 
-  const [cooldown, setCooldown] = useState(0);
-  const [resendStatus, setResendStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
-
-  useEffect(() => {
-    if (cooldown > 0) {
-      const timer = setInterval(() => setCooldown(prev => prev - 1), 1000);
-      return () => clearInterval(timer);
-    }
-  }, [cooldown]);
-
-  const handleResend = async () => {
-    setResendStatus('loading');
-    try {
-      await onResendOtp();
-      setResendStatus('success');
-      setCooldown(60);
-    } catch (err) {
-      setResendStatus('error');
-    }
-  };
-
-  return (
-    <form onSubmit={handleSubmit(onOtpSubmit as SubmitHandler<OtpFormData>)} className="space-y-4">
-      <div className="text-center space-y-4">
-        <h3 className="text-lg font-semibold">Verify Your Email</h3>
-        <p className="text-gray-400">
-          An OTP has been sent to <span className="font-semibold text-primary">{userEmail}</span>
-        </p>
-        <div className="flex justify-center">
-          <Controller
-            name="otp"
-            control={control}
-            render={({ field }) => (
-              <InputOTP maxLength={6} {...field}>
-                <InputOTPGroup>
-                  {[...Array(6)].map((_, i) => (
-                    <InputOTPSlot key={i} index={i} />
-                  ))}
-                </InputOTPGroup>
-              </InputOTP>
-            )}
-          />
-        </div>
-        {errors.otp && <FormError error={errors.otp} />}
-        <div className="flex justify-center mt-4">
-          <Button 
-            type="button"
-            variant="link"
-            disabled={cooldown > 0 || resendStatus === 'loading'}
-            onClick={handleResend}
-            className="text-primary"
-          >
-            {cooldown > 0 ? `Resend OTP in ${cooldown}s` : 'Resend OTP'}
-          </Button>
-        </div>
-      </div>
-      <div className="flex justify-center">
-        <Button type="submit" disabled={isLoading}>
-          {isLoading ? 'Verifying...' : 'Verify OTP'}
-        </Button>
-      </div>
-    </form>
-  );
-};
+interface InvestorStep2Props {
+  control: Control<SignUpFormData>;
+  errors: FieldErrors<SignUpFormData>;
+  setValue: UseFormSetValue<SignUpFormData>;
+}
 
 // InvestorStep1 Component
 const InvestorStep1: React.FC<InvestorStep1Props> = ({ control, register, errors, onEmailBlur, emailValidation }) => {
-  const { formData, handleChange } = useOnboarding();
-  
-  const handleInputChange = (field: keyof SignUpFormData) => (e: ChangeEvent<HTMLInputElement>) => {
-    handleChange(field as any)(e);
-  };
-
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
       <div className="space-y-2">
         <Label>First Name</Label>
-        <Input {...register("firstName")} value={formData.firstName} onChange={handleInputChange('firstName')} className="bg-gray-700" />
+        <Input {...register("firstName")} className="bg-gray-700" />
         <FormError error={errors.firstName} />
       </div>
       <div className="space-y-2">
         <Label>Last Name</Label>
-        <Input {...register("lastName")} value={formData.lastName} onChange={handleInputChange('lastName')} className="bg-gray-700" />
+        <Input {...register("lastName")} className="bg-gray-700" />
         <FormError error={errors.lastName} />
       </div>
       <div className="space-y-2 md:col-span-2">
         <Label>Email</Label>
-        <Input type="email" {...register("email")} value={formData.email} onChange={handleInputChange('email')} onBlur={onEmailBlur} className="bg-gray-700" />
+        <Input type="email" {...register("email")} onBlur={onEmailBlur} className="bg-gray-700" />
         <FormError error={errors.email} />
         {emailValidation.status !== 'idle' && (
           <p className={`text-xs ${emailValidation.status === 'valid' ? 'text-green-500' : emailValidation.status === 'checking' ? 'text-yellow-500' : 'text-red-500'}`}>
@@ -197,27 +99,27 @@ const InvestorStep1: React.FC<InvestorStep1Props> = ({ control, register, errors
       </div>
       <div className="space-y-2">
         <Label>Phone Country Code</Label>
-        <Input {...register("countryCode")} value={formData.countryCode} onChange={handleInputChange('countryCode')} className="bg-gray-700" placeholder="+91" />
+        <Input {...register("countryCode")} className="bg-gray-700" placeholder="+91" />
         <FormError error={errors.countryCode} />
       </div>
       <div className="space-y-2">
         <Label>Phone Number</Label>
-        <Input {...register("phoneNumber")} value={formData.phoneNumber} onChange={handleInputChange('phoneNumber')} className="bg-gray-700" />
+        <Input {...register("phoneNumber")} className="bg-gray-700" />
         <FormError error={errors.phoneNumber} />
       </div>
       <div className="space-y-2 md:col-span-2">
         <Label>LinkedIn Profile</Label>
-        <Input {...register("linkedinProfile")} value={formData.linkedinProfile} onChange={handleInputChange('linkedinProfile')} className="bg-gray-700" placeholder="https://linkedin.com/in/username" />
+        <Input {...register("linkedinProfile")} className="bg-gray-700" placeholder="https://linkedin.com/in/username" />
         <FormError error={errors.linkedinProfile} />
       </div>
       <div className="space-y-2">
         <Label>Password</Label>
-        <Input type="password" {...register("password")} value={formData.password} onChange={handleInputChange('password')} className="bg-gray-700" />
+        <Input type="password" {...register("password")} className="bg-gray-700" />
         <FormError error={errors.password} />
       </div>
       <div className="space-y-2">
         <Label>Confirm Password</Label>
-        <Input type="password" {...register("confirmPassword")} value={formData.confirmPassword} onChange={handleInputChange('confirmPassword')} className="bg-gray-700" />
+        <Input type="password" {...register("confirmPassword")} className="bg-gray-700" />
         <FormError error={errors.confirmPassword} />
       </div>
     </div>
@@ -226,8 +128,9 @@ const InvestorStep1: React.FC<InvestorStep1Props> = ({ control, register, errors
 
 // InvestorStep2 Component
 const InvestorStep2: React.FC<InvestorStep2Props> = ({ control, errors, setValue }) => {
-  const { formData, handleSelectChange, handleInvestmentTypeChange } = useOnboarding();
-  
+  const investmentTypes = ['Angel', 'Seed', 'Series A'];
+  const chequeSizes = ['25K-50K', '50K-100K', '100K+'];
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
       <div className="space-y-2 md:col-span-2">
@@ -269,7 +172,6 @@ const InvestorStep2: React.FC<InvestorStep2Props> = ({ control, errors, setValue
                       ? field.value.filter((t: string) => t !== type)
                       : [...(field.value || []), type];
                     field.onChange(newValue);
-                    handleInvestmentTypeChange(newValue.join(','));
                   }}
                 >
                   {type}
@@ -325,32 +227,17 @@ const InvestorStep2: React.FC<InvestorStep2Props> = ({ control, errors, setValue
 
 // Main SignUp Component
 const SignUp: React.FC<SignUpProps> = ({ setCurrentView, userType, setUserType }) => {
-  const { signupData, updateSignupData } = useSignup();
-  const { handleChange, handleSelectChange, handleInvestmentTypeChange } = useOnboarding();
-  
   const [investorStep, setInvestorStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [investorFlowStep, setInvestorFlowStep] = useState<'details' | 'verifyOtp' | 'success'>('details');
-  const [investorAgreed, setInvestorAgreed] = useState(false);
+  const [emailForVerification, setEmailForVerification] = useState('');
   const [emailValidation, setEmailValidation] = useState<EmailValidation>({ status: 'idle', message: '' });
 
   const investorForm = useForm<SignUpFormData>({
     resolver: zodResolver(allInvestorStepSchemas[investorStep - 1]),
     mode: 'onChange',
-    defaultValues: signupData
   });
-
-  const watchedInvestmentTypes = useWatch({
-    control: investorForm.control,
-    name: 'investmentType'
-  }) || [];
-
-  const handleBothChange = (checked: boolean) => {
-    const newValue = checked ? investmentTypes : [];
-    handleSelectChange('investmentType' as any)(newValue.join(','));
-    investorForm.setValue('investmentType', newValue);
-  };
 
   const handleEmailBlur = async (e: React.FocusEvent<HTMLInputElement>) => {
     const email = e.target.value;
@@ -365,12 +252,7 @@ const SignUp: React.FC<SignUpProps> = ({ setCurrentView, userType, setUserType }
 
     setEmailValidation({ status: 'checking', message: 'Checking email...' });
     try {
-      const response = await fetch('/api/company/check', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ companyEmail: email }),
-      });
-      const data = await response.json();
+      const data = await apiClient.checkEmail(email);
       if (data.exists) {
         setEmailValidation({ status: 'invalid', message: 'This email is already registered.' });
       } else {
@@ -393,18 +275,8 @@ const SignUp: React.FC<SignUpProps> = ({ setCurrentView, userType, setUserType }
     setLoading(true);
     setError('');
     try {
-      const allData = { ...signupData, ...investorForm.getValues(), ...data };
-      updateSignupData(allData);
-      
-      const response = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...allData, userType: 'investor' }),
-      });
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error || 'Something went wrong');
-      
-      window.localStorage.setItem('emailForVerification', allData.email);
+      await apiClient.registerUser({ ...data, userType: 'investor' } as any);
+      setEmailForVerification(data.email);
       setInvestorFlowStep('verifyOtp');
     } catch (err) {
       console.error('Registration error:', err);
@@ -414,21 +286,11 @@ const SignUp: React.FC<SignUpProps> = ({ setCurrentView, userType, setUserType }
     }
   };
 
-  const handleOtpSubmit = async (data: { otp: string }) => {
+  const handleOtpSubmit = async (data: OtpFormData) => {
     setLoading(true);
     setError('');
     try {
-      const email = window.localStorage.getItem('emailForVerification');
-      if (!email) throw new Error('Email not found');
-
-      const response = await fetch('/api/auth/verify-email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, otp: data.otp }),
-      });
-      const result = await response.json();
-      
-      if (!response.ok) throw new Error(result.error || 'Invalid OTP');
+      await apiClient.verifyUserOtp(emailForVerification, data.otp);
       setInvestorFlowStep('success');
     } catch (err) {
       console.error('OTP verification error:', err);
@@ -439,19 +301,7 @@ const SignUp: React.FC<SignUpProps> = ({ setCurrentView, userType, setUserType }
   };
 
   const handleResendOtp = async () => {
-    const email = window.localStorage.getItem('emailForVerification');
-    if (!email) throw new Error('Email not found');
-
-    const response = await fetch('/api/auth/resend-otp', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email }),
-    });
-
-    if (!response.ok) {
-      const result = await response.json();
-      throw new Error(result.error || 'Failed to resend OTP');
-    }
+    await apiClient.resendUserOtp(emailForVerification);
   };
 
   if (investorFlowStep === 'verifyOtp') {
@@ -461,10 +311,12 @@ const SignUp: React.FC<SignUpProps> = ({ setCurrentView, userType, setUserType }
           <CardTitle className="text-2xl text-center">Verify Your Email</CardTitle>
         </CardHeader>
         <CardContent>
-          <OtpVerificationStep
-            onOtpSubmit={handleOtpSubmit}
+          <OtpStep
+            title="Verify Your Email"
+            description="An OTP has been sent to"
+            email={emailForVerification}
             isLoading={loading}
-            userEmail={window.localStorage.getItem('emailForVerification') || ''}
+            onOtpSubmit={handleOtpSubmit}
             onResendOtp={handleResendOtp}
           />
           {error && <p className="text-red-500 text-center mt-4">{error}</p>}

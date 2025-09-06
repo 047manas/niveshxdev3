@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import admin from '@/lib/firebase-admin';
-import { sendOtpEmail } from '@/lib/email';
+import { firestore, Timestamp, FieldValue } from '@/lib/server-utils/firebase-admin';
+import emailClient from '@/lib/email/client';
 import bcrypt from 'bcryptjs';
 
 const generateOtp = () => {
@@ -15,7 +15,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Company ID is required.' }, { status: 400 });
     }
 
-    const firestore = admin.firestore();
     const companyRef = firestore.collection('new_companies').doc(companyId);
     const companyDoc = await companyRef.get();
 
@@ -37,18 +36,13 @@ export async function POST(req: NextRequest) {
         type: 'company',
         target: companyId,
         otp: hashedOtp,
-        expiresAt: admin.firestore.Timestamp.fromMillis(Date.now() + 15 * 60 * 1000),
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        expiresAt: Timestamp.fromMillis(Date.now() + 15 * 60 * 1000),
+        createdAt: FieldValue.serverTimestamp(),
     });
 
-    const emailSubject = `Your Verification Code for ${companyData.companyName || companyData.name || 'Your Company'} on NiveshX`;
-    const emailBody = `
-      <p>Hello,</p>
-      <p>Please use the following One-Time Password (OTP) to verify your company's email address (${companyEmail}) for NiveshX:</p>
-      <h2 style="text-align:center; font-size: 24px; letter-spacing: 4px;">${otp}</h2>
-      <p>This code will expire in 15 minutes.</p>
-    `;
-    await sendOtpEmail(companyEmail, emailBody, emailSubject);
+    // Note: The sendOTPEmail function in the client does not support custom subject and body.
+    // This will be sent with the default OTP template.
+    await emailClient.sendOTPEmail(companyEmail, companyData.name, otp);
 
     return NextResponse.json({ success: true, message: 'Company verification OTP sent successfully.' });
 

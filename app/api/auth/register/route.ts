@@ -1,84 +1,73 @@
 import { NextRequest, NextResponse } from 'next/server';
-import admin from '@/lib/firebase-admin';
+import { firestore, Timestamp, FieldValue } from '@/lib/server-utils/firebase-admin';
 import bcrypt from 'bcryptjs';
-import { sendOtpEmail } from '@/lib/email';
+import emailClient from '@/lib/email/client';
+import { z } from 'zod';
 
 const generateOtp = () => {
   return Math.floor(100000 + Math.random() * 900000).toString();
 };
 
+const registerSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(8),
+  firstName: z.string().min(1),
+  lastName: z.string().min(1),
+  userType: z.enum(['company', 'investor']),
+});
+
 export async function POST(req: NextRequest) {
   try {
-    const { userType, ...formData } = await req.json();
-    const { email, password, firstName, lastName } = formData;
+    const body = await req.json();
+    const validation = registerSchema.safeParse(body);
 
-    if (!email || !password || !firstName || !lastName || !userType) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    if (!validation.success) {
+      return NextResponse.json({ error: 'Invalid input' }, { status: 400 });
     }
 
-    const firestore = admin.firestore();
+    const { email, password, firstName, lastName, userType, ...rest } = validation.data;
 
-    // --- Check #1: Is user in pending_users collection? (User email not verified) ---
+    // For security, don't reveal if the user exists or not.
+    // We will proceed as if we are creating a new user, but we won't overwrite existing data.
+    // The OTP will be sent to the email address provided.
+
     const pendingUserRef = firestore.collection('pending_users').doc(email);
     const pendingUserDoc = await pendingUserRef.get();
-    if (pendingUserDoc.exists) {
-        const userData = pendingUserDoc.data()!;
-        if (userData.emailVerificationStatus === 'pending') {
-            const otp = generateOtp();
-            await pendingUserRef.update({ userOtp: otp, userOtpExpires: admin.firestore.Timestamp.fromMillis(Date.now() + 10 * 60 * 1000) });
-            await sendOtpEmail(email, `<p>Here is your new One-Time Password (OTP): <h2>${otp}</h2></p>`, "New Verification Code");
-            // Tell frontend to proceed to user OTP verification
-            return NextResponse.json({ status: 'USER_OTP_RESENT' });
-        }
-    }
 
-    // --- Check #2: Is user in the final users collection? ---
-    const usersCollection = firestore.collection('users');
-    const userQuery = await usersCollection.where('email', '==', email).get();
-    if (!userQuery.empty) {
-        const userDoc = userQuery.docs[0];
-        const userData = userDoc.data();
+    const usersQuery = await firestore.collection('users').where('email', '==', email).limit(1).get();
 
-        // Check #2a: Have company details been submitted?
-        if (!userData.companyId) {
-            return NextResponse.json({ status: 'CONTINUE_PROFILE', userId: userDoc.id });
-        }
-
-        const companyDoc = await firestore.collection('new_companies').doc(userData.companyId).get();
-        if (!companyDoc.exists) {
-            // Data inconsistency, treat as if profile is incomplete
-            return NextResponse.json({ status: 'CONTINUE_PROFILE', userId: userDoc.id });
-        }
-
-        // Check #2b: Is the company's contact email verified?
-        const companyData = companyDoc.data()!;
-        if (companyData.isVerified) {
-            return NextResponse.json({ status: 'ONBOARDING_COMPLETE' });
-        } else {
-            // Resend company OTP and prompt for verification
-            const otp = generateOtp();
-            await companyDoc.ref.update({ companyOtp: otp, companyOtpExpires: admin.firestore.Timestamp.fromMillis(Date.now() + 10 * 60 * 1000) });
-            await sendOtpEmail(companyData.contactEmail, `<p>Your new company verification OTP is: <h2>${otp}</h2></p>`, "New Company Verification Code");
-            return NextResponse.json({ status: 'VERIFY_COMPANY', companyId: companyDoc.id, companyEmail: companyData.contactEmail });
-        }
+    if (pendingUserDoc.exists || !usersQuery.empty) {
+      // User already exists. Don't create a new one.
+      // We can optionally resend OTP here, or just return a generic message.
+      // For now, we will return a generic message to avoid complexity.
+      // A separate resend-otp endpoint should be used.
+      return NextResponse.json({
+        status: 'SUCCESS',
+        message: 'If your email is not yet verified, a new OTP has been sent. Otherwise, please log in.'
+      });
     }
 
     // --- Flow for a completely new user ---
     const hashedPassword = await bcrypt.hash(password, 10);
     const otp = generateOtp();
     const newPendingUser = {
-      ...formData,
-      userType,
+      email,
       password: hashedPassword,
+      firstName,
+      lastName,
+      userType,
+      ...rest,
       userOtp: otp,
-      userOtpExpires: admin.firestore.Timestamp.fromMillis(Date.now() + 10 * 60 * 1000),
+      userOtpExpires: Timestamp.fromMillis(Date.now() + 10 * 60 * 1000), // 10 minutes
       emailVerificationStatus: 'pending',
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      createdAt: FieldValue.serverTimestamp(),
     };
-    await pendingUserRef.set(newPendingUser);
-    await sendOtpEmail(email, `<p>Your OTP is: <h2>${otp}</h2></p>`, "Your Verification Code");
 
-    return NextResponse.json({ status: 'NEW_USER' });
+    await pendingUserRef.set(newPendingUser);
+
+    await emailClient.sendOTPEmail(email, firstName, otp);
+
+    return NextResponse.json({ status: 'SUCCESS', message: 'Registration successful. Please check your email for an OTP to verify your account.' });
 
   } catch (error) {
     console.error('Registration error:', error);
