@@ -1,0 +1,590 @@
+'use client';
+
+import React, { useState, useEffect, ChangeEvent } from 'react';
+import Link from 'next/link';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { useForm, useWatch, Controller, Control, UseFormRegister, FieldErrors, UseFormSetValue, SubmitHandler } from 'react-hook-form';
+import { useSignup } from '@/context/SignupContext';
+import { useOnboarding } from '@/context/OnboardingContext';
+import {
+  SignUpProps,
+  EmailValidation,
+  InvestorType,
+  InvestmentType,
+  SignUpFormData
+} from '@/types/auth';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Textarea } from "@/components/ui/textarea";
+import { Progress } from "@/components/ui/progress";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
+import { Building2, User } from "lucide-react";
+import CompanyOnboarding from "@/components/onboarding/CompanyOnboarding";
+
+// --- Types ---
+interface InvestorStep1Props {
+  control: Control<SignUpFormData>;
+  register: UseFormRegister<SignUpFormData>;
+  errors: FieldErrors<SignUpFormData>;
+  onEmailBlur: (e: React.FocusEvent<HTMLInputElement>) => void;
+  emailValidation: EmailValidation;
+}
+
+interface InvestorStep2Props {
+  control: Control<SignUpFormData>;
+  errors: FieldErrors<SignUpFormData>;
+  setValue: UseFormSetValue<SignUpFormData>;
+}
+
+interface OtpVerificationStepProps {
+  onOtpSubmit: (data: { otp: string }) => Promise<void>;
+  isLoading: boolean;
+  userEmail: string;
+  onResendOtp: () => Promise<void>;
+}
+
+interface OtpFormData {
+  otp: string;
+}
+
+// --- Constants ---
+const investmentTypes = ['Angel', 'Seed', 'Series A'];
+const chequeSizes = ['25K-50K', '50K-100K', '100K+'];
+
+// --- Form Schemas ---
+const investorStep1Schema = z.object({
+  firstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"),
+  email: z.string().email("Invalid email address"),
+  phoneCountryCode: z.string(),
+  phoneNumber: z.string().min(1, "Phone number is required"),
+  linkedinProfile: z.string().url("Please enter a valid LinkedIn URL").or(z.literal('')),
+  password: z.string().min(8, "Password must be at least 8 characters"),
+  confirmPassword: z.string(),
+}).refine(data => data.password === data.confirmPassword, { message: "Passwords do not match", path: ["confirmPassword"] });
+
+const investorStep2Schema = z.object({
+  investorType: z.enum(["UHNI/HNI", "Family Office", "VC", "Private Equity"]),
+  investmentType: z.array(z.string()).min(1, "Please select at least one investment type"),
+  chequeSize: z.string().min(1, "Please select a cheque size"),
+  interestedSectors: z.string().min(1, "Please list interested sectors")
+    .transform(val => val.split(',').map(s => s.trim()).filter(s => s.length > 0))
+    .refine(arr => arr.length > 0, { message: "Please list at least one valid sector." }),
+});
+
+const otpSchema = z.object({
+  otp: z.string().min(6, "Your OTP must be 6 characters."),
+});
+
+const allInvestorStepSchemas = [investorStep1Schema, investorStep2Schema];
+
+// Helper component for form errors
+const FormError: React.FC<{ error?: { message?: string } | string }> = ({ error }) => {
+  if (!error) return null;
+  const message = typeof error === 'string' ? error : error.message;
+  return message ? <p className="text-red-500 text-xs">{message}</p> : null;
+};
+
+// OTP Verification Step Component
+const OtpVerificationStep: React.FC<OtpVerificationStepProps> = ({ onOtpSubmit, isLoading, userEmail, onResendOtp }) => {
+  const { register, handleSubmit, control, formState: { errors } } = useForm<OtpFormData>({
+    resolver: zodResolver(otpSchema),
+  });
+
+  const [cooldown, setCooldown] = useState(0);
+  const [resendStatus, setResendStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+
+  useEffect(() => {
+    if (cooldown > 0) {
+      const timer = setInterval(() => setCooldown(prev => prev - 1), 1000);
+      return () => clearInterval(timer);
+    }
+  }, [cooldown]);
+
+  const handleResend = async () => {
+    setResendStatus('loading');
+    try {
+      await onResendOtp();
+      setResendStatus('success');
+      setCooldown(60);
+    } catch (err) {
+      setResendStatus('error');
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit(onOtpSubmit as SubmitHandler<OtpFormData>)} className="space-y-4">
+      <div className="text-center space-y-4">
+        <h3 className="text-lg font-semibold">Verify Your Email</h3>
+        <p className="text-gray-400">
+          An OTP has been sent to <span className="font-semibold text-primary">{userEmail}</span>
+        </p>
+        <div className="flex justify-center">
+          <Controller
+            name="otp"
+            control={control}
+            render={({ field }) => (
+              <InputOTP maxLength={6} {...field}>
+                <InputOTPGroup>
+                  {[...Array(6)].map((_, i) => (
+                    <InputOTPSlot key={i} index={i} />
+                  ))}
+                </InputOTPGroup>
+              </InputOTP>
+            )}
+          />
+        </div>
+        {errors.otp && <FormError error={errors.otp} />}
+        <div className="flex justify-center mt-4">
+          <Button 
+            type="button"
+            variant="link"
+            disabled={cooldown > 0 || resendStatus === 'loading'}
+            onClick={handleResend}
+            className="text-primary"
+          >
+            {cooldown > 0 ? `Resend OTP in ${cooldown}s` : 'Resend OTP'}
+          </Button>
+        </div>
+      </div>
+      <div className="flex justify-center">
+        <Button type="submit" disabled={isLoading}>
+          {isLoading ? 'Verifying...' : 'Verify OTP'}
+        </Button>
+      </div>
+    </form>
+  );
+};
+
+// InvestorStep1 Component
+const InvestorStep1: React.FC<InvestorStep1Props> = ({ control, register, errors, onEmailBlur, emailValidation }) => {
+  const { formData, handleChange } = useOnboarding();
+  
+  const handleInputChange = (field: keyof SignUpFormData) => (e: ChangeEvent<HTMLInputElement>) => {
+    handleChange(field)(e.target.value);
+  };
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+      <div className="space-y-2">
+        <Label>First Name</Label>
+        <Input {...register("firstName")} value={formData.firstName} onChange={handleInputChange('firstName')} className="bg-gray-700" />
+        <FormError error={errors.firstName} />
+      </div>
+      <div className="space-y-2">
+        <Label>Last Name</Label>
+        <Input {...register("lastName")} value={formData.lastName} onChange={handleInputChange('lastName')} className="bg-gray-700" />
+        <FormError error={errors.lastName} />
+      </div>
+      <div className="space-y-2 md:col-span-2">
+        <Label>Email</Label>
+        <Input type="email" {...register("email")} value={formData.email} onChange={handleInputChange('email')} onBlur={onEmailBlur} className="bg-gray-700" />
+        <FormError error={errors.email} />
+        {emailValidation.status !== 'idle' && (
+          <p className={`text-xs ${emailValidation.status === 'valid' ? 'text-green-500' : emailValidation.status === 'checking' ? 'text-yellow-500' : 'text-red-500'}`}>
+            {emailValidation.message}
+          </p>
+        )}
+      </div>
+      <div className="space-y-2">
+        <Label>Phone Country Code</Label>
+        <Input {...register("phoneCountryCode")} value={formData.phoneCountryCode} onChange={handleInputChange('phoneCountryCode')} className="bg-gray-700" placeholder="+91" />
+        <FormError error={errors.phoneCountryCode} />
+      </div>
+      <div className="space-y-2">
+        <Label>Phone Number</Label>
+        <Input {...register("phoneNumber")} value={formData.phoneNumber} onChange={handleInputChange('phoneNumber')} className="bg-gray-700" />
+        <FormError error={errors.phoneNumber} />
+      </div>
+      <div className="space-y-2 md:col-span-2">
+        <Label>LinkedIn Profile</Label>
+        <Input {...register("linkedinProfile")} value={formData.linkedinProfile} onChange={handleInputChange('linkedinProfile')} className="bg-gray-700" placeholder="https://linkedin.com/in/username" />
+        <FormError error={errors.linkedinProfile} />
+      </div>
+      <div className="space-y-2">
+        <Label>Password</Label>
+        <Input type="password" {...register("password")} value={formData.password} onChange={handleInputChange('password')} className="bg-gray-700" />
+        <FormError error={errors.password} />
+      </div>
+      <div className="space-y-2">
+        <Label>Confirm Password</Label>
+        <Input type="password" {...register("confirmPassword")} value={formData.confirmPassword} onChange={handleInputChange('confirmPassword')} className="bg-gray-700" />
+        <FormError error={errors.confirmPassword} />
+      </div>
+    </div>
+  );
+};
+
+// InvestorStep2 Component
+const InvestorStep2: React.FC<InvestorStep2Props> = ({ control, errors, setValue }) => {
+  const { formData, handleSelectChange, handleInvestmentTypeChange } = useOnboarding();
+  
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+      <div className="space-y-2 md:col-span-2">
+        <Label>Type of Investor</Label>
+        <Controller
+          name="investorType"
+          control={control}
+          render={({ field }) => (
+            <Select onValueChange={field.onChange} value={field.value}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select investor type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="UHNI/HNI">UHNI/HNI</SelectItem>
+                <SelectItem value="Family Office">Family Office</SelectItem>
+                <SelectItem value="VC">VC</SelectItem>
+                <SelectItem value="Private Equity">Private Equity</SelectItem>
+              </SelectContent>
+            </Select>
+          )}
+        />
+        <FormError error={errors.investorType} />
+      </div>
+      
+      <div className="space-y-2 md:col-span-2">
+        <Label>Investment Type</Label>
+        <div className="flex flex-wrap gap-2">
+          {investmentTypes.map((type) => (
+            <Controller
+              key={type}
+              name="investmentType"
+              control={control}
+              render={({ field }) => (
+                <Button
+                  type="button"
+                  variant={field.value?.includes(type) ? "default" : "outline"}
+                  onClick={() => {
+                    const newValue = field.value?.includes(type)
+                      ? field.value.filter((t: string) => t !== type)
+                      : [...(field.value || []), type];
+                    field.onChange(newValue);
+                    handleInvestmentTypeChange(newValue);
+                  }}
+                >
+                  {type}
+                </Button>
+              )}
+            />
+          ))}
+        </div>
+        <FormError error={errors.investmentType} />
+      </div>
+
+      <div className="space-y-2 md:col-span-2">
+        <Label>Cheque Size</Label>
+        <Controller
+          name="chequeSize"
+          control={control}
+          render={({ field }) => (
+            <Select onValueChange={field.onChange} value={field.value}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select cheque size" />
+              </SelectTrigger>
+              <SelectContent>
+                {chequeSizes.map((size) => (
+                  <SelectItem key={size} value={size}>
+                    {size}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        />
+        <FormError error={errors.chequeSize} />
+      </div>
+
+      <div className="space-y-2 md:col-span-2">
+        <Label>Sectors of Interest</Label>
+        <Controller
+          name="interestedSectors"
+          control={control}
+          render={({ field }) => (
+            <Textarea
+              className="bg-gray-700"
+              placeholder="Enter sectors separated by commas"
+              {...field}
+            />
+          )}
+        />
+        <FormError error={errors.interestedSectors} />
+      </div>
+    </div>
+  );
+};
+
+// Main SignUp Component
+const SignUp: React.FC<SignUpProps> = ({ setCurrentView, userType, setUserType }) => {
+  const { signupData, updateSignupData } = useSignup();
+  const { handleChange, handleSelectChange, handleInvestmentTypeChange } = useOnboarding();
+  
+  const [investorStep, setInvestorStep] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [investorFlowStep, setInvestorFlowStep] = useState<'details' | 'verifyOtp' | 'success'>('details');
+  const [investorAgreed, setInvestorAgreed] = useState(false);
+  const [emailValidation, setEmailValidation] = useState<EmailValidation>({ status: 'idle', message: '' });
+
+  const investorForm = useForm<SignUpFormData>({
+    resolver: zodResolver(allInvestorStepSchemas[investorStep - 1]),
+    mode: 'onChange',
+    defaultValues: signupData
+  });
+
+  const watchedInvestmentTypes = useWatch({
+    control: investorForm.control,
+    name: 'investmentType'
+  }) || [];
+
+  const handleBothChange = (checked: boolean) => {
+    const newValue = checked ? investmentTypes : [];
+    handleSelectChange('investmentType')(newValue);
+    investorForm.setValue('investmentType', newValue);
+  };
+
+  const handleEmailBlur = async (e: React.FocusEvent<HTMLInputElement>) => {
+    const email = e.target.value;
+    if (!email) return;
+
+    const emailSchema = z.string().email("Invalid email address");
+    const validationResult = emailSchema.safeParse(email);
+    if (!validationResult.success) {
+      setEmailValidation({ status: 'invalid', message: 'Please enter a valid email address.' });
+      return;
+    }
+
+    setEmailValidation({ status: 'checking', message: 'Checking email...' });
+    try {
+      const response = await fetch('/api/company/check', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ companyEmail: email }),
+      });
+      const data = await response.json();
+      if (data.exists) {
+        setEmailValidation({ status: 'invalid', message: 'This email is already registered.' });
+      } else {
+        setEmailValidation({ status: 'valid', message: 'This email is available.' });
+      }
+    } catch (error) {
+      setEmailValidation({ status: 'invalid', message: 'Could not verify email. Please try again.' });
+    }
+  };
+
+  const nextInvestorStep = async () => {
+    if (await investorForm.trigger()) {
+      setInvestorStep(p => p + 1);
+    }
+  };
+
+  const prevInvestorStep = () => setInvestorStep(p => p - 1);
+
+  const handleInvestorSubmit = async (data: SignUpFormData) => {
+    setLoading(true);
+    setError('');
+    try {
+      const allData = { ...signupData, ...investorForm.getValues(), ...data };
+      updateSignupData(allData);
+      
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...allData, userType: 'investor' }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Something went wrong');
+      
+      window.localStorage.setItem('emailForVerification', allData.email);
+      setInvestorFlowStep('verifyOtp');
+    } catch (err) {
+      console.error('Registration error:', err);
+      setError(err instanceof Error ? err.message : 'Registration failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleOtpSubmit = async (data: { otp: string }) => {
+    setLoading(true);
+    setError('');
+    try {
+      const email = window.localStorage.getItem('emailForVerification');
+      if (!email) throw new Error('Email not found');
+
+      const response = await fetch('/api/auth/verify-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, otp: data.otp }),
+      });
+      const result = await response.json();
+      
+      if (!response.ok) throw new Error(result.error || 'Invalid OTP');
+      setInvestorFlowStep('success');
+    } catch (err) {
+      console.error('OTP verification error:', err);
+      setError(err instanceof Error ? err.message : 'Verification failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    const email = window.localStorage.getItem('emailForVerification');
+    if (!email) throw new Error('Email not found');
+
+    const response = await fetch('/api/auth/resend-otp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    });
+
+    if (!response.ok) {
+      const result = await response.json();
+      throw new Error(result.error || 'Failed to resend OTP');
+    }
+  };
+
+  if (investorFlowStep === 'verifyOtp') {
+    return (
+      <Card className="w-full max-w-md mx-auto">
+        <CardHeader className="space-y-1">
+          <CardTitle className="text-2xl text-center">Verify Your Email</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <OtpVerificationStep
+            onOtpSubmit={handleOtpSubmit}
+            isLoading={loading}
+            userEmail={window.localStorage.getItem('emailForVerification') || ''}
+            onResendOtp={handleResendOtp}
+          />
+          {error && <p className="text-red-500 text-center mt-4">{error}</p>}
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (investorFlowStep === 'success') {
+    return (
+      <Card className="w-full max-w-md mx-auto">
+        <CardHeader className="space-y-1">
+          <CardTitle className="text-2xl text-center">Registration Complete!</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-center mb-4">Your email has been verified successfully.</p>
+          <div className="flex justify-center">
+            <Button onClick={() => setCurrentView('login')}>
+              Proceed to Login
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="w-full">
+      <Tabs defaultValue={userType === 'investor' ? 'investor' : 'founder'} className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger
+            value="investor"
+            className="data-[state=active]:bg-primary"
+            onClick={() => setUserType('investor')}
+          >
+            <User className="w-4 h-4 mr-2" />
+            Investor
+          </TabsTrigger>
+          <TabsTrigger
+            value="founder"
+            className="data-[state=active]:bg-primary"
+            onClick={() => setUserType('founder')}
+          >
+            <Building2 className="w-4 h-4 mr-2" />
+            Founder
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="investor">
+          <Card>
+            <CardHeader>
+              <CardTitle>Sign Up as an Investor</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={investorForm.handleSubmit(handleInvestorSubmit)} className="space-y-6">
+                {investorStep === 1 && (
+                  <InvestorStep1
+                    control={investorForm.control}
+                    register={investorForm.register}
+                    errors={investorForm.formState.errors}
+                    onEmailBlur={handleEmailBlur}
+                    emailValidation={emailValidation}
+                  />
+                )}
+
+                {investorStep === 2 && (
+                  <InvestorStep2
+                    control={investorForm.control}
+                    errors={investorForm.formState.errors}
+                    setValue={investorForm.setValue}
+                  />
+                )}
+
+                {error && (
+                  <div className="text-red-500 text-center">{error}</div>
+                )}
+
+                <div className="flex justify-between">
+                  {investorStep > 1 && (
+                    <Button type="button" variant="outline" onClick={prevInvestorStep}>
+                      Previous
+                    </Button>
+                  )}
+                  <div className="flex-1" />
+                  {investorStep === 1 && (
+                    <Button type="button" onClick={nextInvestorStep}>
+                      Next
+                    </Button>
+                  )}
+                  {investorStep === 2 && (
+                    <Button type="submit" disabled={loading}>
+                      {loading ? 'Creating Account...' : 'Create Account'}
+                    </Button>
+                  )}
+                </div>
+
+                <div className="text-center">
+                  <p className="text-sm text-gray-500">
+                    Already have an account?{' '}
+                    <Button variant="link" className="p-0" onClick={() => setCurrentView('login')}>
+                      Login here
+                    </Button>
+                  </p>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="founder">
+          <Card>
+            <CardHeader>
+              <CardTitle>Sign Up as a Founder</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <CompanyOnboarding />
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+};
+
+export default SignUp;

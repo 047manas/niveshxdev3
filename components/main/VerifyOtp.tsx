@@ -105,54 +105,89 @@ const VerifyOtp: React.FC<VerifyOtpProps> = ({ setCurrentView }): React.ReactNod
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-[#0D1B2A]">
-      <Card className="w-full max-w-md bg-[#1a2332] border-gray-700 text-white">
-        <CardHeader className="text-center">
-          <CardTitle className="text-3xl font-bold">Verify your email</CardTitle>
-          <CardDescription className="text-gray-400">
-            We&apos;ve sent a 6-digit code to {email}. Please enter it below.
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-gray-900 to-gray-800 p-4 sm:p-6 md:p-8">
+      <Card className="w-full max-w-md bg-gray-800/50 backdrop-blur-lg border border-gray-700 shadow-xl rounded-xl">
+        <CardHeader className="text-center space-y-2 pb-6">
+          <CardTitle className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-violet-400 bg-clip-text text-transparent">
+            Verify your email
+          </CardTitle>
+          <CardDescription className="text-gray-300 text-base">
+            We&apos;ve sent a 6-digit code to <span className="font-medium text-blue-400">{email}</span>
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form className="space-y-6" onSubmit={onVerify}>
+          <form className="space-y-8" onSubmit={onVerify}>
             <div className="flex justify-center">
-              <InputOTP maxLength={6} value={otp} onChange={setOtp}>
+              <InputOTP 
+                maxLength={6} 
+                value={otp} 
+                onChange={setOtp}
+                className="gap-2 sm:gap-3"
+              >
                 <InputOTPGroup>
-                  <InputOTPSlot index={0} className="bg-[#0D1B2A] border-gray-600 text-white" />
-                  <InputOTPSlot index={1} className="bg-[#0D1B2A] border-gray-600 text-white" />
-                  <InputOTPSlot index={2} className="bg-[#0D1B2A] border-gray-600 text-white" />
-                  <InputOTPSlot index={3} className="bg-[#0D1B2A] border-gray-600 text-white" />
-                  <InputOTPSlot index={4} className="bg-[#0D1B2A] border-gray-600 text-white" />
-                  <InputOTPSlot index={5} className="bg-[#0D1B2A] border-gray-600 text-white" />
+                  {[...Array(6)].map((_, i) => (
+                    <InputOTPSlot 
+                      key={i} 
+                      index={i} 
+                      className="w-10 h-12 sm:w-12 sm:h-14 bg-gray-900/50 border-gray-600 text-white rounded-lg transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20" 
+                    />
+                  ))}
                 </InputOTPGroup>
               </InputOTP>
             </div>
 
-            <div className="text-center">
+            <div className="text-center mt-2">
               <Button
                 type="button"
-                variant="link"
+                variant="ghost"
                 onClick={handleResendOtp}
                 disabled={resendCooldown > 0 || resendLoading}
-                className="text-sm text-link hover:underline"
+                className="text-sm text-gray-400 hover:text-gray-300 transition-colors"
               >
-                {resendLoading
-                  ? 'Sending...'
-                  : resendCooldown > 0
-                    ? `Resend OTP in ${resendCooldown}s`
-                    : 'Did not receive code? Resend OTP'}
+                {resendLoading ? (
+                  <span className="flex items-center gap-2">
+                    <span className="animate-spin">⏳</span> Sending...
+                  </span>
+                ) : resendCooldown > 0 ? (
+                  `Resend OTP in ${resendCooldown}s`
+                ) : (
+                  'Did not receive code? Resend OTP'
+                )}
               </Button>
             </div>
 
-            {error && <p className="text-sm text-center text-red-500">{error}</p>}
-            {success && <p className="text-sm text-center text-green-500">{success}</p>}
+            {error && (
+              <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20">
+                <p className="text-sm text-center text-red-400">{error}</p>
+              </div>
+            )}
+            {success && (
+              <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20">
+                <p className="text-sm text-center text-green-400">{success}</p>
+              </div>
+            )}
 
-            <div className="flex justify-between items-center gap-4 pt-2">
-                <Button type="button" variant="outline" onClick={() => setCurrentView('signup')} className="w-full text-white border-gray-600 hover:bg-gray-700">
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-4 pt-4">
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => setCurrentView('signup')} 
+                  className="w-full sm:w-1/2 text-white border-gray-700 bg-gray-800/50 hover:bg-gray-700/50 transition-colors"
+                >
                     Back
                 </Button>
-                <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" disabled={loading}>
-                {loading ? 'Verifying...' : 'Verify'}
+                <Button 
+                  type="submit" 
+                  className="w-full sm:w-1/2 bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-500 hover:to-violet-500 text-white transition-all disabled:opacity-50" 
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <span className="flex items-center gap-2">
+                      <span className="animate-spin">⏳</span> Verifying...
+                    </span>
+                  ) : (
+                    'Verify'
+                  )}
                 </Button>
             </div>
           </form>
