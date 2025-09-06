@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import admin from '@/lib/firebase-admin';
+import { firestore, FieldValue } from '@/lib/server-utils/firebase-admin';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import emailClient from '@/lib/email/client';
-import { rateLimit, validateEmail } from '@/lib/utils';
+import { rateLimit } from '@/lib/server-utils/rate-limit';
+import { validateEmail } from '@/lib/utils';
 
 interface UserData {
   password: string;
