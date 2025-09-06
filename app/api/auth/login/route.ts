@@ -11,9 +11,11 @@ interface UserData {
   password: string;
   email: string;
   emailVerificationStatus: string;
+  isVerified?: boolean;
   firstName: string;
   lastName: string;
-  userType: string;
+  userType: 'company' | 'investor';
+  companyId?: string;
 }
 
 const generateOtp = () => {
@@ -32,153 +34,96 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid email format' }, { status: 400 });
     }
 
-    // Apply rate limiting - 5 attempts per 15 minutes
     const identifier = `login:${email}`;
     const { success, limit, reset } = await rateLimit(identifier, 5, 15 * 60);
     
     if (!success) {
-      return NextResponse.json({
-        error: 'Too many login attempts. Please try again later.',
-        reset,
-        limit
-      }, { status: 429 });
+      return NextResponse.json({ error: 'Too many login attempts. Please try again later.', reset, limit }, { status: 429 });
     }
 
-    // First check the users collection (verified users)
     const userResult = await firestore.runTransaction(async (transaction: Transaction) => {
       const usersCollection = firestore.collection('users');
-      const userQuery = await transaction.get(
-        usersCollection.where('email', '==', email).limit(1)
-      );
-
+      const userQuery = await transaction.get(usersCollection.where('email', '==', email).limit(1));
       if (!userQuery.empty) {
         const doc = userQuery.docs[0];
         const data = doc.data() as UserData;
-        return { doc, data };
+        return { doc, data, source: 'users' };
       }
 
-      // If not found in users, check pending_users collection
       const pendingUsersCollection = firestore.collection('pending_users');
-      const pendingUserDoc = await transaction.get(
-        pendingUsersCollection.doc(email)
-      );
-
+      const pendingUserDoc = await transaction.get(pendingUsersCollection.doc(email));
       if (pendingUserDoc.exists) {
         const data = pendingUserDoc.data() as UserData;
-        return { doc: pendingUserDoc, data };
+        return { doc: pendingUserDoc, data, source: 'pending_users' };
       }
 
       return null;
     });
 
     if (!userResult) {
-      // Log failed attempt
-      await firestore.collection('audit_logs').add({
-        type: 'LOGIN_FAILED',
-        email,
-        reason: 'USER_NOT_FOUND',
-        timestamp: FieldValue.serverTimestamp(),
-        ip: req.headers.get('x-forwarded-for') || 'unknown'
-      });
-
+      await firestore.collection('audit_logs').add({ type: 'LOGIN_FAILED', email, reason: 'USER_NOT_FOUND', timestamp: FieldValue.serverTimestamp(), ip: req.headers.get('x-forwarded-for') || 'unknown' });
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
     }
 
-    const { doc: userDoc, data: userData } = userResult;
+    const { doc: userDoc, data: userData, source } = userResult;
 
     if (!userData.password) {
-      await firestore.collection('audit_logs').add({
-        type: 'LOGIN_FAILED',
-        email,
-        reason: 'NO_PASSWORD',
-        timestamp: FieldValue.serverTimestamp(),
-        ip: req.headers.get('x-forwarded-for') || 'unknown'
-      });
-
+      await firestore.collection('audit_logs').add({ type: 'LOGIN_FAILED', email, reason: 'NO_PASSWORD', timestamp: FieldValue.serverTimestamp(), ip: req.headers.get('x-forwarded-for') || 'unknown' });
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
     }
 
     const isPasswordValid = await bcrypt.compare(password, userData.password);
 
     if (!isPasswordValid) {
-      await firestore.collection('audit_logs').add({
-        type: 'LOGIN_FAILED',
-        email,
-        reason: 'INVALID_PASSWORD',
-        timestamp: FieldValue.serverTimestamp(),
-        ip: req.headers.get('x-forwarded-for') || 'unknown'
-      });
-
+      await firestore.collection('audit_logs').add({ type: 'LOGIN_FAILED', email, reason: 'INVALID_PASSWORD', timestamp: FieldValue.serverTimestamp(), ip: req.headers.get('x-forwarded-for') || 'unknown' });
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
     }
 
-      if (userData.emailVerificationStatus !== 'verified') {
-      // User is not verified, send new OTP
-      const otp = generateOtp();
-      const otpExpires = Timestamp.fromMillis(Date.now() + 30 * 60 * 1000); // 30 minutes
+    // --- Verification Logic ---
+    const isUserVerified = source === 'users' ? userData.isVerified === true : userData.emailVerificationStatus === 'verified';
 
+    if (!isUserVerified) {
+      const otp = generateOtp();
       await userDoc.ref.update({
         userOtp: otp,
-        userOtpExpires: otpExpires,
-        otpAttempts: 0,
-        lastOtpSentAt: FieldValue.serverTimestamp()
+        userOtpExpires: Timestamp.fromMillis(Date.now() + 30 * 60 * 1000),
       });
-      // Send verification email
       await sendOtpEmail(email, `<p>Your new OTP is: <h2>${otp}</h2></p>`, "New Verification Code");
-
-      return NextResponse.json({ error: 'NOT_VERIFIED' }, { status: 401 });
+      return NextResponse.json({ error: 'USER_NOT_VERIFIED' }, { status: 401 });
     }
 
-    // Generate JWT with user claims
-    const token = jwt.sign(
-      { 
-        uid: userDoc.id,
-        email: userData.email,
-        userType: userData.userType,
-        firstName: userData.firstName,
-        lastName: userData.lastName
-      },
-      process.env.JWT_SECRET!,
-      { 
-        expiresIn: '1d',
-        audience: process.env.JWT_AUDIENCE || 'niveshx-app',
-        issuer: process.env.JWT_ISSUER || 'niveshx-auth'
+    if (userData.userType === 'company') {
+      if (!userData.companyId) {
+        // This case should ideally not happen for a verified user, but as a fallback.
+        return NextResponse.json({ error: 'COMPANY_PROFILE_INCOMPLETE' }, { status: 401 });
       }
+
+      const companyDoc = await firestore.collection('new_companies').doc(userData.companyId).get();
+      if (!companyDoc.exists || companyDoc.data()?.isVerified !== true) {
+        // Company is not verified. We can't send an OTP from here easily without more info.
+        // The frontend should handle this by redirecting to a page where they can trigger company OTP.
+        return NextResponse.json({ error: 'COMPANY_NOT_VERIFIED', companyId: userData.companyId }, { status: 401 });
+      }
+    }
+
+    // --- JWT Generation ---
+    const token = jwt.sign(
+      { uid: userDoc.id, email: userData.email, userType: userData.userType, firstName: userData.firstName, lastName: userData.lastName },
+      process.env.JWT_SECRET!,
+      { expiresIn: '1d', audience: process.env.JWT_AUDIENCE || 'niveshx-app', issuer: process.env.JWT_ISSUER || 'niveshx-auth' }
     );
 
-    // Log successful login
-    await firestore.collection('audit_logs').add({
-      type: 'LOGIN_SUCCESS',
-      userId: userDoc.id,
-      email,
-      timestamp: FieldValue.serverTimestamp(),
-      ip: req.headers.get('x-forwarded-for') || 'unknown'
-    });
+    await firestore.collection('audit_logs').add({ type: 'LOGIN_SUCCESS', userId: userDoc.id, email, timestamp: FieldValue.serverTimestamp(), ip: req.headers.get('x-forwarded-for') || 'unknown' });
 
     return NextResponse.json({ 
       success: true, 
       token,
-      user: {
-        id: userDoc.id,
-        email: userData.email,
-        firstName: userData.firstName,
-        lastName: userData.lastName,
-        userType: userData.userType
-      }
+      user: { id: userDoc.id, email: userData.email, firstName: userData.firstName, lastName: userData.lastName, userType: userData.userType }
     });
 
   } catch (error) {
     console.error('Login error:', error);
-    
-    // Log unexpected errors
-    await firestore.collection('audit_logs').add({
-      type: 'LOGIN_ERROR',
-      error: error instanceof Error ? error.message : 'Unknown error',
-      timestamp: FieldValue.serverTimestamp()
-    });
-
-    return NextResponse.json({ 
-      error: 'An unexpected error occurred while trying to log in.' 
-    }, { status: 500 });
+    await firestore.collection('audit_logs').add({ type: 'LOGIN_ERROR', error: error instanceof Error ? error.message : 'Unknown error', timestamp: FieldValue.serverTimestamp() });
+    return NextResponse.json({ error: 'An unexpected error occurred while trying to log in.' }, { status: 500 });
   }
 }

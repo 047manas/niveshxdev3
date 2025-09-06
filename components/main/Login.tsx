@@ -40,12 +40,21 @@ const Login = ({ setCurrentView }) => {
       const responseData = await response.json();
 
       if (!response.ok) {
-        if (responseData.error === 'NOT_VERIFIED') {
+        const error = responseData.error || 'Login failed';
+        if (error === 'USER_NOT_VERIFIED') {
           window.localStorage.setItem('emailForVerification', data.email);
           setCurrentView('verify-otp');
           return;
         }
-        throw new Error(responseData.error || 'Login failed');
+        if (error === 'COMPANY_NOT_VERIFIED') {
+          setError('Your company email is not verified. Please check your company email for a verification link or contact support.');
+          return;
+        }
+        if (error === 'COMPANY_PROFILE_INCOMPLETE') {
+            setError('Your company profile is incomplete. Please contact support.');
+            return;
+        }
+        throw new Error(error);
       }
 
       await login(responseData.token);
