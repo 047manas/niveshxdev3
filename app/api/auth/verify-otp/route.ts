@@ -1,7 +1,8 @@
 // In niveshxdev3-feature-platform-hardening-and-refactor/app/api/auth/verify-otp/route.ts
 
 import { NextRequest, NextResponse } from 'next/server';
-import admin from '@/lib/firebase-admin';
+import { firestore, FieldValue, Timestamp } from '@/lib/server-utils/firebase-admin';
+import type { Transaction } from 'firebase-admin/firestore';
 import bcrypt from 'bcryptjs';
 
 export async function POST(req: NextRequest) {
@@ -15,7 +16,7 @@ export async function POST(req: NextRequest) {
   console.log(`[Verify OTP] Received request for email: ${email}`);
 
   try {
-    const firestore = admin.firestore();
+    console.log(`[Verify OTP] Checking in pending_users collection for email: ${email}`);
     
     // Check in pending_users collection (for user registration OTPs)
     const pendingUserRef = firestore.collection('pending_users').doc(email);
@@ -36,17 +37,19 @@ export async function POST(req: NextRequest) {
         // Move user from pending_users to users collection
         const { userOtp, userOtpExpires, emailVerificationStatus, ...finalUserData } = userData;
         
-        await firestore.runTransaction(async (transaction) => {
+        await firestore.runTransaction(async (transaction: Transaction) => {
           // Add to users collection as verified
           const userRef = firestore.collection('users').doc();
           transaction.set(userRef, {
             ...finalUserData,
             isVerified: true,
-            createdAt: admin.firestore.FieldValue.serverTimestamp()
+            createdAt: FieldValue.serverTimestamp()
           });
           
           // Remove from pending_users
           transaction.delete(pendingUserRef);
+
+          console.log(`[Verify OTP] User data moved to users collection for ${email}`);
         });
         
         console.log(`[Verify OTP] SUCCESS: User ${email} has been verified and moved to users collection.`);

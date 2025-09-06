@@ -1,70 +1,75 @@
 import { NextRequest, NextResponse } from 'next/server';
-import admin from '@/lib/firebase-admin';
-import { sendOtpEmail } from '@/lib/email'; // Re-using for sending reset links
+import { firestore, FieldValue, Timestamp } from '@/lib/server-utils/firebase-admin';
+import emailClient from '@/lib/email/client';
 import crypto from 'crypto';
+import { validateEmail } from '@/lib/utils';
 
 export async function POST(req: NextRequest) {
   try {
     const { email } = await req.json();
 
-    if (!email) {
-      return NextResponse.json({ error: 'Email is required' }, { status: 400 });
+    if (!email || !validateEmail(email)) {
+      return NextResponse.json({ error: 'Valid email is required' }, { status: 400 });
     }
 
-    const firestore = admin.firestore();
+    console.log('Processing password reset request for:', email);
     
+    // Initialize variables for document and data
+    let foundDoc: FirebaseFirestore.DocumentSnapshot<FirebaseFirestore.DocumentData> | null = null;
+    let foundData: FirebaseFirestore.DocumentData | null = null;
+
     // Check in the users collection first (verified users)
-    let usersCollection = firestore.collection('users');
-    let userQuery = await usersCollection.where('email', '==', email).limit(1).get();
+    const usersCollection = firestore.collection('users');
+    const userQuery = await usersCollection.where('email', '==', email.toLowerCase()).limit(1).get();
     
-    // If not found in users, check pending_users (unverified users)
-    if (userQuery.empty) {
-      usersCollection = firestore.collection('pending_users');
-      const pendingUserRef = usersCollection.doc(email);
+    if (!userQuery.empty) {
+      foundDoc = userQuery.docs[0];
+      foundData = foundDoc.data() || null;
+    } else {
+      // If not found in users, check pending_users
+      console.log('User not found in users collection, checking pending_users');
+      const pendingUserRef = firestore.collection('pending_users').doc(email.toLowerCase());
       const pendingUserDoc = await pendingUserRef.get();
       
       if (pendingUserDoc.exists) {
-        // Convert to same format as query result
-        userQuery = {
-          empty: false,
-          docs: [{ ref: pendingUserRef, data: () => pendingUserDoc.data() }]
-        } as any;
+        foundDoc = pendingUserDoc;
+        foundData = pendingUserDoc.data() || null;
       }
     }
 
-    if (userQuery.empty) {
-      // Don't reveal that the user doesn't exist for security reasons
-      return NextResponse.json({ success: true, message: 'If an account with that email exists, we have sent a password reset link to it.' });
+    // Don't reveal if user exists or not
+    if (!foundDoc || !foundData) {
+      console.log('No user found with email:', email);
+      return NextResponse.json({ 
+        success: true, 
+        message: 'If an account with that email exists, we have sent a password reset link to it.' 
+      });
     }
 
-    const userDoc = userQuery.docs[0];
+    // We know we have a valid document and data at this point
 
     // Generate a secure token
     const resetToken = crypto.randomBytes(32).toString('hex');
     const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
 
-    // Set an expiry for the token (e.g., 1 hour)
-    const tokenExpires = admin.firestore.Timestamp.fromMillis(Date.now() + 60 * 60 * 1000);
+    // Set an expiry for the token (1 hour)
+    const tokenExpires = Timestamp.fromMillis(Date.now() + 60 * 60 * 1000);
 
     // Update user document with reset token
-    await userDoc.ref.update({
+    await foundDoc.ref.update({
       resetPasswordToken: hashedToken,
       resetPasswordExpires: tokenExpires,
     });
 
-    // Send the email
-    const resetUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3003'}/reset-password?token=${resetToken}`;
-
-    // Send the email
-    const emailSubject = "Reset Your Password for Niveshx";
-    const emailBody = `
-      <p>Hello,</p>
-      <p>You requested a password reset. Please click the link below to set a new password:</p>
-      <p><a href="${resetUrl}" style="color: #007bff; text-decoration: none;">${resetUrl}</a></p>
-      <p>This link will expire in 1 hour.</p>
-      <p>If you did not request this, please ignore this email.</p>
-    `;
-    await sendOtpEmail(email, emailBody, emailSubject);
+    // Send the email using the email client
+    const resetUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`;
+    
+    await emailClient.sendPasswordResetEmail(
+      email.toLowerCase(),
+      foundData.firstName || 'User',
+      resetToken,
+      resetUrl
+    );
 
     return NextResponse.json({ success: true, message: 'If an account with that email exists, we have sent a password reset link to it.' });
 

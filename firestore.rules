@@ -1,0 +1,77 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper function to validate email
+    function isValidEmail(email) {
+      return email.matches('^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$');
+    }
+    
+    // Helper function to verify authenticated user
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Helper function to verify user owns the document
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // Helper function to validate string length
+    function validateString(str, minLen, maxLen) {
+      return str is string && str.size() >= minLen && str.size() <= maxLen;
+    }
+
+    // Pending Users Collection
+    match /pending_users/{email} {
+      allow create: if isValidEmail(email) &&
+        request.resource.data.keys().hasAll(['email', 'password', 'firstName', 'lastName']) &&
+        validateString(request.resource.data.firstName, 1, 50) &&
+        validateString(request.resource.data.lastName, 1, 50);
+      
+      allow read, update: if true; // Allow read/update for email verification
+      allow delete: if false; // Only server-side deletion
+    }
+    
+    // Users Collection
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow write: if isOwner(userId);
+      
+      // Only allow updates to specific fields
+      allow update: if isOwner(userId) &&
+        request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['firstName', 'lastName', 'phone', 'lastModified']);
+    }
+    
+    // Companies Collection
+    match /companies/{companyId} {
+      // Company data is readable by authenticated users
+      allow read: if isAuthenticated();
+      
+      // Only company owners can write
+      allow write: if isAuthenticated() &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        (resource == null || resource.data.createdBy == request.auth.uid);
+        
+      // Verify required fields and data types
+      allow create: if request.resource.data.keys().hasAll([
+          'name', 'website', 'oneLiner', 'about', 'industry', 'primarySector',
+          'businessModel', 'stage', 'teamSize', 'contactEmail'
+        ]) &&
+        validateString(request.resource.data.name, 1, 100) &&
+        isValidEmail(request.resource.data.contactEmail);
+    }
+    
+    // Rate Limits Collection
+    match /rate_limits/{docId} {
+      allow read: if false;
+      allow write: if false; // Only server-side access
+    }
+    
+    // Audit Logs Collection
+    match /audit_logs/{logId} {
+      allow read: if false;
+      allow write: if false; // Only server-side access
+    }
+  }
+}
