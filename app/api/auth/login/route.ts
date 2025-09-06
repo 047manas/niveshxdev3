@@ -10,7 +10,7 @@ import type { Transaction } from 'firebase-admin/firestore';
 interface UserData {
   password: string;
   email: string;
-  emailVerificationStatus: string;
+  emailVerificationStatus?: 'verified' | 'pending';
   isVerified?: boolean;
   firstName: string;
   lastName: string;
@@ -41,20 +41,30 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Too many login attempts. Please try again later.', reset, limit }, { status: 429 });
     }
 
+    // --- User Lookup ---
+    // Find the user in any of the possible collections.
     const userResult = await firestore.runTransaction(async (transaction: Transaction) => {
-      const usersCollection = firestore.collection('users');
-      const userQuery = await transaction.get(usersCollection.where('email', '==', email).limit(1));
-      if (!userQuery.empty) {
-        const doc = userQuery.docs[0];
-        const data = doc.data() as UserData;
-        return { doc, data, source: 'users' };
+      // 1. Check 'users' collection (new, verified users from the refactored flow)
+      const usersRef = firestore.collection('users').where('email', '==', email).limit(1);
+      const usersQuery = await transaction.get(usersRef);
+      if (!usersQuery.empty) {
+        const doc = usersQuery.docs[0];
+        return { doc, data: doc.data() as UserData };
       }
 
-      const pendingUsersCollection = firestore.collection('pending_users');
-      const pendingUserDoc = await transaction.get(pendingUsersCollection.doc(email));
+      // 2. Check 'new_users' collection (from the other registration flow)
+      const newUsersRef = firestore.collection('new_users').where('email', '==', email).limit(1);
+      const newUsersQuery = await transaction.get(newUsersRef);
+      if (!newUsersQuery.empty) {
+        const doc = newUsersQuery.docs[0];
+        return { doc, data: doc.data() as UserData };
+      }
+
+      // 3. Check 'pending_users' collection
+      const pendingUserRef = firestore.collection('pending_users').doc(email);
+      const pendingUserDoc = await transaction.get(pendingUserRef);
       if (pendingUserDoc.exists) {
-        const data = pendingUserDoc.data() as UserData;
-        return { doc: pendingUserDoc, data, source: 'pending_users' };
+        return { doc: pendingUserDoc, data: pendingUserDoc.data() as UserData };
       }
 
       return null;
@@ -65,7 +75,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
     }
 
-    const { doc: userDoc, data: userData, source } = userResult;
+    const { doc: userDoc, data: userData } = userResult;
 
     if (!userData.password) {
       await firestore.collection('audit_logs').add({ type: 'LOGIN_FAILED', email, reason: 'NO_PASSWORD', timestamp: FieldValue.serverTimestamp(), ip: req.headers.get('x-forwarded-for') || 'unknown' });
@@ -80,7 +90,7 @@ export async function POST(req: NextRequest) {
     }
 
     // --- Verification Logic ---
-    const isUserVerified = source === 'users' ? userData.isVerified === true : userData.emailVerificationStatus === 'verified';
+    const isUserVerified = userData.isVerified === true || userData.emailVerificationStatus === 'verified';
 
     if (!isUserVerified) {
       const otp = generateOtp();
@@ -94,14 +104,11 @@ export async function POST(req: NextRequest) {
 
     if (userData.userType === 'company') {
       if (!userData.companyId) {
-        // This case should ideally not happen for a verified user, but as a fallback.
         return NextResponse.json({ error: 'COMPANY_PROFILE_INCOMPLETE' }, { status: 401 });
       }
 
       const companyDoc = await firestore.collection('new_companies').doc(userData.companyId).get();
       if (!companyDoc.exists || companyDoc.data()?.isVerified !== true) {
-        // Company is not verified. We can't send an OTP from here easily without more info.
-        // The frontend should handle this by redirecting to a page where they can trigger company OTP.
         return NextResponse.json({ error: 'COMPANY_NOT_VERIFIED', companyId: userData.companyId }, { status: 401 });
       }
     }
