@@ -10,11 +10,40 @@ const generateOtp = () => {
 
 export async function POST(req: NextRequest) {
   try {
-    const { email } = await req.json();
-
-    if (!email) {
-      return NextResponse.json({ error: 'Email is required.' }, { status: 400 });
+    // Check if request has a body
+    const contentType = req.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      return NextResponse.json({ 
+        error: 'Content-Type must be application/json'
+      }, { status: 400 });
     }
+
+    let body;
+    try {
+      body = await req.json();
+    } catch (e) {
+      console.error('Failed to parse request body:', e);
+      return NextResponse.json({ 
+        error: 'Invalid JSON in request body'
+      }, { status: 400 });
+    }
+
+    const { email } = body;
+    console.log('Received resend OTP request for:', { email });
+
+    if (!email || typeof email !== 'string') {
+      return NextResponse.json({ 
+        error: 'Email is required and must be a string.' 
+      }, { status: 400 });
+    }
+
+    if (!validateEmail(email)) {
+      return NextResponse.json({ 
+        error: 'Invalid email format.' 
+      }, { status: 400 });
+    }
+
+    console.log('Email validation passed, checking rate limit...');
 
     // Apply rate limiting - 5 attempts per 30 minutes
     const identifier = `resend-otp:${email}`;
@@ -59,8 +88,23 @@ export async function POST(req: NextRequest) {
       lastOtpSentAt: FieldValue.serverTimestamp(),
     });
 
-      // Send the email using the improved email service
-      await emailClient.sendOTPEmail(email, userData.firstName, otp);    return NextResponse.json({ success: true, message: 'A new OTP has been sent to your email.' });
+      // Ensure email client is initialized
+      console.log('Initializing email client...');
+      await emailClient.initialize();
+      
+      console.log('Attempting to send OTP email to user:', { 
+        email,
+        firstName: userData.firstName,
+        otpGenerated: true
+      });
+
+      await emailClient.sendOTPEmail(email, userData.firstName, otp);
+      console.log('Email sent successfully');
+
+      return NextResponse.json({ 
+        success: true, 
+        message: 'A new OTP has been sent to your email.' 
+      });
 
   } catch (error) {
     console.error('Resend OTP error:', error);

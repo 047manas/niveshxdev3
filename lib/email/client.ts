@@ -93,7 +93,23 @@ class EmailClient {
   }
 
   async sendOTPEmail(to: string, firstName: string, otp: string): Promise<void> {
+    if (!this.transporter) {
+      await this.initialize();
+    }
+    
+    console.log('Starting OTP email send process...', { to, firstName });
+    
     const template = EMAIL_TEMPLATES.OTP_VERIFICATION;
+    console.log('Email template:', { 
+      templateExists: !!template,
+      subject: template?.subject
+    });
+
+    if (!template) {
+      console.error('OTP verification template not found!');
+      throw new Error('Email template not found');
+    }
+
     const options: EmailOptions = {
       from: `"NiveshX" <${process.env.EMAIL_FROM || 'no-reply@niveshx.app'}>`,
       to,
@@ -101,10 +117,26 @@ class EmailClient {
       html: template.html({ firstName, otp }),
     };
 
+    console.log('Email configuration:', { 
+      smtpHost: process.env.EMAIL_SMTP_HOST,
+      smtpPort: process.env.EMAIL_SMTP_PORT,
+      smtpUser: process.env.EMAIL_SMTP_USER,
+      fromEmail: process.env.EMAIL_FROM || 'no-reply@niveshx.app'
+    });
+
     try {
+      console.log('Attempting to send email...');
       await this.sendWithRetry(options);
+      console.log('OTP email sent successfully!');
     } catch (error) {
       console.error('Failed to send OTP email:', error);
+      if (error instanceof Error) {
+        console.error('Error details:', {
+          message: error.message,
+          stack: error.stack,
+          name: error.name
+        });
+      }
       throw new Error('Failed to send verification email');
     }
   }
