@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { firestore, FieldValue } from '@/lib/server-utils/firebase-admin';
+import { firestore, FieldValue, Timestamp } from '@/lib/server-utils/firebase-admin';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import emailClient from '@/lib/email/client';
 import { rateLimit } from '@/lib/server-utils/rate-limit';
 import { validateEmail } from '@/lib/utils';
+import type { Transaction } from 'firebase-admin/firestore';
 
 interface UserData {
   password: string;
@@ -43,10 +44,8 @@ export async function POST(req: NextRequest) {
       }, { status: 429 });
     }
 
-    const firestore = admin.firestore();
-    
     // First check the users collection (verified users)
-    const userResult = await firestore.runTransaction(async (transaction) => {
+    const userResult = await firestore.runTransaction(async (transaction: Transaction) => {
       const usersCollection = firestore.collection('users');
       const userQuery = await transaction.get(
         usersCollection.where('email', '==', email).limit(1)
@@ -78,7 +77,7 @@ export async function POST(req: NextRequest) {
         type: 'LOGIN_FAILED',
         email,
         reason: 'USER_NOT_FOUND',
-        timestamp: admin.firestore.FieldValue.serverTimestamp(),
+        timestamp: FieldValue.serverTimestamp(),
         ip: req.headers.get('x-forwarded-for') || 'unknown'
       });
 
@@ -92,7 +91,7 @@ export async function POST(req: NextRequest) {
         type: 'LOGIN_FAILED',
         email,
         reason: 'NO_PASSWORD',
-        timestamp: admin.firestore.FieldValue.serverTimestamp(),
+        timestamp: FieldValue.serverTimestamp(),
         ip: req.headers.get('x-forwarded-for') || 'unknown'
       });
 
@@ -106,26 +105,24 @@ export async function POST(req: NextRequest) {
         type: 'LOGIN_FAILED',
         email,
         reason: 'INVALID_PASSWORD',
-        timestamp: admin.firestore.FieldValue.serverTimestamp(),
+        timestamp: FieldValue.serverTimestamp(),
         ip: req.headers.get('x-forwarded-for') || 'unknown'
       });
 
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
     }
 
-    if (userData.emailVerificationStatus !== 'verified') {
+      if (userData.emailVerificationStatus !== 'verified') {
       // User is not verified, send new OTP
       const otp = generateOtp();
-      const otpExpires = admin.firestore.Timestamp.fromMillis(Date.now() + 10 * 60 * 1000);
+      const otpExpires = Timestamp.fromMillis(Date.now() + 10 * 60 * 1000);
 
       await userDoc.ref.update({
         userOtp: otp,
         userOtpExpires: otpExpires,
         otpAttempts: 0,
-        lastOtpSentAt: admin.firestore.FieldValue.serverTimestamp()
-      });
-
-      // Send verification email using the new email service
+        lastOtpSentAt: FieldValue.serverTimestamp()
+      });      // Send verification email using the new email service
       await emailClient.sendOTPEmail(email, userData.firstName, otp);
 
       return NextResponse.json({ error: 'NOT_VERIFIED' }, { status: 401 });
@@ -153,7 +150,7 @@ export async function POST(req: NextRequest) {
       type: 'LOGIN_SUCCESS',
       userId: userDoc.id,
       email,
-      timestamp: admin.firestore.FieldValue.serverTimestamp(),
+      timestamp: FieldValue.serverTimestamp(),
       ip: req.headers.get('x-forwarded-for') || 'unknown'
     });
 
@@ -171,13 +168,12 @@ export async function POST(req: NextRequest) {
 
   } catch (error) {
     console.error('Login error:', error);
-    const firestore = admin.firestore();
     
     // Log unexpected errors
     await firestore.collection('audit_logs').add({
       type: 'LOGIN_ERROR',
       error: error instanceof Error ? error.message : 'Unknown error',
-      timestamp: admin.firestore.FieldValue.serverTimestamp()
+      timestamp: FieldValue.serverTimestamp()
     });
 
     return NextResponse.json({ 

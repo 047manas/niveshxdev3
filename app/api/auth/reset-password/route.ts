@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import admin from '@/lib/firebase-admin';
+import { firestore, FieldValue, Timestamp } from '@/lib/server-utils/firebase-admin';
+import type { Transaction } from 'firebase-admin/firestore';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
-import { isStrongPassword, rateLimit } from '@/lib/utils';
+import { rateLimit } from '@/lib/server-utils/rate-limit';
+import { isStrongPassword } from '@/lib/utils';
 
 export async function POST(req: NextRequest) {
-  const firestore = admin.firestore();
   let requestToken: string | undefined;
   
   try {
@@ -38,13 +39,13 @@ export async function POST(req: NextRequest) {
     const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
     
     // Use a transaction to ensure atomicity
-    const result = await firestore.runTransaction(async (transaction) => {
+    const result = await firestore.runTransaction(async (transaction: Transaction) => {
       // Check in users collection first
       let usersCollection = firestore.collection('users');
       let userQuery = await transaction.get(
         usersCollection
           .where('resetPasswordToken', '==', hashedToken)
-          .where('resetPasswordExpires', '>', admin.firestore.Timestamp.now())
+          .where('resetPasswordExpires', '>', Timestamp.now())
           .limit(1)
       );
 
@@ -85,11 +86,11 @@ export async function POST(req: NextRequest) {
       // Update the user's password and mark token as used
       transaction.update(userDoc.ref, {
         password: hashedPassword,
-        resetPasswordToken: admin.firestore.FieldValue.delete(),
-        resetPasswordExpires: admin.firestore.FieldValue.delete(),
+        resetPasswordToken: FieldValue.delete(),
+        resetPasswordExpires: FieldValue.delete(),
         resetPasswordUsed: true,
-        passwordLastChanged: admin.firestore.FieldValue.serverTimestamp(),
-        lastModified: admin.firestore.FieldValue.serverTimestamp()
+        passwordLastChanged: FieldValue.serverTimestamp(),
+        lastModified: FieldValue.serverTimestamp()
       });
 
       return userDoc.id;
@@ -101,7 +102,7 @@ export async function POST(req: NextRequest) {
     await firestore.collection('audit_logs').add({
       type: 'PASSWORD_RESET',
       userId: result,
-      timestamp: admin.firestore.FieldValue.serverTimestamp(),
+      timestamp: FieldValue.serverTimestamp(),
       success: true
     });
 
@@ -118,7 +119,7 @@ export async function POST(req: NextRequest) {
       await firestore.collection('audit_logs').add({
         type: 'PASSWORD_RESET_FAILED',
         token: crypto.createHash('sha256').update(requestToken).digest('hex'),
-        timestamp: admin.firestore.FieldValue.serverTimestamp(),
+        timestamp: FieldValue.serverTimestamp(),
         error: error instanceof Error ? error.message : 'Unknown error'
       });
     }

@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import admin from '@/lib/firebase-admin';
+import { firestore, FieldValue, Timestamp } from '@/lib/server-utils/firebase-admin';
 import emailClient from '@/lib/email/client';
-import { rateLimit, validateEmail } from '@/lib/utils';
+import { rateLimit } from '@/lib/server-utils/rate-limit';
+import { validateEmail } from '@/lib/utils';
 
 const generateOtp = () => {
   return Math.floor(100000 + Math.random() * 900000).toString();
@@ -27,7 +28,6 @@ export async function POST(req: NextRequest) {
       }, { status: 429 });
     }
 
-    const firestore = admin.firestore();
     const pendingUserRef = firestore.collection('pending_users').doc(email);
     const pendingUserDoc = await pendingUserRef.get();
 
@@ -49,14 +49,14 @@ export async function POST(req: NextRequest) {
     }
 
     const otp = generateOtp();
-    const otpExpires = admin.firestore.Timestamp.fromMillis(Date.now() + 10 * 60 * 1000); // 10 minutes
+    const otpExpires = Timestamp.fromMillis(Date.now() + 10 * 60 * 1000); // 10 minutes
 
     // Update the user document with new OTP and expiry
     await pendingUserRef.update({
       userOtp: otp,
       userOtpExpires: otpExpires,
-      otpAttempts: admin.firestore.FieldValue.increment(1),
-      lastOtpSentAt: admin.firestore.FieldValue.serverTimestamp(),
+      otpAttempts: FieldValue.increment(1),
+      lastOtpSentAt: FieldValue.serverTimestamp(),
     });
 
       // Send the email using the improved email service
