@@ -6,13 +6,15 @@ import { getAuth } from 'firebase-admin/auth';
 
 // Initialize Firebase Admin
 if (!getApps().length) {
-  const serviceAccount = JSON.parse(
-    process.env.FIREBASE_SERVICE_ACCOUNT_KEY || '{}'
-  ) as ServiceAccount;
+  const serviceAccount = {
+    projectId: process.env.FIREBASE_PROJECT_ID,
+    clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+    privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n')
+  } as ServiceAccount;
 
   initializeApp({
     credential: cert(serviceAccount),
-    databaseURL: process.env.FIREBASE_DATABASE_URL
+    databaseURL: `https://${process.env.FIREBASE_PROJECT_ID}.firebaseio.com`
   });
 }
 
