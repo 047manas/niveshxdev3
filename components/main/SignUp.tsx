@@ -94,24 +94,11 @@ const OtpVerificationStep = ({ onOtpSubmit, isLoading, userEmail, onResendOtp })
 };
 
 
-import { useOnboarding } from '@/context/OnboardingContext';
-
-// ... (schemas and OTP component remain the same)
-
 const SignUp = ({ setCurrentView, userType, setUserType }) => {
-  const {
-    investorStep,
-    setInvestorStep,
-    loading,
-    setLoading,
-    error,
-    setError,
-    formData,
-    setFormData,
-    handleChange,
-    handleSelectChange,
-    handleInvestmentTypeChange,
-  } = useOnboarding();
+  const { signupData, updateSignupData } = useSignup();
+  const [investorStep, setInvestorStep] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const [investorFlowStep, setInvestorFlowStep] = useState('details');
   const [investorAgreed, setInvestorAgreed] = useState(false);
@@ -158,8 +145,10 @@ const SignUp = ({ setCurrentView, userType, setUserType }) => {
     setLoading(true);
     setError('');
     try {
-      const allData = { ...formData, ...investorForm.getValues(), ...data };
-      setFormData(allData); // Update context state
+      const allData = { ...signupData, ...investorForm.getValues(), ...data };
+      updateSignupData(allData); // Update signup context
+      
+      console.log('Submitting registration with data:', { userType: 'investor', ...allData });
       const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -167,8 +156,12 @@ const SignUp = ({ setCurrentView, userType, setUserType }) => {
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || 'Something went wrong');
+      
+      // Store email in localStorage for OTP verification
+      window.localStorage.setItem('emailForVerification', allData.email);
       setInvestorFlowStep('verifyOtp');
     } catch (err) {
+      console.error('Registration error:', err);
       setError(err.message);
     } finally {
       setLoading(false);

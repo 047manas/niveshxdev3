@@ -1,17 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-import admin from '@/lib/firebase-admin';
-import { sendOtpEmail } from '@/lib/email'; // Re-using for sending reset links
+import { firestore, FieldValue, Timestamp } from '@/lib/server-utils/firebase-admin';
+import emailClient from '@/lib/email/client';
 import crypto from 'crypto';
+import { validateEmail } from '@/lib/utils';
 
 export async function POST(req: NextRequest) {
   try {
     const { email } = await req.json();
 
-    if (!email) {
-      return NextResponse.json({ error: 'Email is required' }, { status: 400 });
+    if (!email || !validateEmail(email)) {
+      return NextResponse.json({ error: 'Valid email is required' }, { status: 400 });
     }
 
-    const firestore = admin.firestore();
+    console.log('Processing password reset request for:', email);
     
     // Check in the users collection first (verified users)
     let usersCollection = firestore.collection('users');
@@ -19,32 +20,33 @@ export async function POST(req: NextRequest) {
     
     // If not found in users, check pending_users (unverified users)
     if (userQuery.empty) {
-      usersCollection = firestore.collection('pending_users');
-      const pendingUserRef = usersCollection.doc(email);
+      console.log('User not found in users collection, checking pending_users');
+      const pendingUserRef = firestore.collection('pending_users').doc(email);
       const pendingUserDoc = await pendingUserRef.get();
       
       if (pendingUserDoc.exists) {
-        // Convert to same format as query result
         userQuery = {
           empty: false,
-          docs: [{ ref: pendingUserRef, data: () => pendingUserDoc.data() }]
-        } as any;
+          docs: [pendingUserDoc]
+        };
       }
     }
 
     if (userQuery.empty) {
+      console.log('No user found with email:', email);
       // Don't reveal that the user doesn't exist for security reasons
       return NextResponse.json({ success: true, message: 'If an account with that email exists, we have sent a password reset link to it.' });
     }
 
     const userDoc = userQuery.docs[0];
+    const userData = userDoc.data();
 
     // Generate a secure token
     const resetToken = crypto.randomBytes(32).toString('hex');
     const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
 
-    // Set an expiry for the token (e.g., 1 hour)
-    const tokenExpires = admin.firestore.Timestamp.fromMillis(Date.now() + 60 * 60 * 1000);
+    // Set an expiry for the token (1 hour)
+    const tokenExpires = Timestamp.fromMillis(Date.now() + 60 * 60 * 1000);
 
     // Update user document with reset token
     await userDoc.ref.update({
