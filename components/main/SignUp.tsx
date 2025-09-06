@@ -2,8 +2,37 @@
 
 import React, { useState, useEffect, ChangeEvent } from 'react';
 import Link from 'next/link';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';const InvestorStep1: React.FC<InvestorStep1Props> = ({ control, register, errors, onEmailBlur, emailValidation }) => {
+  const { formData, handleChange } = useOnboarding();
+  
+  const handleInputChange = (field: keyof SignUpFormData) => (e: ChangeEvent<HTMLInputElement>) => {
+    handleChange(field)(e.target.value);
+  };
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="space-y-2">
+        <Label className="text-gray-200">First Name</Label>
+        <Input 
+          {...register("firstName")} 
+          value={formData.firstName} 
+          onChange={handleInputChange('firstName')} 
+          className={`${sharedStyles.inputBase} h-11`}
+          placeholder="John"
+        />
+        <FormError error={errors.firstName} />
+      </div>
+      <div className="space-y-2">
+        <Label className="text-gray-200">Last Name</Label>
+        <Input 
+          {...register("lastName")} 
+          value={formData.lastName} 
+          onChange={handleInputChange('lastName')} 
+          className={`${sharedStyles.inputBase} h-11`}
+          placeholder="Doe"
+        />
+        <FormError error={errors.lastName} />
+      </div>m 'zod';
 import { useForm, useWatch, Controller, Control, UseFormRegister, FieldErrors, UseFormSetValue, SubmitHandler } from 'react-hook-form';
 import { useSignup } from '@/context/SignupContext';
 import { useOnboarding } from '@/context/OnboardingContext';
@@ -17,7 +46,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -25,6 +54,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
+import { sharedStyles } from '@/styles/shared';
+import { Loader2 } from 'lucide-react';
 import { Building2, User } from "lucide-react";
 import CompanyOnboarding from "@/components/onboarding/CompanyOnboarding";
 
@@ -490,79 +521,129 @@ const SignUp: React.FC<SignUpProps> = ({ setCurrentView, userType, setUserType }
   }
 
   return (
-    <div className="w-full">
-      <Tabs defaultValue={userType === 'investor' ? 'investor' : 'founder'} className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger
-            value="investor"
-            className="data-[state=active]:bg-primary"
-            onClick={() => setUserType('investor')}
-          >
-            <User className="w-4 h-4 mr-2" />
-            Investor
-          </TabsTrigger>
-          <TabsTrigger
-            value="founder"
-            className="data-[state=active]:bg-primary"
-            onClick={() => setUserType('founder')}
-          >
-            <Building2 className="w-4 h-4 mr-2" />
-            Founder
-          </TabsTrigger>
-        </TabsList>
+    <div className={sharedStyles.pageContainer}>
+      <div className="w-full max-w-4xl mx-auto">
+        <Tabs 
+          defaultValue={userType === 'investor' ? 'investor' : 'founder'} 
+          className="w-full space-y-6"
+        >
+          <TabsList className="grid w-full grid-cols-2 p-1 bg-gray-800/50 backdrop-blur-sm rounded-lg border border-gray-700">
+            <TabsTrigger
+              value="investor"
+              className="relative px-6 py-3 rounded-md data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-violet-600 data-[state=active]:text-white transition-all"
+              onClick={() => setUserType('investor')}
+            >
+              <div className="flex items-center justify-center space-x-2">
+                <User className="w-4 h-4" />
+                <span>Investor</span>
+              </div>
+            </TabsTrigger>
+            <TabsTrigger
+              value="founder"
+              className="relative px-6 py-3 rounded-md data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-violet-600 data-[state=active]:text-white transition-all"
+              onClick={() => setUserType('founder')}
+            >
+              <div className="flex items-center justify-center space-x-2">
+                <Building2 className="w-4 h-4" />
+                <span>Founder</span>
+              </div>
+            </TabsTrigger>
+          </TabsList>
 
-        <TabsContent value="investor">
-          <Card>
-            <CardHeader>
-              <CardTitle>Sign Up as an Investor</CardTitle>
+        <TabsContent value="investor" className="mt-6">
+          <Card className={sharedStyles.cardWrapper}>
+            <CardHeader className="text-center space-y-2">
+              <CardTitle className={sharedStyles.gradientHeading}>Sign Up as an Investor</CardTitle>
+              <CardDescription className={sharedStyles.description}>
+                Join our community of investors and discover promising opportunities
+              </CardDescription>
+              {investorStep === 1 || investorStep === 2 ? (
+                <div className="pt-4">
+                  <div className="flex items-center justify-between text-sm text-gray-400 mb-2">
+                    <span>Step {investorStep} of 2</span>
+                    <span>{investorStep === 1 ? 'Basic Information' : 'Investment Preferences'}</span>
+                  </div>
+                  <Progress value={investorStep * 50} className="h-2 bg-gray-700">
+                    <div className="h-full bg-gradient-to-r from-blue-600 to-violet-600" />
+                  </Progress>
+                </div>
+              ) : null}
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-6">
               <form onSubmit={investorForm.handleSubmit(handleInvestorSubmit)} className="space-y-6">
-                {investorStep === 1 && (
-                  <InvestorStep1
-                    control={investorForm.control}
-                    register={investorForm.register}
-                    errors={investorForm.formState.errors}
-                    onEmailBlur={handleEmailBlur}
-                    emailValidation={emailValidation}
-                  />
-                )}
+                <div className={`space-y-6 ${sharedStyles.fadeIn}`}>
+                  {investorStep === 1 && (
+                    <InvestorStep1
+                      control={investorForm.control}
+                      register={investorForm.register}
+                      errors={investorForm.formState.errors}
+                      onEmailBlur={handleEmailBlur}
+                      emailValidation={emailValidation}
+                    />
+                  )}
 
-                {investorStep === 2 && (
-                  <InvestorStep2
-                    control={investorForm.control}
-                    errors={investorForm.formState.errors}
-                    setValue={investorForm.setValue}
-                  />
-                )}
+                  {investorStep === 2 && (
+                    <InvestorStep2
+                      control={investorForm.control}
+                      errors={investorForm.formState.errors}
+                      setValue={investorForm.setValue}
+                    />
+                  )}
+                </div>
 
                 {error && (
-                  <div className="text-red-500 text-center">{error}</div>
+                  <div className={sharedStyles.errorAlert}>
+                    <p className="text-center">{error}</p>
+                  </div>
                 )}
 
-                <div className="flex justify-between">
+                <div className="flex flex-col sm:flex-row justify-between gap-4 pt-4">
                   {investorStep > 1 && (
-                    <Button type="button" variant="outline" onClick={prevInvestorStep}>
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      onClick={prevInvestorStep}
+                      className={sharedStyles.secondaryButton}
+                    >
                       Previous
                     </Button>
                   )}
                   <div className="flex-1" />
                   {investorStep === 1 && (
-                    <Button type="button" onClick={nextInvestorStep}>
-                      Next
+                    <Button 
+                      type="button" 
+                      onClick={nextInvestorStep}
+                      className={sharedStyles.primaryButton}
+                    >
+                      Continue
                     </Button>
                   )}
                   {investorStep === 2 && (
-                    <Button type="submit" disabled={loading}>
-                      {loading ? 'Creating Account...' : 'Create Account'}
+                    <Button 
+                      type="submit" 
+                      disabled={loading}
+                      className={sharedStyles.primaryButton}
+                    >
+                      {loading ? (
+                        <span className="flex items-center gap-2">
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Creating Account...
+                        </span>
+                      ) : (
+                        'Create Account'
+                      )}
                     </Button>
                   )}
                 </div>
 
-                <div className="text-center">
-                  <p className="text-sm text-gray-500">
+                <div className="text-center pt-4 border-t border-gray-800">
+                  <p className="text-sm text-gray-400">
                     Already have an account?{' '}
-                    <Button variant="link" className="p-0" onClick={() => setCurrentView('login')}>
+                    <Button 
+                      variant="link" 
+                      onClick={() => setCurrentView('login')}
+                      className="text-blue-400 hover:text-blue-300 p-0 h-auto font-normal"
+                    >
                       Login here
                     </Button>
                   </p>
@@ -572,18 +653,22 @@ const SignUp: React.FC<SignUpProps> = ({ setCurrentView, userType, setUserType }
           </Card>
         </TabsContent>
 
-        <TabsContent value="founder">
-          <Card>
-            <CardHeader>
-              <CardTitle>Sign Up as a Founder</CardTitle>
+        <TabsContent value="founder" className="mt-6">
+          <Card className={sharedStyles.cardWrapper}>
+            <CardHeader className="text-center space-y-2">
+              <CardTitle className={sharedStyles.gradientHeading}>Sign Up as a Founder</CardTitle>
+              <CardDescription className={sharedStyles.description}>
+                Start your journey to connect with potential investors
+              </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-6">
               <CompanyOnboarding />
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
     </div>
+  );
   );
 };
 
