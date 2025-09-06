@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
+import { useSignup } from '@/context/SignupContext';
+import { VerifyOtpProps } from '@/types/auth';
 
-const VerifyOtp = ({ setCurrentView }) => {
+const VerifyOtp: React.FC<VerifyOtpProps> = ({ setCurrentView }): React.ReactNode => {
   const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -28,26 +30,26 @@ const VerifyOtp = ({ setCurrentView }) => {
   }, [signupData]);
 
   useEffect(() => {
-    let timer;
+    let timer: NodeJS.Timeout | undefined;
     if (resendCooldown > 0) {
       timer = setTimeout(() => setResendCooldown(resendCooldown - 1), 1000);
     }
-    return () => clearTimeout(timer);
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
   }, [resendCooldown]);
 
-  const onVerify = async (e) => {
+    const onVerify = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
     setSuccess('');
 
-    if (otp.length !== 6) {
-      setError("Please enter a 6-digit OTP.");
+    if (!otp || otp.length !== 6) {
+      setError("Please enter a valid 6-digit OTP.");
       setLoading(false);
       return;
-    }
-
-    try {
+    }    try {
       const response = await fetch('/api/auth/verify-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -55,16 +57,23 @@ const VerifyOtp = ({ setCurrentView }) => {
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'OTP verification failed');
+      
+      setSuccess('Email verified successfully!');
 
       window.localStorage.removeItem('emailForVerification');
       setCurrentView('login');
-    } catch (err) {
-      if (err.message.includes('incorrect or has expired')) {
-        setError('The OTP you entered is incorrect or has expired.');
-      } else if (err.message.includes('session has expired')) {
-        setError("Verification session not found. Please wait a moment and try again, or resend the code.");
+    } catch (err: unknown) {
+      console.error('OTP verification error:', err);
+      if (err instanceof Error) {
+        if (err.message.includes('incorrect') || err.message.includes('expired')) {
+          setError('The OTP you entered is incorrect or has expired. Please try again or request a new code.');
+        } else if (err.message.includes('session')) {
+          setError("Your verification session has expired. Please request a new code.");
+        } else {
+          setError('An error occurred during verification. Please try again.');
+        }
       } else {
-        setError(err.message);
+        setError('An unexpected error occurred during verification. Please try again.');
       }
     } finally {
       setLoading(false);
@@ -88,8 +97,8 @@ const VerifyOtp = ({ setCurrentView }) => {
 
       setSuccess(`A new OTP has been sent to ${email}.`);
       setResendCooldown(60); // Start 60-second cooldown
-    } catch (err) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to resend OTP');
     } finally {
       setResendLoading(false);
     }
