@@ -12,14 +12,20 @@ const VerifyOtp = ({ setCurrentView }) => {
   const [resendCooldown, setResendCooldown] = useState(0);
   const [resendLoading, setResendLoading] = useState(false);
 
+  const { signupData } = useSignup();
+
   useEffect(() => {
-    const storedEmail = window.localStorage.getItem('emailForVerification');
-    if (storedEmail) {
-      setEmail(storedEmail);
+    if (signupData.email) {
+      setEmail(signupData.email);
     } else {
-      setError("Could not find an email for verification. Please sign up again.");
+      const storedEmail = window.localStorage.getItem('emailForVerification');
+      if (storedEmail) {
+        setEmail(storedEmail);
+      } else {
+        setError("Could not find an email for verification. Please sign up again.");
+      }
     }
-  }, []);
+  }, [signupData]);
 
   useEffect(() => {
     let timer;
