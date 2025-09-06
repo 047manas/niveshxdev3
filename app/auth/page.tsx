@@ -6,11 +6,13 @@ import Login from '@/components/main/Login';
 import SignUp from '@/components/main/SignUp';
 import VerifyOtp from '@/components/main/VerifyOtp';
 import ForgotPassword from '@/components/main/ForgotPassword';
+import { OnboardingProvider, useOnboarding } from '@/context/OnboardingContext';
 
 const AuthFlow = () => {
   const [view, setView] = useState('login');
   const [userType, setUserType] = useState('company');
   const searchParams = useSearchParams();
+  const { resetFormState } = useOnboarding();
 
   useEffect(() => {
     const viewParam = searchParams.get('view');
@@ -23,74 +25,11 @@ const AuthFlow = () => {
       setUserType(userTypeParam);
     }
   }, [searchParams]);
-  const [step, setStep] = useState(1); // For company registration
-  const [investorStep, setInvestorStep] = useState(1); // For investor registration
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
 
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-    confirmPassword: '',
-    firstName: '',
-    lastName: '',
-    linkedinProfile: '',
-    countryCode: '+91',
-    phoneNumber: '',
-    investorType: '',
-    chequeSize: '',
-    interestedSectors: '',
-    designation: '',
-    companyName: '',
-    companyStage: '',
-    latestValuation: '',
-    shareType: [],
-    dealSize: '',
-  });
-
-  const handleChange = (input) => (e) => {
-    setFormData({ ...formData, [input]: e.target.value });
+  const handleUserTypeChange = (newUserType: 'company' | 'investor') => {
+    setUserType(newUserType);
+    resetFormState();
   };
-
-  const handleSelectChange = (input) => (value) => {
-    setFormData({ ...formData, [input]: value });
-  };
-
-  const handleShareTypeChange = (value) => {
-    setFormData({ ...formData, shareType: value });
-  };
-
-  const handleInvestmentTypeChange = (value) => {
-    let newInvestmentType = [...formData.investmentType];
-    const hasEquity = newInvestmentType.includes("Equity investments");
-    const hasDebt = newInvestmentType.includes("Debt financing");
-
-    if (value === "Both") {
-      if (hasEquity && hasDebt) {
-        newInvestmentType = [];
-      } else {
-        newInvestmentType = ["Equity investments", "Debt financing"];
-      }
-    } else {
-      if (newInvestmentType.includes(value)) {
-        newInvestmentType = newInvestmentType.filter(v => v !== value);
-      } else {
-        newInvestmentType.push(value);
-      }
-    }
-    setFormData({ ...formData, investmentType: newInvestmentType });
-  };
-
-  const resetFormState = () => {
-      setStep(1);
-      setInvestorStep(1);
-      setError('');
-  }
-
-  const handleUserTypeChange = (newUserType) => {
-      setUserType(newUserType);
-      resetFormState();
-  }
 
   const renderView = () => {
     switch (view) {
@@ -102,19 +41,6 @@ const AuthFlow = () => {
             setCurrentView={setView}
             userType={userType}
             setUserType={handleUserTypeChange}
-            step={step}
-            setStep={setStep}
-            investorStep={investorStep}
-            setInvestorStep={setInvestorStep}
-            loading={loading}
-            setLoading={setLoading}
-            error={error}
-            setError={setError}
-            formData={formData}
-            setFormData={setFormData}
-            handleChange={handleChange}
-            handleSelectChange={handleSelectChange}
-            handleShareTypeChange={handleShareTypeChange}
           />
         );
       case 'verify-otp':
@@ -122,21 +48,20 @@ const AuthFlow = () => {
       case 'forgot-password':
         return <ForgotPassword setCurrentView={setView} />;
       default:
-        return <SignUp setCurrentView={setView} />;
+        // Default to signup, passing the view setter
+        return <SignUp setCurrentView={setView} userType={userType} setUserType={handleUserTypeChange} />;
     }
   };
 
-  return (
-    <div>
-      {renderView()}
-    </div>
-  );
+  return <div>{renderView()}</div>;
 };
 
 const AuthPage = () => {
   return (
     <Suspense fallback={<div>Loading...</div>}>
-      <AuthFlow />
+      <OnboardingProvider>
+        <AuthFlow />
+      </OnboardingProvider>
     </Suspense>
   );
 };

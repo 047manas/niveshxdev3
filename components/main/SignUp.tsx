@@ -93,13 +93,27 @@ const OtpVerificationStep = ({ onOtpSubmit, isLoading, userEmail, onResendOtp })
 };
 
 
+import { useOnboarding } from '@/context/OnboardingContext';
+
+// ... (schemas and OTP component remain the same)
+
 const SignUp = ({ setCurrentView, userType, setUserType }) => {
-  const [investorStep, setInvestorStep] = useState(1);
+  const {
+    investorStep,
+    setInvestorStep,
+    loading,
+    setLoading,
+    error,
+    setError,
+    formData,
+    setFormData,
+    handleChange,
+    handleSelectChange,
+    handleInvestmentTypeChange,
+  } = useOnboarding();
+
   const [investorFlowStep, setInvestorFlowStep] = useState('details');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
   const [investorAgreed, setInvestorAgreed] = useState(false);
-  const [formData, setFormData] = useState(null);
   const [emailValidation, setEmailValidation] = useState({ status: 'idle', message: '' });
 
   const handleEmailBlur = async (e) => {
@@ -131,9 +145,9 @@ const SignUp = ({ setCurrentView, userType, setUserType }) => {
   };
 
   const investorForm = useForm({
-      resolver: zodResolver(allInvestorStepSchemas[investorStep - 1]),
-      mode: 'onChange',
-      defaultValues: { firstName: '', lastName: '', email: '', phoneCountryCode: '+91', phoneNumber: '', linkedinId: '', password: '', confirmPassword: '', investorType: undefined, investmentType: [], chequeSize: undefined, interestedSectors: '' }
+    resolver: zodResolver(allInvestorStepSchemas[investorStep - 1]),
+    mode: 'onChange',
+    defaultValues: formData, // Use context formData for defaults
   });
 
   const nextInvestorStep = async () => { if (await investorForm.trigger()) setInvestorStep(p => p + 1); };
@@ -143,7 +157,8 @@ const SignUp = ({ setCurrentView, userType, setUserType }) => {
     setLoading(true);
     setError('');
     try {
-      const allData = { ...investorForm.getValues(), ...data };
+      const allData = { ...formData, ...investorForm.getValues(), ...data };
+      setFormData(allData); // Update context state
       const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -151,7 +166,6 @@ const SignUp = ({ setCurrentView, userType, setUserType }) => {
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || 'Something went wrong');
-      setFormData(allData);
       setInvestorFlowStep('verifyOtp');
     } catch (err) {
       setError(err.message);
@@ -202,7 +216,7 @@ const SignUp = ({ setCurrentView, userType, setUserType }) => {
                 <OtpVerificationStep
                     onOtpSubmit={handleInvestorOtpSubmit}
                     isLoading={loading}
-                    userEmail={formData?.email}
+                    userEmail={formData.email} // Directly use from context
                     onResendOtp={handleInvestorResendOtp}
                 />
             );
@@ -258,36 +272,41 @@ const SignUp = ({ setCurrentView, userType, setUserType }) => {
 };
 
 // --- INVESTOR STEP COMPONENTS ---
-const InvestorStep1 = ({ control, register, errors, onEmailBlur, emailValidation }) => (
+const InvestorStep1 = ({ control, register, errors, onEmailBlur, emailValidation }) => {
+  const { formData, handleChange } = useOnboarding();
+  return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-        <div className="space-y-2"><Label>First Name</Label><Input {...register("firstName")} className="bg-gray-700" />{errors.firstName && <p className="text-red-500 text-xs">{errors.firstName.message}</p>}</div>
-        <div className="space-y-2"><Label>Last Name</Label><Input {...register("lastName")} className="bg-gray-700" />{errors.lastName && <p className="text-red-500 text-xs">{errors.lastName.message}</p>}</div>
+        <div className="space-y-2"><Label>First Name</Label><Input {...register("firstName")} value={formData.firstName} onChange={handleChange('firstName')} className="bg-gray-700" />{errors.firstName && <p className="text-red-500 text-xs">{errors.firstName.message}</p>}</div>
+        <div className="space-y-2"><Label>Last Name</Label><Input {...register("lastName")} value={formData.lastName} onChange={handleChange('lastName')} className="bg-gray-700" />{errors.lastName && <p className="text-red-500 text-xs">{errors.lastName.message}</p>}</div>
         <div className="space-y-2 md:col-span-2">
             <Label>Email</Label>
-            <Input type="email" {...register("email")} onBlur={onEmailBlur} className="bg-gray-700" />
+            <Input type="email" {...register("email")} value={formData.email} onChange={handleChange('email')} onBlur={onEmailBlur} className="bg-gray-700" />
             {errors.email && <p className="text-red-500 text-xs">{errors.email.message}</p>}
             {emailValidation.status === 'checking' && <p className="text-xs text-gray-400">{emailValidation.message}</p>}
             {emailValidation.status === 'valid' && <p className="text-xs text-green-500">{emailValidation.message}</p>}
             {emailValidation.status === 'invalid' && <p className="text-xs text-red-500">{emailValidation.message}</p>}
         </div>
-        <div className="space-y-2 md:col-span-2"><Label>Phone Number</Label><div className="grid grid-cols-1 sm:grid-cols-4 gap-2"><Controller name="phoneCountryCode" control={control} render={({ field }) => (<Select onValueChange={field.onChange} value={field.value}><SelectTrigger className="sm:col-span-1 bg-gray-700"><SelectValue /></SelectTrigger><SelectContent className="bg-gray-800 text-white"><SelectItem value="+91">IN (+91)</SelectItem><SelectItem value="+1">US (+1)</SelectItem></SelectContent></Select>)} /><Input type="tel" {...register("phoneNumber")} className="sm:col-span-3 bg-gray-700" /></div>{errors.phoneNumber && <p className="text-red-500 text-xs">{errors.phoneNumber.message}</p>}</div>
-        <div className="space-y-2 md:col-span-2"><Label>LinkedIn Id</Label><Input {...register("linkedinId")} placeholder="https://linkedin.com/in/..." className="bg-gray-700" />{errors.linkedinId && <p className="text-red-500 text-xs">{errors.linkedinId.message}</p>}</div>
-        <div className="space-y-2"><Label>Create Password</Label><Input type="password" {...register("password")} className="bg-gray-700" /></div>
-        <div className="space-y-2"><Label>Confirm Password</Label><Input type="password" {...register("confirmPassword")} className="bg-gray-700" />{errors.confirmPassword && <p className="text-red-500 text-xs">{errors.confirmPassword.message}</p>}</div>
+        <div className="space-y-2 md:col-span-2"><Label>Phone Number</Label><div className="grid grid-cols-1 sm:grid-cols-4 gap-2"><Controller name="phoneCountryCode" control={control} render={({ field }) => (<Select onValueChange={(value) => { field.onChange(value); handleChange('countryCode')({ target: { value } }); }} value={field.value}><SelectTrigger className="sm:col-span-1 bg-gray-700"><SelectValue /></SelectTrigger><SelectContent className="bg-gray-800 text-white"><SelectItem value="+91">IN (+91)</SelectItem><SelectItem value="+1">US (+1)</SelectItem></SelectContent></Select>)} /><Input type="tel" {...register("phoneNumber")} value={formData.phoneNumber} onChange={handleChange('phoneNumber')} className="sm:col-span-3 bg-gray-700" /></div>{errors.phoneNumber && <p className="text-red-500 text-xs">{errors.phoneNumber.message}</p>}</div>
+        <div className="space-y-2 md:col-span-2"><Label>LinkedIn Id</Label><Input {...register("linkedinId")} value={formData.linkedinProfile} onChange={handleChange('linkedinProfile')} placeholder="https://linkedin.com/in/..." className="bg-gray-700" />{errors.linkedinId && <p className="text-red-500 text-xs">{errors.linkedinId.message}</p>}</div>
+        <div className="space-y-2"><Label>Create Password</Label><Input type="password" {...register("password")} value={formData.password} onChange={handleChange('password')} className="bg-gray-700" /></div>
+        <div className="space-y-2"><Label>Confirm Password</Label><Input type="password" {...register("confirmPassword")} value={formData.confirmPassword} onChange={handleChange('confirmPassword')} className="bg-gray-700" />{errors.confirmPassword && <p className="text-red-500 text-xs">{errors.confirmPassword.message}</p>}</div>
     </div>
-);
+  );
+};
 
 const InvestorStep2 = ({ control, errors, setValue }) => {
+    const { formData, handleSelectChange, handleInvestmentTypeChange } = useOnboarding();
     const investmentTypes = ["Equity investments", "Debt financing"];
     const chequeSizes = ["₹ 1-5 L", "₹ 5-25 L", "₹ 25-1 Cr", "₹ 1 Cr+", "₹ 10 Cr+", "₹ 100 Cr+"];
     const watchedInvestmentTypes = useWatch({ control, name: 'investmentType' }) || [];
-    const handleBothChange = (checked) => { if (checked) { setValue('investmentType', investmentTypes, { shouldValidate: true }); } else { setValue('investmentType', [], { shouldValidate: true }); } };
+    const handleBothChange = (checked) => { handleInvestmentTypeChange('Both'); };
+
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-            <div className="space-y-2 md:col-span-2"><Label>Investor Type</Label><Controller name="investorType" control={control} render={({ field }) => (<Select onValueChange={field.onChange} value={field.value}><SelectTrigger className="bg-gray-700"><SelectValue placeholder="Select..." /></SelectTrigger><SelectContent className="bg-gray-800 text-white"><SelectItem value="UHNI/HNI">UHNI/HNI</SelectItem><SelectItem value="Family Office">Family Office</SelectItem><SelectItem value="VC">VC</SelectItem><SelectItem value="Private Equity">Private Equity</SelectItem></SelectContent></Select>)} />{errors.investorType && <p className="text-red-500 text-xs">{errors.investorType.message}</p>}</div>
-            <div className="space-y-2 md:col-span-2"><Label>Investment Type</Label><Controller name="investmentType" control={control} render={({ field }) => (<div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">{investmentTypes.map(type => (<div key={type} className="flex items-center space-x-2"><Checkbox id={type} checked={field.value?.includes(type)} onCheckedChange={checked => { const currentValues = field.value || []; const newValue = checked ? [...currentValues, type] : currentValues.filter(item => item !== type); field.onChange(newValue); }} /><Label htmlFor={type} className="font-normal">{type}</Label></div>))}<div className="flex items-center space-x-2"><Checkbox id="both" checked={watchedInvestmentTypes.length === investmentTypes.length} onCheckedChange={handleBothChange} /><Label htmlFor="both" className="font-normal">Both</Label></div></div>)} />{errors.investmentType && <p className="text-red-500 text-xs">{errors.investmentType.message}</p>}</div>
-            <div className="space-y-2 md:col-span-2"><Label>What Cheque Size are you comfortable with?</Label><Controller name="chequeSize" control={control} render={({ field }) => (<RadioGroup onValueChange={field.onChange} value={field.value} className="grid grid-cols-2 md:grid-cols-3 gap-2 pt-2">{chequeSizes.map(size => (<div key={size} className="flex items-center space-x-2"><RadioGroupItem value={size} id={size} /><Label htmlFor={size} className="font-normal">{size}</Label></div>))}</RadioGroup>)} />{errors.chequeSize && <p className="text-red-500 text-xs">{errors.chequeSize.message}</p>}</div>
-            <div className="space-y-2 md:col-span-2"><Label>What sectors / startups are you interested in?</Label><Textarea {...control.register("interestedSectors")} placeholder="e.g., FinTech, HealthTech, SaaS" className="bg-gray-700" />{errors.interestedSectors && <p className="text-red-500 text-xs">{errors.interestedSectors.message}</p>}</div>
+            <div className="space-y-2 md:col-span-2"><Label>Investor Type</Label><Controller name="investorType" control={control} render={({ field }) => (<Select onValueChange={(value) => { field.onChange(value); handleSelectChange('investorType')(value); }} value={field.value}><SelectTrigger className="bg-gray-700"><SelectValue placeholder="Select..." /></SelectTrigger><SelectContent className="bg-gray-800 text-white"><SelectItem value="UHNI/HNI">UHNI/HNI</SelectItem><SelectItem value="Family Office">Family Office</SelectItem><SelectItem value="VC">VC</SelectItem><SelectItem value="Private Equity">Private Equity</SelectItem></SelectContent></Select>)} />{errors.investorType && <p className="text-red-500 text-xs">{errors.investorType.message}</p>}</div>
+            <div className="space-y-2 md:col-span-2"><Label>Investment Type</Label><Controller name="investmentType" control={control} render={({ field }) => (<div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">{investmentTypes.map(type => (<div key={type} className="flex items-center space-x-2"><Checkbox id={type} checked={field.value?.includes(type)} onCheckedChange={checked => { handleInvestmentTypeChange(type); field.onChange(formData.investmentType); }} /><Label htmlFor={type} className="font-normal">{type}</Label></div>))}<div className="flex items-center space-x-2"><Checkbox id="both" checked={watchedInvestmentTypes.length === investmentTypes.length} onCheckedChange={handleBothChange} /><Label htmlFor="both" className="font-normal">Both</Label></div></div>)} />{errors.investmentType && <p className="text-red-500 text-xs">{errors.investmentType.message}</p>}</div>
+            <div className="space-y-2 md:col-span-2"><Label>What Cheque Size are you comfortable with?</Label><Controller name="chequeSize" control={control} render={({ field }) => (<RadioGroup onValueChange={(value) => { field.onChange(value); handleSelectChange('chequeSize')(value); }} value={field.value} className="grid grid-cols-2 md:grid-cols-3 gap-2 pt-2">{chequeSizes.map(size => (<div key={size} className="flex items-center space-x-2"><RadioGroupItem value={size} id={size} /><Label htmlFor={size} className="font-normal">{size}</Label></div>))}</RadioGroup>)} />{errors.chequeSize && <p className="text-red-500 text-xs">{errors.chequeSize.message}</p>}</div>
+            <div className="space-y-2 md:col-span-2"><Label>What sectors / startups are you interested in?</Label><Textarea {...control.register("interestedSectors")} value={formData.interestedSectors} onChange={(e) => handleSelectChange('interestedSectors')(e.target.value)} placeholder="e.g., FinTech, HealthTech, SaaS" className="bg-gray-700" />{errors.interestedSectors && <p className="text-red-500 text-xs">{errors.interestedSectors.message}</p>}</div>
         </div>
     );
 };
