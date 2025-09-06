@@ -88,7 +88,9 @@ export async function POST(req: NextRequest) {
 
     for (const doc of querySnapshot.docs) {
       const verificationData = doc.data();
-      const isOtpValid = await bcrypt.compare(otp, verificationData.otp);
+      // Defensively ensure OTP is a clean string to prevent type or whitespace issues.
+      const cleanOtp = String(otp).trim();
+      const isOtpValid = await bcrypt.compare(cleanOtp, verificationData.otp);
 
       if (isOtpValid) {
         if (verificationData.expiresAt.toMillis() < Date.now()) {
