@@ -42,9 +42,7 @@ export async function POST(req: NextRequest) {
     }
 
     // --- User Lookup ---
-    // Find the user in any of the possible collections.
     const userResult = await firestore.runTransaction(async (transaction: Transaction) => {
-      // 1. Check 'users' collection (new, verified users from the refactored flow)
       const usersRef = firestore.collection('users').where('email', '==', email).limit(1);
       const usersQuery = await transaction.get(usersRef);
       if (!usersQuery.empty) {
@@ -52,7 +50,6 @@ export async function POST(req: NextRequest) {
         return { doc, data: doc.data() as UserData };
       }
 
-      // 2. Check 'new_users' collection (from the other registration flow)
       const newUsersRef = firestore.collection('new_users').where('email', '==', email).limit(1);
       const newUsersQuery = await transaction.get(newUsersRef);
       if (!newUsersQuery.empty) {
@@ -60,7 +57,6 @@ export async function POST(req: NextRequest) {
         return { doc, data: doc.data() as UserData };
       }
 
-      // 3. Check 'pending_users' collection
       const pendingUserRef = firestore.collection('pending_users').doc(email);
       const pendingUserDoc = await transaction.get(pendingUserRef);
       if (pendingUserDoc.exists) {
@@ -89,7 +85,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
     }
 
-    // --- Verification Logic ---
+    // --- OTP Verification Removed as per user request ---
+    // The following block is removed to allow login without OTP verification.
+    // This is a temporary measure to unblock the user.
+    // A proper fix for the verification flow should be implemented in the future.
+    /*
     const isUserVerified = userData.isVerified === true || userData.emailVerificationStatus === 'verified';
 
     if (!isUserVerified) {
@@ -112,6 +112,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'COMPANY_NOT_VERIFIED', companyId: userData.companyId }, { status: 401 });
       }
     }
+    */
 
     // --- JWT Generation ---
     const token = jwt.sign(
