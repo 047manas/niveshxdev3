@@ -2,37 +2,8 @@
 
 import React, { useState, useEffect, ChangeEvent } from 'react';
 import Link from 'next/link';
-import { zodResolver } from '@hookform/resolvers/zod';const InvestorStep1: React.FC<InvestorStep1Props> = ({ control, register, errors, onEmailBlur, emailValidation }) => {
-  const { formData, handleChange } = useOnboarding();
-  
-  const handleInputChange = (field: keyof SignUpFormData) => (e: ChangeEvent<HTMLInputElement>) => {
-    handleChange(field)(e.target.value);
-  };
-
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <div className="space-y-2">
-        <Label className="text-gray-200">First Name</Label>
-        <Input 
-          {...register("firstName")} 
-          value={formData.firstName} 
-          onChange={handleInputChange('firstName')} 
-          className={`${sharedStyles.inputBase} h-11`}
-          placeholder="John"
-        />
-        <FormError error={errors.firstName} />
-      </div>
-      <div className="space-y-2">
-        <Label className="text-gray-200">Last Name</Label>
-        <Input 
-          {...register("lastName")} 
-          value={formData.lastName} 
-          onChange={handleInputChange('lastName')} 
-          className={`${sharedStyles.inputBase} h-11`}
-          placeholder="Doe"
-        />
-        <FormError error={errors.lastName} />
-      </div>m 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { useForm, useWatch, Controller, Control, UseFormRegister, FieldErrors, UseFormSetValue, SubmitHandler } from 'react-hook-form';
 import { useSignup } from '@/context/SignupContext';
 import { useOnboarding } from '@/context/OnboardingContext';
@@ -550,125 +521,125 @@ const SignUp: React.FC<SignUpProps> = ({ setCurrentView, userType, setUserType }
             </TabsTrigger>
           </TabsList>
 
-        <TabsContent value="investor" className="mt-6">
-          <Card className={sharedStyles.cardWrapper}>
-            <CardHeader className="text-center space-y-2">
-              <CardTitle className={sharedStyles.gradientHeading}>Sign Up as an Investor</CardTitle>
-              <CardDescription className={sharedStyles.description}>
-                Join our community of investors and discover promising opportunities
-              </CardDescription>
-              {investorStep === 1 || investorStep === 2 ? (
-                <div className="pt-4">
-                  <div className="flex items-center justify-between text-sm text-gray-400 mb-2">
-                    <span>Step {investorStep} of 2</span>
-                    <span>{investorStep === 1 ? 'Basic Information' : 'Investment Preferences'}</span>
+          <TabsContent value="investor" className="mt-6">
+            <Card className={sharedStyles.cardWrapper}>
+              <CardHeader className="text-center space-y-2">
+                <CardTitle className={sharedStyles.gradientHeading}>Sign Up as an Investor</CardTitle>
+                <CardDescription className={sharedStyles.description}>
+                  Join our community of investors and discover promising opportunities
+                </CardDescription>
+                {investorStep === 1 || investorStep === 2 ? (
+                  <div className="pt-4">
+                    <div className="flex items-center justify-between text-sm text-gray-400 mb-2">
+                      <span>Step {investorStep} of 2</span>
+                      <span>{investorStep === 1 ? 'Basic Information' : 'Investment Preferences'}</span>
+                    </div>
+                    <Progress value={investorStep * 50} className="h-2 bg-gray-700">
+                      <div className="h-full bg-gradient-to-r from-blue-600 to-violet-600" />
+                    </Progress>
                   </div>
-                  <Progress value={investorStep * 50} className="h-2 bg-gray-700">
-                    <div className="h-full bg-gradient-to-r from-blue-600 to-violet-600" />
-                  </Progress>
-                </div>
-              ) : null}
-            </CardHeader>
-            <CardContent className="pt-6">
-              <form onSubmit={investorForm.handleSubmit(handleInvestorSubmit)} className="space-y-6">
-                <div className={`space-y-6 ${sharedStyles.fadeIn}`}>
-                  {investorStep === 1 && (
-                    <InvestorStep1
-                      control={investorForm.control}
-                      register={investorForm.register}
-                      errors={investorForm.formState.errors}
-                      onEmailBlur={handleEmailBlur}
-                      emailValidation={emailValidation}
-                    />
-                  )}
+                ) : null}
+              </CardHeader>
+              <CardContent className="pt-6">
+                <form onSubmit={investorForm.handleSubmit(handleInvestorSubmit)} className="space-y-6">
+                  <div className={`space-y-6 ${sharedStyles.fadeIn}`}>
+                    {investorStep === 1 && (
+                      <InvestorStep1
+                        control={investorForm.control}
+                        register={investorForm.register}
+                        errors={investorForm.formState.errors}
+                        onEmailBlur={handleEmailBlur}
+                        emailValidation={emailValidation}
+                      />
+                    )}
 
-                  {investorStep === 2 && (
-                    <InvestorStep2
-                      control={investorForm.control}
-                      errors={investorForm.formState.errors}
-                      setValue={investorForm.setValue}
-                    />
-                  )}
-                </div>
-
-                {error && (
-                  <div className={sharedStyles.errorAlert}>
-                    <p className="text-center">{error}</p>
+                    {investorStep === 2 && (
+                      <InvestorStep2
+                        control={investorForm.control}
+                        errors={investorForm.formState.errors}
+                        setValue={investorForm.setValue}
+                      />
+                    )}
                   </div>
-                )}
 
-                <div className="flex flex-col sm:flex-row justify-between gap-4 pt-4">
-                  {investorStep > 1 && (
-                    <Button 
-                      type="button" 
-                      variant="outline" 
-                      onClick={prevInvestorStep}
-                      className={sharedStyles.secondaryButton}
-                    >
-                      Previous
-                    </Button>
+                  {error && (
+                    <div className={sharedStyles.errorAlert}>
+                      <p className="text-center">{error}</p>
+                    </div>
                   )}
-                  <div className="flex-1" />
-                  {investorStep === 1 && (
-                    <Button 
-                      type="button" 
-                      onClick={nextInvestorStep}
-                      className={sharedStyles.primaryButton}
-                    >
-                      Continue
-                    </Button>
-                  )}
-                  {investorStep === 2 && (
-                    <Button 
-                      type="submit" 
-                      disabled={loading}
-                      className={sharedStyles.primaryButton}
-                    >
-                      {loading ? (
-                        <span className="flex items-center gap-2">
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                          Creating Account...
-                        </span>
-                      ) : (
-                        'Create Account'
-                      )}
-                    </Button>
-                  )}
-                </div>
 
-                <div className="text-center pt-4 border-t border-gray-800">
-                  <p className="text-sm text-gray-400">
-                    Already have an account?{' '}
-                    <Button 
-                      variant="link" 
-                      onClick={() => setCurrentView('login')}
-                      className="text-blue-400 hover:text-blue-300 p-0 h-auto font-normal"
-                    >
-                      Login here
-                    </Button>
-                  </p>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
-        </TabsContent>
+                  <div className="flex flex-col sm:flex-row justify-between gap-4 pt-4">
+                    {investorStep > 1 && (
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        onClick={prevInvestorStep}
+                        className={sharedStyles.secondaryButton}
+                      >
+                        Previous
+                      </Button>
+                    )}
+                    <div className="flex-1" />
+                    {investorStep === 1 && (
+                      <Button 
+                        type="button" 
+                        onClick={nextInvestorStep}
+                        className={sharedStyles.primaryButton}
+                      >
+                        Continue
+                      </Button>
+                    )}
+                    {investorStep === 2 && (
+                      <Button 
+                        type="submit" 
+                        disabled={loading}
+                        className={sharedStyles.primaryButton}
+                      >
+                        {loading ? (
+                          <span className="flex items-center gap-2">
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            Creating Account...
+                          </span>
+                        ) : (
+                          'Create Account'
+                        )}
+                      </Button>
+                    )}
+                  </div>
 
-        <TabsContent value="founder" className="mt-6">
-          <Card className={sharedStyles.cardWrapper}>
-            <CardHeader className="text-center space-y-2">
-              <CardTitle className={sharedStyles.gradientHeading}>Sign Up as a Founder</CardTitle>
-              <CardDescription className={sharedStyles.description}>
-                Start your journey to connect with potential investors
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="pt-6">
-              <CompanyOnboarding />
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+                  <div className="text-center pt-4 border-t border-gray-800">
+                    <p className="text-sm text-gray-400">
+                      Already have an account?{' '}
+                      <Button 
+                        variant="link" 
+                        onClick={() => setCurrentView('login')}
+                        className="text-blue-400 hover:text-blue-300 p-0 h-auto font-normal"
+                      >
+                        Login here
+                      </Button>
+                    </p>
+                  </div>
+                </form>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="founder" className="mt-6">
+            <Card className={sharedStyles.cardWrapper}>
+              <CardHeader className="text-center space-y-2">
+                <CardTitle className={sharedStyles.gradientHeading}>Sign Up as a Founder</CardTitle>
+                <CardDescription className={sharedStyles.description}>
+                  Start your journey to connect with potential investors
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pt-6">
+                <CompanyOnboarding />
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
-  );
   );
 };
 
