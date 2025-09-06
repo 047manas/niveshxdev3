@@ -78,7 +78,7 @@ export async function POST(req: NextRequest) {
     }
 
     const otp = generateOtp();
-    const otpExpires = Timestamp.fromMillis(Date.now() + 10 * 60 * 1000); // 10 minutes
+    const otpExpires = Timestamp.fromMillis(Date.now() + 30 * 60 * 1000); // 30 minutes
 
     // Update the user document with new OTP and expiry
     await pendingUserRef.update({

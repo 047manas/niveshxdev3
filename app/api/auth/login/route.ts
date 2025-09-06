@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { firestore, FieldValue, Timestamp } from '@/lib/server-utils/firebase-admin';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import emailClient from '@/lib/email/client';
+import { sendOtpEmail } from '@/lib/email';
 import { rateLimit } from '@/lib/server-utils/rate-limit';
 import { validateEmail } from '@/lib/utils';
 import type { Transaction } from 'firebase-admin/firestore';
@@ -115,15 +115,16 @@ export async function POST(req: NextRequest) {
       if (userData.emailVerificationStatus !== 'verified') {
       // User is not verified, send new OTP
       const otp = generateOtp();
-      const otpExpires = Timestamp.fromMillis(Date.now() + 10 * 60 * 1000);
+      const otpExpires = Timestamp.fromMillis(Date.now() + 30 * 60 * 1000); // 30 minutes
 
       await userDoc.ref.update({
         userOtp: otp,
         userOtpExpires: otpExpires,
         otpAttempts: 0,
         lastOtpSentAt: FieldValue.serverTimestamp()
-      });      // Send verification email using the new email service
-      await emailClient.sendOTPEmail(email, userData.firstName, otp);
+      });
+      // Send verification email
+      await sendOtpEmail(email, `<p>Your new OTP is: <h2>${otp}</h2></p>`, "New Verification Code");
 
       return NextResponse.json({ error: 'NOT_VERIFIED' }, { status: 401 });
     }

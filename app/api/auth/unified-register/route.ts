@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { firestore, auth, Timestamp, FieldValue } from '@/lib/server-utils/firebase-admin';
+import admin from '@/lib/firebase-admin';
 import bcrypt from 'bcryptjs';
-import emailClient from '@/lib/email/client';
+import { sendOtpEmail } from '@/lib/email';
 
 const generateOtp = () => {
   return Math.floor(100000 + Math.random() * 900000).toString();
@@ -18,6 +18,8 @@ export async function POST(req: NextRequest) {
     // Normalize email
     email = email.trim().toLowerCase();
 
+    const auth = admin.auth();
+    const firestore = admin.firestore();
     let authUser;
 
     try {
@@ -76,8 +78,8 @@ export async function POST(req: NextRequest) {
             userType: userType,
             isVerified: false,
             password: hashedPassword,
-            createdAt: FieldValue.serverTimestamp(),
-            updatedAt: FieldValue.serverTimestamp(),
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         });
 
         if (userType === 'founder') {
@@ -88,8 +90,8 @@ export async function POST(req: NextRequest) {
                 website: companyWebsite,
                 contactEmail: contactEmail,
                 isVerified: false,
-                createdAt: FieldValue.serverTimestamp(),
-                updatedAt: FieldValue.serverTimestamp(),
+                createdAt: admin.firestore.FieldValue.serverTimestamp(),
+                updatedAt: admin.firestore.FieldValue.serverTimestamp(),
             });
             const companyMemberRef = firestore.collection('new_company_members').doc();
             batch.set(companyMemberRef, {
@@ -97,7 +99,7 @@ export async function POST(req: NextRequest) {
                 companyId: companyRef.id,
                 role: role || 'Founder',
                 status: 'pending_verification',
-                addedAt: FieldValue.serverTimestamp(),
+                addedAt: admin.firestore.FieldValue.serverTimestamp(),
             });
         } else if (userType === 'investor') {
             const { investorType, investmentType, chequeSize } = formData;
@@ -107,8 +109,8 @@ export async function POST(req: NextRequest) {
                 investmentType: investmentType,
                 chequeSize: chequeSize,
                 isAccredited: false,
-                createdAt: FieldValue.serverTimestamp(),
-                updatedAt: FieldValue.serverTimestamp(),
+                createdAt: admin.firestore.FieldValue.serverTimestamp(),
+                updatedAt: admin.firestore.FieldValue.serverTimestamp(),
             });
         }
 
@@ -117,14 +119,14 @@ export async function POST(req: NextRequest) {
             type: 'email',
             target: email,
             otp: hashedOtp,
-            expiresAt: Timestamp.fromMillis(Date.now() + 5 * 60 * 1000),
-            createdAt: FieldValue.serverTimestamp(),
+            expiresAt: admin.firestore.Timestamp.fromMillis(Date.now() + 5 * 60 * 1000),
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
         });
 
         await batch.commit();
 
         // Step 4: Send OTP email (only after all DB operations are successful)
-        await emailClient.sendOTPEmail(email, firstName, otp);
+        await sendOtpEmail(email, `<p>Your NiveshX verification code is: <h2>${otp}</h2></p>`, "Verify your NiveshX Account");
 
         return NextResponse.json({ success: true, message: 'Registration successful. Please check your email for a verification code.' });
 
